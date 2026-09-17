@@ -35,13 +35,14 @@ After installation, log out, select **Omadora** using GDM's gear menu, and log i
 - Upstream Hyprland layout, Quickshell bar, menus, notifications, lock screen and theme system.
 - Omadora text branding and an Omadora ASCII wordmark using the existing animated screensaver engine.
 - Foot terminal, Neovim, Firefox and Files, plus desktop infrastructure for networking, sound, brightness, clipboard and screenshots.
+- Activity opens `top` in Foot. Screenshot selection supports Escape to cancel and Ctrl+Enter for fullscreen, saving and copying the image without an extra editor.
 - Omarchy's additional app and web-app shortcuts disabled; essential desktop shortcuts remain.
 - Optional software in **Install**, grouped by Gaming, Creative, Media, Productivity, Communication, Development, Terminal and Browser. Matching Remove menus.
 - Configuration backups before setup and a restore command that preserves later edits in a second backup.
 
 No games, office suite, media editor, music client, AI agent, container engine or proprietary chat app is installed by Omadora's base profile. Fedora Workstation's own existing applications are left in place.
 
-Theme switching also sets the user's GTK light/dark preference, GTK theme and icon theme. The monospace font preference uses standard user fontconfig configuration. These user-wide settings can affect GNOME and other applications; their original values are backed up for configuration recovery.
+Theme switching also sets the user's GTK light/dark preference, GTK theme and icon theme. The monospace font preference uses a managed user fontconfig file; changing it preserves unrelated Fontconfig preferences. These user-wide settings can affect GNOME and other applications; their original values are backed up for configuration recovery.
 
 ## Optional apps
 

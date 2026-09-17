@@ -2,13 +2,24 @@
 
 ## Latest verified results
 
-- Fourteen source tests and the Fedora integration suite pass with the session-activation fix (`64f6c42`, regression coverage at `f01538d`).
+- [Fifteen source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35280375545) and the [Fedora integration suite](https://github.com/DanielCoffey1/omadora/actions/runs/35280375560) pass at `ed79167`, including the session-activation fix and the minimal-workflow corrections described below.
+- [All eight desktop/service/recovery checks](https://github.com/DanielCoffey1/omadora/actions/runs/35281940399) pass at `43261d4`: Activity, screenshot keyboard/clipboard, font preservation, portal selection, network, audio, notifications and GNOME/config recovery.
 - GTK dark file chooser styling, sandbox font lookup in three Flatpaks, and restoration of shared GTK/font preferences are verified.
 - Native Steam downloads its client and reaches sign-in; Signal and Discord reach their linking/login screens. Install/remove checks pass. No accounts or games were used.
 - The GDM/Hyprland startup crash was traced to an inactive login session and fixed; 20 subsequent GDM relaunches across four fresh VMs passed password authentication, including deliberately delayed startup.
 - A single Bochs virtual display passed three consecutive S3/resume/password-unlock cycles. This is a [verified VM workaround](VIRTUAL_MACHINES.md), not a virtio driver fix. Default QEMU/virtio S3 still fails; software virtio and pre-sleep display blanking did not provide reliable fixes.
 
 The detailed records below distinguish historical failures, fixes, and remaining limitations. Passing individual checks does not imply every workflow passed.
+
+## Minimal workflow audit
+
+The retained Activity shortcut called an uninstalled monitor, TUI helpers delegated to an unrelated default terminal, and several shortcuts still exposed omitted workflows. Activity now uses `top` in Foot, TUI helpers use Foot, and unsupported menu/shortcut entries are filtered. About customization required omitted Fastfetch tooling and is removed; documentation links now match Omadora and plain Neovim.
+
+Screenshot capture now uses the upstream keyboard picker and supports saving, copying, or both. Linux regression tests exercise saved/clipboard bytes, copy-only cleanup, capture failure, and cancellation with freeze-process cleanup. Font selection previously overwrote a general user Fontconfig file; it now updates only Omadora's managed file. Source tests check both the adapted helper and menu/keybinding consistency.
+
+The [first graphical run](https://github.com/DanielCoffey1/omadora/actions/runs/35280374750) passed seven of eight checks, including Activity in Foot, real font changes with unrelated preferences preserved, portal selection, network, audio, notifications and GNOME/config recovery. Screenshot cancellation passed, but the fullscreen test timed out waiting for SSH. The clipboard owner retains stderr after forking; the fixture now redirects capture output to a guest log so that daemon cannot keep the SSH channel open. This first run is not counted as a complete pass. The dark portal, notification and animated Omadora wordmark captures were visually inspected.
+
+The [corrected graphical run](https://github.com/DanielCoffey1/omadora/actions/runs/35281940399) passed all eight checks at `43261d4`. Escape canceled without creating a file; Ctrl+Enter captured fullscreen, the saved PNG matched the clipboard bytes exactly, and both paths removed their freeze overlays. The actual clipboard image was visually inspected and showed the complete desktop without the selection overlay. Activity opened `top` in Foot and quit normally; changing and restoring the monospace font preserved an unrelated Fontconfig sentinel. Portal, network, virtual audio, notifications and GNOME/config recovery passed again. This fixture correction required no additional product change; [source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35281935436) also passed.
 
 ## Session and suspend diagnosis
 
@@ -28,7 +39,7 @@ The [single-Bochs control](https://github.com/DanielCoffey1/omadora/actions/runs
 
 ## Performed in the Windows development workspace
 
-- Fourteen automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree. Windows runs twelve and skips the real-symlink case and Linux session execution; Linux CI runs all fourteen.
+- Fifteen automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree. Windows runs twelve and skips the real-symlink case, Linux session execution and Linux screenshot execution; Linux CI runs all fifteen.
 - Fedora/edition/architecture rejection rules.
 - Optional-app command construction and catalog input constraints.
 - Arch menu replacement and absence of direct Arch package-manager calls in generated command files.

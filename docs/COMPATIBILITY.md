@@ -13,7 +13,10 @@
 ## Differences from upstream
 
 - Firefox is the default browser; web links open as normal Firefox windows rather than Chromium app-mode windows.
-- Screenshots use grim/slurp and copy to the clipboard; the annotation editor and advanced capture tools are not installed.
+- Screenshots retain the upstream keyboard region picker, including Escape cancellation and Ctrl+Enter for fullscreen, with grim/slurp capture and save/copy modes. The annotation editor and advanced capture tools are not installed.
+- Activity opens the installed `top` monitor in Foot. TUI launchers use Foot directly. Shortcuts for omitted agents, reminders, sharing and transcoding are removed alongside their menu entries.
+- About uses Omadora's text information; Fastfetch styling entries are omitted. Documentation links point to Omadora and the installed plain Neovim.
+- Font selection updates the managed `fontconfig/conf.d/99-omadora.conf` file and preserves unrelated `fontconfig/fonts.conf` preferences.
 - Omarchy's optional app shortcuts and AI status widget are disabled in the minimal profile.
 - Gaming/other apps use Fedora RPMs, RPM Fusion or user-scoped Flatpak. No AUR or Arch package-name passthrough.
 - Fedora's GDM, bootloader, kernel, networking, SELinux and firewalld remain in charge.
