@@ -30,7 +30,7 @@ with (out / 'environment.log').open('w') as log:
 subprocess.run(['omarchy-shell', 'idle', 'disable'], check=True)
 assert not json.loads(subprocess.check_output(['omarchy-shell', 'idle', 'status']))['enabled']
 atexit.register(lambda: subprocess.run(['omarchy-shell', 'idle', 'enable']))
-gui = {'steam': ['steam'], 'lutris': ['lutris'], 'gimp': ['gimp'],
+gui = {'steam': ['gtk-launch', 'steam'], 'lutris': ['lutris'], 'gimp': ['gimp'],
        'libreoffice': ['libreoffice', '--writer'], 'kitty': ['kitty'],
        'alacritty': ['alacritty'], 'chromium': ['chromium-browser', '--no-first-run']}
 terminal = {'mangohud': ['mangohud', '--version'], 'gamemode': ['gamemoded', '--version'],
@@ -87,6 +87,10 @@ for app_id in selection:
             status = transaction('install', app_id, log)
             assert status == 0 and installed(app_id), 'installation failed'
             record['install'] = 'PASS'
+            if app_id == 'steam':
+                assert shutil.which('steam') == '/usr/local/share/omadora/bin/steam'
+                desktop = Path.home() / '.local/share/applications/steam.desktop'
+                assert 'Exec=/usr/local/share/omadora/bin/steam %U' in desktop.read_text()
             if app['source'] == 'flatpak':
                 fonts = subprocess.run(['flatpak', 'run', '--command=fc-match', app['id'], 'sans'],
                                        text=True, capture_output=True, timeout=30)
@@ -110,13 +114,15 @@ for app_id in selection:
                                         and c['class'] == 'zenity' and c['title'] == 'Warning'), None)
                         if warning:
                             # Disposable empty profile only: exercise the wrapper's
-                            # default choice without linking an account or changing
+                            # Yes choice without linking an account or changing
                             # the product's storage configuration.
                             subprocess.run(['grim', str(out / 'signal-wrapper.png')], timeout=30)
-                            for state in ('down', 'up'):
-                                expression = 'hl.dsp.send_key_state({mods="", key="Return", state="' + state + '", window="address:' + warning['address'] + '"})'
-                                subprocess.run(['hyprctl', 'dispatch', expression], stdout=log, stderr=log, check=True)
-                                time.sleep(.1)
+                            # Zenity focuses No initially. Move right to Yes first.
+                            for key in ('Right', 'Return'):
+                                for state in ('down', 'up'):
+                                    expression = 'hl.dsp.send_key_state({mods="", key="' + key + '", state="' + state + '", window="address:' + warning['address'] + '"})'
+                                    subprocess.run(['hyprctl', 'dispatch', expression], stdout=log, stderr=log, check=True)
+                                    time.sleep(.1)
                             acknowledged = True
                             record['fixture_warning_acknowledged'] = True
                     created = [c for c in windows() if c['address'] not in before and app_window(app_id, c)]
@@ -152,6 +158,8 @@ for app_id in selection:
                     status = transaction('remove', app_id, log)
                     assert status == 0 and not installed(app_id), 'removal failed'
                     record['remove'] = 'PASS'
+                    if app_id == 'steam':
+                        assert not (Path.home() / '.local/share/applications/steam.desktop').exists()
                 except Exception as error:
                     record['remove'] = 'FAIL: ' + str(error)
             else:

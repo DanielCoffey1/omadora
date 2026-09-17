@@ -38,6 +38,24 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(commands[-1], ['flatpak', 'install', '--user', 'flathub', 'com.heroicgameslauncher.hgl'])
         self.assertEqual(adapter.app_commands(app, 'remove'), [['flatpak', 'uninstall', '--user', 'com.heroicgameslauncher.hgl']])
 
+    def test_steam_launcher_actions_and_custom_edits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            desktop = home / 'system-steam.desktop'
+            adapter.write(desktop, '[Desktop Entry]\nExec=/usr/bin/steam %U\n[Desktop Action Store]\nExec=/usr/bin/steam steam://store\n')
+            target = home / '.local/share/applications/steam.desktop'
+            adapter.steam_launcher('install', home, desktop)
+            self.assertEqual(target.read_text().count('Exec=/usr/local/share/omadora/bin/steam'), 2)
+            adapter.steam_launcher('check', home, desktop)
+            adapter.steam_launcher('remove', home, desktop)
+            self.assertFalse(target.exists())
+            adapter.steam_launcher('install', home, desktop)
+            adapter.write(target, 'user customization')
+            with self.assertRaisesRegex(ValueError, 'Preserving custom'):
+                adapter.steam_launcher('check', home, desktop)
+            adapter.steam_launcher('remove', home, desktop)
+            self.assertEqual(target.read_text(), 'user customization')
+
     def test_catalog_cannot_inject_flags_or_shell(self):
         import re
         for app_id, app in adapter.read_json(ROOT / 'apps.json').items():

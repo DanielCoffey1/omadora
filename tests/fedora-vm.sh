@@ -58,6 +58,7 @@ qemu_pid=$!
 cleanup() {
   status=$?
   scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/ 2>/dev/null || true
+  scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 omadora-test@127.0.0.1:.cache/hyprland vm-results/hyprland-crashes 2>/dev/null || true
   ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager' >vm-results/guest-journal.log 2>&1 || true
   kill "$qemu_pid" "$xvfb_pid" 2>/dev/null || true
   exit "$status"
