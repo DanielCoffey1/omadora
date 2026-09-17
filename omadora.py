@@ -181,6 +181,7 @@ def assemble(source, output):
     # and menu branding are Omadora; wholesale textual renaming breaks IPC.
     env = ('export OMARCHY_PATH=/usr/local/share/omadora/upstream\n'
            'export PATH="/usr/local/share/omadora/bin:$OMARCHY_PATH/bin:$PATH"\n'
+           'export XDG_DATA_DIRS="/usr/local/share/omadora/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"\n'
            'export TERMINAL=foot\nexport EDITOR=nvim\n'
            # Set before UWSM activates portal/toolkit services, not only in
            # compositor child processes after asynchronous environment import.
@@ -232,6 +233,10 @@ def assemble(source, output):
     write(output / 'system/omarchy-lock-password', '#%PAM-1.0\nauth include system-auth\naccount include system-auth\n')
     write(output / 'system/omadora.desktop', '[Desktop Entry]\nName=Omadora\nComment=Minimal Omarchy 4 desktop for Fedora\nExec=/usr/local/bin/omadora-session\nType=Application\nDesktopNames=Hyprland;\n')
     write(output / 'system/omadora-env', env)
+    # gnome-themes-extra supplies this name upstream. Use GTK's own bundled
+    # dark stylesheet without pulling obsolete GTK2 theme dependencies.
+    write(output / 'share/themes/Adwaita-dark/gtk-3.0/gtk.css',
+          '@import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css");\n')
     autostart = tree / 'default/hypr/autostart.lua'
     write(autostart, autostart.read_text().replace(
         'hl.exec_cmd("omarchy-launch-shell")',

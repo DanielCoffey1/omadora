@@ -1,5 +1,6 @@
 #!/bin/bash
 # Session environment for SSH-driven tests in the disposable VM.
+source /usr/local/share/omadora/system/omadora-env
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 export OMARCHY_PATH=/usr/local/share/omadora/upstream

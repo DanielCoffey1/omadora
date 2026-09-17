@@ -12,6 +12,7 @@ spec.loader.exec_module(v)
 
 def portal():
     v.guest("printf 'Omadora portal fixture' >/tmp/omadora-portal.txt")
+    (v.OUT / 'gtk-rendered-theme.log').write_text(v.guest('python3 ~/source/tests/gtk-theme-probe.py dark'))
     (v.OUT / 'gtk-settings.log').write_text(v.guest('''python3 - <<'PY'
 import gi, os
 gi.require_version('Gtk', '3.0')

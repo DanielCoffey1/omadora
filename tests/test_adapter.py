@@ -167,6 +167,7 @@ class AdapterTests(unittest.TestCase):
             self.assertNotIn('polkit-gnome', (tree / 'config/hypr/autostart.lua').read_text())
             self.assertTrue((tree / 'shell/plugins/polkit/PolkitAgent.qml').is_file())
             self.assertNotIn('FONTCONFIG_FILE', (output / 'system/omadora-env').read_text())
+            self.assertIn('gtk-contained-dark.css', (output / 'share/themes/Adwaita-dark/gtk-3.0/gtk.css').read_text())
             self.assertIn('gsettings set', (tree / 'bin/omarchy-theme-set-gnome').read_text())
             logo = (tree / 'logo.txt').read_text(encoding='utf-8')
             self.assertEqual(logo, (tree / 'config/omarchy/branding/screensaver.txt').read_text(encoding='utf-8'))

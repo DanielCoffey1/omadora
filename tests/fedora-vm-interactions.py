@@ -149,6 +149,8 @@ def themes():
         assert guest('omarchy-shell shell ping') == 'ok'
         expected = 'prefer-light' if theme == 'white' else 'prefer-dark'
         assert expected in guest('gsettings get org.gnome.desktop.interface color-scheme')
+        mode = 'light' if theme == 'white' else 'dark'
+        (OUT / f'gtk-theme-{theme}.json').write_text(guest('python3 ~/source/tests/gtk-theme-probe.py ' + mode))
         guest(f'grim /tmp/omadora-vm-results/theme-{theme}.png')
     return 'Dark/light/dark themes updated shell and GTK color scheme without compositor config errors.'
 
