@@ -77,7 +77,7 @@ PY
 fi
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py apps.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SUITE:-apps}" <<'GUEST'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default}" <<'GUEST'
 set -euo pipefail
 sudo dnf install -y --allowerasing @workstation-product-environment fedora-release-identity-workstation
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
@@ -90,7 +90,7 @@ mkdir -p ~/.config/hypr
 printf 'pre-install sentinel\n' >~/.config/hypr/original-test-marker
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash
 cmp omadora.py /usr/local/share/omadora/omadora.py
-if [[ $1 == diagnostic ]]; then
+if [[ $1 == legacy-drm ]]; then
   # Diagnostic only. Upstream discourages legacy DRM for normal use:
   # https://github.com/hyprwm/aquamarine/blob/main/docs/env.md
   printf '\nexport AQ_NO_ATOMIC=1\n' >>~/.config/uwsm/env-hyprland

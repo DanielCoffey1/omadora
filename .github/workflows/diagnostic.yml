@@ -1,6 +1,12 @@
-name: Fedora suspend diagnostic (legacy DRM)
+name: Fedora suspend diagnostic
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Isolated fixture diagnostic; never changes product defaults'
+        type: choice
+        options: [s2idle, legacy-drm]
+        default: s2idle
 permissions:
   contents: read
 jobs:
@@ -11,9 +17,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install VM test tools
         run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
-      - name: Diagnose virtual GPU suspend with legacy DRM
+      - name: Diagnose virtual GPU suspend
         env:
           VM_SUITE: diagnostic
+          VM_SLEEP_DIAGNOSTIC: ${{ inputs.mode }}
         run: bash tests/fedora-vm.sh
       - name: Save diagnostic evidence
         if: always()

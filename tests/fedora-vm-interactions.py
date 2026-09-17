@@ -4,6 +4,7 @@ Keyboard input goes through QMP, including password authentication; no test-only
 unlock API is added to the desktop. See QEMU's QMP send-key documentation.
 """
 import json
+import os
 from pathlib import Path
 import shlex
 import socket
@@ -167,12 +168,38 @@ def suspend():
     return 'Guest entered ACPI suspend, resumed, remained locked, and accepted password.'
 
 
+def s2idle():
+    # Diagnostic-only: avoids the known virtio-GPU S3 device-reset path.
+    # Confirm actual kernel sleep entry/exit; a QMP pause does not qualify.
+    since = guest("date '+%Y-%m-%d %H:%M:%S'")
+    modes = guest('cat /sys/power/mem_sleep')
+    original = next(part[1:-1] for part in modes.split() if part.startswith('['))
+    assert 's2idle' in modes
+    guest('omarchy-shell lock lock')
+    wait_for(lambda: lock_status()['secure'])
+    try:
+        guest("printf s2idle | sudo tee /sys/power/mem_sleep >/dev/null; sudo rtcwake -m no -s 12; sudo systemctl suspend", timeout=60)
+        journal = guest('sudo journalctl -k -b --no-pager --since ' + shlex.quote(since))
+        (OUT / 's2idle-kernel.log').write_text(journal)
+        assert 'PM: suspend entry (s2idle)' in journal and 'PM: suspend exit' in journal, journal[-2000:]
+        wait_for(lambda: lock_status()['secure'])
+        unlock()
+        guest('grim /tmp/omadora-vm-results/s2idle-resumed.png')
+        assert guest('omarchy-shell shell ping') == 'ok'
+        return 'Kernel s2idle entry/exit recorded; RTC resumed guest; lock retained and password accepted.'
+    finally:
+        guest('printf ' + shlex.quote(original) + ' | sudo tee /sys/power/mem_sleep >/dev/null')
+
+
 if __name__ == '__main__':
     check('password authentication', authentication)
     check('keyboard and windows', keyboard_windows)
     check('clipboard', clipboard)
     check('power profiles', power)
     check('theme switching', themes)
-    check('suspend/resume', suspend)
+    if os.environ.get('VM_SLEEP_DIAGNOSTIC') == 's2idle':
+        check('suspend/resume (s2idle diagnostic)', s2idle)
+    else:
+        check('suspend/resume', suspend)
     print('Interaction tests complete.', flush=True)
-# Caller continues with app tests even when an individual interaction fails.
+# Caller retains every result even when an individual interaction fails.
