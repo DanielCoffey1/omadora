@@ -5,8 +5,8 @@
 - Fourteen source tests and the Fedora integration suite pass with the session-activation fix (`64f6c42`, regression coverage at `f01538d`).
 - GTK dark file chooser styling, sandbox font lookup in three Flatpaks, and restoration of shared GTK/font preferences are verified.
 - Native Steam downloads its client and reaches sign-in; Signal and Discord reach their linking/login screens. Install/remove checks pass. No accounts or games were used.
-- The GDM/Hyprland startup crash was traced to an inactive login session and fixed; 15 subsequent GDM relaunches across three fresh VMs passed password authentication, including deliberately delayed startup.
-- Default QEMU/virtio S3 resume/unlock still fails. Software rendering and pre-sleep display blanking did not provide reliable fixes; the earlier s2idle diagnostic also did not establish a working alternative.
+- The GDM/Hyprland startup crash was traced to an inactive login session and fixed; 20 subsequent GDM relaunches across four fresh VMs passed password authentication, including deliberately delayed startup.
+- A single Bochs virtual display passed three consecutive S3/resume/password-unlock cycles. This is a [verified VM workaround](VIRTUAL_MACHINES.md), not a virtio driver fix. Default QEMU/virtio S3 still fails; software virtio and pre-sleep display blanking did not provide reliable fixes.
 
 The detailed records below distinguish historical failures, fixes, and remaining limitations. Passing individual checks does not imply every workflow passed.
 
@@ -23,6 +23,8 @@ The [delayed-startup retest](https://github.com/DanielCoffey1/omadora/actions/ru
 Two more fresh VMs with the session fix each passed five GDM relaunches and password checks. [Virtio without 3D acceleration](https://github.com/DanielCoffey1/omadora/actions/runs/35254055711) passed the first S3/resume/unlock cycle but failed the second in the same kernel DRM path. [Blanking the display before S3](https://github.com/DanielCoffey1/omadora/actions/runs/35254131881) failed the first cycle. Neither experiment is enabled in the product or counted as a reliable suspend fix. Multiple cycles are required to avoid treating a single successful wake as resolution.
 
 Related upstream evidence: [QEMU issue 2520](https://gitlab.com/qemu-project/qemu/-/issues/2520) describes the same inactive-display symptom after S3. This similarity alone does not prove an identical cause or establish a fix for Omadora.
+
+The [single-Bochs control](https://github.com/DanielCoffey1/omadora/actions/runs/35257282229) passed all eight checks: five GDM relaunches/password checks and three S3/resume/unlock cycles. Kernel logs confirm three actual `deep` sleep entries and exits. The final display capture showed the usable Omadora desktop. No sleep-mode, DPMS, PAM or lock changes were used. This establishes a working alternative VM graphics configuration; it does not establish working virtio S3 or physical-hardware support. The [initial Bochs attempt](https://github.com/DanielCoffey1/omadora/actions/runs/35255719283) inadvertently included QEMU's default VGA as a second GPU, failed rendering before suspend, and is not evidence about Bochs suspend. The corrected fixture explicitly uses `-vga none`.
 
 ## Performed in the Windows development workspace
 
