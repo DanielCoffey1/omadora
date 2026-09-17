@@ -1,0 +1,58 @@
+# Menu and shortcut audit
+
+The minimal profile keeps the upstream desktop controls and supplies Fedora
+Install/Remove/Update menus. This audit covers the generated menu, all six
+default binding modules, dynamic font/application providers, and the helpers
+behind retained shell panels. It does not prove every hardware or application
+workflow works.
+
+## Issues corrected
+
+- The shell menu had an embedded `pacman` package cache that shadowed the
+  adapted RPM helpers. It now uses the installed Fedora helpers.
+- Menu filtering now checks `checked` expressions as well as actions,
+  visibility and disabled expressions.
+- Keybinding help no longer advertises the upstream browser extensions' copy
+  URL and download-video shortcuts, since those extensions are not installed.
+- The standalone Lua interpreter is installed so keybinding help can recover
+  Lua dispatcher details and resolve numbered workspace shortcuts.
+- `eject` supplies the media-eject key. `ddcutil` supplies the external display
+  brightness helper. These are desktop utilities, not optional applications.
+- The brightness router only selects the Apple vendor utility when it exists;
+  otherwise it tries ordinary DDC/CI. Apple HID brightness support is not part
+  of this release.
+- Theme changes no longer invoke upstream browser-policy tinting, which sourced
+  an excluded installer file and expected an upstream privileged entrypoint.
+  Firefox follows the shared GTK light/dark preference; Chromium policy-based
+  toolbar color synchronization is not supported.
+
+## Coverage and limits
+
+| Surface | Verification | Still requires validation |
+| --- | --- | --- |
+| Menu actions and predicates | Generated entries checked; runtime dependency and predicate inventory saved as `menu-audit.json` | User extensions and future upstream changes |
+| Apps / Install / Remove | QML application provider; explicit Fedora catalog; prior catalog install/removal runs | Account login, gameplay, all app workflows and offline cases |
+| Learn and About | Targets point to Omadora, Fedora, Hyprland, Bash and plain Neovim | External website availability |
+| Fonts, theme and background | Existing font test plus theme/background change-and-restore checks | Full application visual parity |
+| Bar and toggles | Position, transparency, idle, nightlight, screensaver, bar, gaps, layout and notification state checks | Physical display color output and idle timing |
+| Screenshot / color | Screenshot keyboard cancellation and clipboard equality tested; `hyprpicker` available | Color selection and every region-picker combination |
+| Audio / network | Virtual audio volume/mute and network reconnect tests | Physical audio, Wi-Fi authentication and Bluetooth pairing |
+| Display / power / Bluetooth panels | Panel screenshots; helpers traced to Fedora tools | Monitor topology, DDC permissions/hardware, battery profiles and radio hardware |
+| Window and clipboard shortcuts | Hyprland Lua dispatchers, source inspection and populated keybinding help | Every tiling/grouping/clipboard combination and multi-monitor behavior |
+| System actions | Prior lock/password and Bochs suspend tests; logout/reboot/shutdown helpers use UWSM/systemd | Full power-action sequence on physical hardware; virtio suspend issue remains |
+| Speed tests | Network uses curl/IP tools; disk uses bounded temporary files and standard utilities | Fast.com availability and real disk throughput run |
+
+Optional application bindings remain disabled. Dictation bindings require an
+installed `voxtype`; Dell haptics require both matching hardware and the
+vendor command. Theme hooks for omitted apps generally exit when their app or
+configuration is absent; this does not establish compatibility for manually
+installed upstream-only apps such as Hermes.
+
+`tests/fedora-menu-audit.py` checks command availability and evaluates menu
+predicates in the disposable Fedora session. False hardware predicates are
+recorded as false, not counted as successful hardware tests. The graphical
+suite captures menus and panels for inspection and tests state transitions;
+merely opening a panel does not validate its hardware controls.
+
+See [validation results](VALIDATION.md) for workflow evidence and
+[compatibility](COMPATIBILITY.md) for remaining release limitations.

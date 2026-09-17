@@ -26,7 +26,7 @@ DISALLOWED = re.compile(r'\b(pacman|yay|paru|mkinitcpio|limine|arch-chroot|pacst
 UNPORTED = ('omarchy-install-', 'omarchy-setup-', 'omarchy-provision-',
             'omarchy-apply-', 'omarchy-dev-', 'omarchy-update-',
             'omarchy-snapshot-', 'omarchy-migrate', 'omarchy-reinstall-',
-            'omarchy-refresh-', 'omarchy-pkg-')
+            'omarchy-refresh-', 'omarchy-pkg-', 'omarchy-theme-set-browser')
 
 
 def run(*argv, capture=False, check=True, env=None):
@@ -303,6 +303,10 @@ fi
     write(brightness, brightness.read_text().replace(
         '  omarchy-hyprland-monitor-focused-apple "$monitor"',
         '  command -v asdcontrol >/dev/null && omarchy-hyprland-monitor-focused-apple "$monitor"'), 0o755)
+    # Browser policy tinting depends on upstream install helpers and a
+    # privileged /usr/bin entrypoint. Fedora browsers retain their own policies.
+    theme_set = tree / 'bin/omarchy-theme-set'
+    write(theme_set, theme_set.read_text().replace('  omarchy-theme-set-browser\n', ''), 0o755)
     for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
         path = tree / 'bin' / name
         write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)

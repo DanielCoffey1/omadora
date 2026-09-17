@@ -198,6 +198,7 @@ class AdapterTests(unittest.TestCase):
             active_model = '\n'.join(line for line in model.splitlines() if not line.strip().startswith('//'))
             self.assertNotRegex(active_model, r'\bpacman\b')
             self.assertIn('lua', adapter.packages())
+            self.assertNotIn('omarchy-theme-set-browser', (tree / 'bin/omarchy-theme-set').read_text())
             for unsupported in ('learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu', 'trigger.toggle.crash-capture', 'style.about'):
                 self.assertNotIn(unsupported, menu)
             self.assertNotIn('$HOME/.config/fontconfig/fonts.conf', (tree / 'bin/omarchy-font-set').read_text(encoding='utf-8'))
@@ -221,6 +222,7 @@ class AdapterTests(unittest.TestCase):
             for command in (tree / 'bin').iterdir():
                 if command.is_file():
                     self.assertIsNone(adapter.DISALLOWED.search(command.read_text(encoding='utf-8')), command.name)
+                    self.assertNotIn('$OMARCHY_PATH/install/', command.read_text(encoding='utf-8'), command.name)
 
     def test_font_integrity(self):
         import hashlib
