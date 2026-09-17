@@ -91,11 +91,13 @@ class AdapterTests(unittest.TestCase):
                     'install.gaming.steam': {'action': 'yay -S steam'},
                     'system.lock': {'action': 'omarchy-system-lock'},
                     'setup.bad': {'action': 'omarchy-setup-disk'},
-                    'style': {'label': 'Style'}, 'style.theme': {'action': 'omarchy-theme-switcher'}}
+                    'style': {'label': 'Style'}, 'style.theme': {'action': 'omarchy-theme-switcher'},
+                    'style.bad-check': {'checked': 'pacman -Q test', 'action': 'true'}}
         menu = adapter.menu_for_fedora(original, adapter.read_json(ROOT / 'apps.json'), ['omarchy-setup-disk'])
         self.assertEqual(menu['system.lock'], original['system.lock'])
         self.assertIn('omadora app install steam', menu['install.gaming.steam']['action'])
         self.assertNotIn('setup.bad', menu)
+        self.assertNotIn('style.bad-check', menu)
         self.assertNotRegex(json.dumps(menu), r'\b(yay|pacman|paru)\b')
 
     def test_backup_restore_preserves_later_edits(self):
@@ -180,7 +182,7 @@ class AdapterTests(unittest.TestCase):
             # Fedora-added entries must not reference removed upstream helpers.
             import re
             for entry in menu.values():
-                for field in ('action', 'when', 'disabled', 'provider'):
+                for field in ('action', 'when', 'disabled', 'checked', 'provider'):
                     for command in re.findall(r'\bomarchy-[a-z0-9-]+\b', str(entry.get(field, ''))):
                         self.assertTrue((tree / 'bin' / command).is_file(), command)
             self.assertNotIn('install.gaming.xbox-controllers', menu)
@@ -190,6 +192,12 @@ class AdapterTests(unittest.TestCase):
             for unsupported in ('omarchy-agent', 'omarchy-transcode', 'omarchy-reminder', 'toggle share', 'tui = "btop"'):
                 self.assertNotIn(unsupported, utilities)
             self.assertIn('tui = "top"', utilities)
+            help_script = (tree / 'bin/omarchy-menu-keybindings').read_text(encoding='utf-8')
+            self.assertNotIn('Download Video from Web App', help_script)
+            model = (tree / 'shell/plugins/menu/MenuModel.js').read_text(encoding='utf-8')
+            active_model = '\n'.join(line for line in model.splitlines() if not line.strip().startswith('//'))
+            self.assertNotRegex(active_model, r'\bpacman\b')
+            self.assertIn('lua', adapter.packages())
             for unsupported in ('learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu', 'trigger.toggle.crash-capture', 'style.about'):
                 self.assertNotIn(unsupported, menu)
             self.assertNotIn('$HOME/.config/fontconfig/fonts.conf', (tree / 'bin/omarchy-font-set').read_text(encoding='utf-8'))

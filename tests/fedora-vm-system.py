@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import subprocess
 import time
+import shlex
 
 spec = importlib.util.spec_from_file_location('interactions', Path(__file__).with_name('fedora-vm-interactions.py'))
 v = importlib.util.module_from_spec(spec)
@@ -189,7 +190,92 @@ def desktop_lifecycle():
     return 'Upgraded from GNOME, logged into Omadora and opened Foot; rolled back from GNOME and logged in again; personal edit retained.'
 
 
+def menu_audit():
+    detail = v.guest('python3 ~/source/tests/fedora-menu-audit.py', timeout=180)
+    bindings = v.guest('omarchy-menu-keybindings --print', timeout=90)
+    (v.OUT / 'keybindings.txt').write_text(bindings)
+    for label in ('Terminal', 'Omadora menu', 'Switch to workspace 1', 'Activity'):
+        assert label in bindings, label
+    assert 'Download Video from Web App' not in bindings
+    assert 'Copy URL from Web App' not in bindings
+    for route in ('root', 'apps', 'style.font', 'install.gaming', 'system'):
+        v.guest('omarchy-menu summon ' + route)
+        time.sleep(1)
+        v.guest('grim /tmp/omadora-vm-results/menu-' + route.replace('.', '-') + '.png')
+        v.guest('omarchy-menu close')
+    for panel in ('bluetooth', 'monitor', 'power'):
+        v.guest('omarchy-shell shell summon omarchy.' + panel)
+        time.sleep(1)
+        v.guest('grim /tmp/omadora-vm-results/panel-' + panel + '.png')
+        v.guest('omarchy-shell shell hide omarchy.' + panel)
+    return detail + ' Keybinding help populated; menu/provider and hardware panel screenshots captured.'
+
+
+def style_controls():
+    original = v.guest('omarchy-theme-current')
+    config = json.loads(v.guest('cat ~/.config/omarchy/shell.json'))['bar']
+    try:
+        themes = v.guest('omarchy-theme-list').splitlines()
+        alternate = next(t for t in themes if t.lower() != original.lower())
+        for theme in (alternate, original):
+            v.guest('omarchy-theme-set ' + shlex.quote(theme), timeout=90)
+            v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok')
+            assert v.guest('omarchy-theme-current').lower() == theme.lower()
+            assert v.guest('hyprctl configerrors') in ('', 'ok')
+        for position in ('bottom', 'left', 'right', 'top'):
+            v.guest('omarchy-bar position ' + position)
+            assert json.loads(v.guest('cat ~/.config/omarchy/shell.json'))['bar']['position'] == position
+        v.guest('omarchy-bar transparent toggle')
+        assert json.loads(v.guest('cat ~/.config/omarchy/shell.json'))['bar']['transparent'] != config['transparent']
+        v.guest('grim /tmp/omadora-vm-results/style-controls.png')
+    finally:
+        v.guest('omarchy-theme-set ' + shlex.quote(original), timeout=90)
+        v.guest('omarchy-bar position ' + config['position'])
+        v.guest('omarchy-bar transparent ' + str(config['transparent']).lower())
+    return 'Changed/restored theme with valid compositor config; all four bar positions and transparency persisted.'
+
+
+def desktop_toggles():
+    def status(command):
+        return json.loads(v.guest(command))
+    for command in ('omarchy-toggle-idle', 'omarchy-toggle-nightlight'):
+        before = status(command + ' --status')['enabled']
+        try:
+            v.guest(command + ' >/tmp/omadora-vm-results/toggle.log 2>&1')
+            assert status(command + ' --status')['enabled'] != before, command
+        finally:
+            if status(command + ' --status')['enabled'] != before:
+                v.guest(command + ' >/tmp/omadora-vm-results/toggle.log 2>&1')
+        assert status(command + ' --status')['enabled'] == before
+    for command, marker in (
+        ('omarchy-toggle-screensaver', 'screensaver-off'),
+        ('omarchy-toggle-bar', 'bar-off'),
+        ('omarchy-hyprland-window-gaps-toggle', 'hypr/window-no-gaps.lua'),
+    ):
+        query = 'test -e ~/.local/state/omarchy/toggles/' + marker + '; echo $?'
+        before = v.guest(query)
+        try:
+            v.guest(command)
+            assert v.guest(query) != before, command
+        finally:
+            if v.guest(query) != before:
+                v.guest(command)
+        assert v.guest(query) == before
+    before = json.loads(v.guest('hyprctl activeworkspace -j'))['tiledLayout']
+    try:
+        v.guest('omarchy-hyprland-workspace-layout-toggle')
+        assert json.loads(v.guest('hyprctl activeworkspace -j'))['tiledLayout'] != before
+    finally:
+        if json.loads(v.guest('hyprctl activeworkspace -j'))['tiledLayout'] != before:
+            v.guest('omarchy-hyprland-workspace-layout-toggle')
+    assert v.guest('hyprctl configerrors') in ('', 'ok')
+    return 'Idle, nightlight, screensaver, bar, gaps and workspace layout changed and were restored.'
+
+
 v.check('desktop upgrade and rollback login', desktop_lifecycle)
+v.check('menu dependencies and providers', menu_audit)
+v.check('theme and bar controls', style_controls)
+v.check('desktop toggles', desktop_toggles)
 v.check('Activity shortcut', desktop_shortcuts)
 v.check('screenshot keyboard and clipboard', screenshot_keyboard)
 v.check('font preference preservation', font_preferences)

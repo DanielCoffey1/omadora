@@ -62,5 +62,7 @@ psmisc
 curl
 git
 python3
+lua
+eject
 flatpak
 unzip

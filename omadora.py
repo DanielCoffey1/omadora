@@ -123,7 +123,7 @@ def menu_for_fedora(menu, apps, blocked):
                    'learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu',
                    'trigger.toggle.crash-capture'):
             continue
-        commands = ' '.join(str(value.get(k, '')) for k in ('action', 'when', 'disabled'))
+        commands = ' '.join(str(value.get(k, '')) for k in ('action', 'when', 'disabled', 'checked'))
         if DISALLOWED.search(commands) or any(name in commands for name in blocked):
             continue
         if key.startswith(('trigger.reminder', 'trigger.transcode', 'trigger.share',
@@ -280,6 +280,23 @@ fi
                 'omarchy-reminder', 'toggle reminder-set', 'toggle share')
     write(utilities, '\n'.join(line for line in utilities.read_text().splitlines()
                               if not any(token in line for token in optional)).replace('tui = "btop"', 'tui = "top"') + '\n')
+    # The stock browser extensions are not installed in the minimal profile.
+    keybindings = tree / 'bin/omarchy-menu-keybindings'
+    text = keybindings.read_text(encoding='utf-8')
+    text, count = re.subn(r'static_bindings\(\) \{\n.*?\n\}',
+                         'static_bindings() {\n  :\n}', text, flags=re.S)
+    if count != 1:
+        raise ValueError('Upstream keybinding help changed; review the adapter')
+    write(keybindings, text, 0o755)
+    # Menu guards otherwise shadow our RPM helpers with an embedded Arch cache.
+    model = tree / 'shell/plugins/menu/MenuModel.js'
+    text = model.read_text(encoding='utf-8')
+    text, count = re.subn(r'function guardHelpers\(\) \{\n.*?\n\}',
+                         'function guardHelpers() {\n  // Use the installed Fedora helper commands.\n  return ""\n}',
+                         text, flags=re.S)
+    if count != 1:
+        raise ValueError('Upstream menu guards changed; review the adapter')
+    write(model, text)
     for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
         path = tree / 'bin' / name
         write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)
