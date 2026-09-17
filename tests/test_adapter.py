@@ -170,8 +170,8 @@ class AdapterTests(unittest.TestCase):
             self.assertIn('tui = "top"', utilities)
             for unsupported in ('learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu', 'trigger.toggle.crash-capture', 'style.about'):
                 self.assertNotIn(unsupported, menu)
-            self.assertNotIn('$HOME/.config/fontconfig/fonts.conf', (tree / 'bin/omarchy-font-set').read_text())
-            self.assertIn('$HOME/' + adapter.FONT_CONFIG, (tree / 'bin/omarchy-font-set').read_text())
+            self.assertNotIn('$HOME/.config/fontconfig/fonts.conf', (tree / 'bin/omarchy-font-set').read_text(encoding='utf-8'))
+            self.assertIn('$HOME/' + adapter.FONT_CONFIG, (tree / 'bin/omarchy-font-set').read_text(encoding='utf-8'))
             self.assertIn('github.com/DanielCoffey1/omadora', menu['learn.omarchy']['action'])
             self.assertNotIn('polkit-gnome', (tree / 'config/hypr/autostart.lua').read_text())
             self.assertTrue((tree / 'shell/plugins/polkit/PolkitAgent.qml').is_file())

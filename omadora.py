@@ -285,7 +285,7 @@ fi
     # Font changes belong to the managed file covered by backup/restore, not
     # the user's general Fontconfig preferences, which may contain other rules.
     font_set = tree / 'bin/omarchy-font-set'
-    write(font_set, font_set.read_text().replace(
+    write(font_set, font_set.read_text(encoding='utf-8').replace(
         '$HOME/.config/fontconfig/fonts.conf', '$HOME/' + FONT_CONFIG), 0o755)
     # A plain screenshot remains useful without preinstalling the annotation app.
     screenshot = tree / 'bin/omarchy-capture-screenshot'
