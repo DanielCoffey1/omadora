@@ -65,6 +65,15 @@ wait_ssh() {
 }
 wait_ssh
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo cloud-init status --wait --format json >/tmp/cloud-status.json; cat /tmp/cloud-status.json; python3 -c '\''import json; s=json.load(open("/tmp/cloud-status.json")); assert s["status"] == "done" and not s.get("errors"), s'\'''
+if [[ -n ${OMADORA_TEST_APPS:-} ]]; then
+  python3 - <<'PY'
+import json, os
+from pathlib import Path
+selection = [item.strip() for item in os.environ['OMADORA_TEST_APPS'].split(',') if item.strip()]
+assert selection and len(selection) == len(set(selection)) and set(selection) <= set(json.loads(Path('apps.json').read_text()))
+Path('tests/selected-apps.json').write_text(json.dumps(selection))
+PY
+fi
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py apps.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SUITE:-apps}" <<'GUEST'
@@ -117,6 +126,8 @@ interactions = json.loads(Path('vm-results/interactions.json').read_text())
 assert all(r['status'] == 'PASS' for r in interactions), interactions
 if Path('vm-results/apps/results.json').exists():
     apps = json.loads(Path('vm-results/apps/results.json').read_text())
-    assert len(apps) == 26 and all('error' not in r and not r['remove'].startswith('FAIL') for r in apps), apps
+    selection_file = Path('vm-results/apps/selection.json')
+    expected = json.loads(selection_file.read_text()) if selection_file.exists() else list(json.loads(Path('apps.json').read_text()))
+    assert {r['app'] for r in apps} == set(expected) and all('error' not in r and not r['remove'].startswith('FAIL') for r in apps), apps
 PY
 echo 'PASS: booted Fedora VM, GDM autologin, Hyprland, Quickshell IPC and screenshots.'

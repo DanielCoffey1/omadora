@@ -10,12 +10,22 @@ import signal
 import subprocess
 import time
 import pexpect
+import atexit
 
 out = Path('/tmp/omadora-vm-results/apps')
 out.mkdir(parents=True, exist_ok=True)
 catalog = json.loads(Path('/usr/local/share/omadora/apps.json').read_text())
 cli = ['python3', '/usr/local/share/omadora/omadora.py', 'app']
 results = []
+selection_file = Path(__file__).with_name('selected-apps.json')
+selection = json.loads(selection_file.read_text()) if selection_file.exists() else list(catalog)
+assert selection and set(selection) <= set(catalog)
+(out / 'selection.json').write_text(json.dumps(selection))
+# Long unattended downloads should not auto-lock over app screenshots. This
+# exercises the normal Stay Awake control and restores it when the suite exits.
+subprocess.run(['omarchy-shell', 'idle', 'disable'], check=True)
+assert not json.loads(subprocess.check_output(['omarchy-shell', 'idle', 'status']))['enabled']
+atexit.register(lambda: subprocess.run(['omarchy-shell', 'idle', 'enable']))
 gui = {'steam': ['steam'], 'lutris': ['lutris'], 'gimp': ['gimp'],
        'libreoffice': ['libreoffice', '--writer'], 'kitty': ['kitty'],
        'alacritty': ['alacritty'], 'chromium': ['chromium', '--no-first-run']}
@@ -51,7 +61,8 @@ def transaction(action, app_id, log):
             child.close(force=True)
 
 
-for app_id, app in catalog.items():
+for app_id in selection:
+    app = catalog[app_id]
     record = {'app': app_id, 'source': app['source'], 'preexisting': installed(app_id)}
     print('Testing app:', app_id, flush=True)
     with (out / f'{app_id}.log').open('w') as log:

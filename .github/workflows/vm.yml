@@ -1,6 +1,11 @@
 name: Fedora graphical VM
 on:
   workflow_dispatch:
+    inputs:
+      apps:
+        description: 'Comma-separated catalog IDs to retest; empty tests all 26'
+        type: string
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -12,6 +17,8 @@ jobs:
       - name: Install VM test tools
         run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
       - name: Boot Fedora and test Omadora session
+        env:
+          OMADORA_TEST_APPS: ${{ inputs.apps }}
         run: bash tests/fedora-vm.sh
       - name: Save VM evidence
         if: always()
