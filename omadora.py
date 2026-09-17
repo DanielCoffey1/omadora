@@ -197,7 +197,21 @@ def assemble(source, output):
     write(output / 'bin/powerprofilesctl', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py powerprofile "$@"\n', 0o755)
     # Match Hyprland's packaged UWSM session: the desktop entry invokes its
     # supported start-hyprland watchdog and carries the desktop environment ID.
-    write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + 'exec uwsm start -e -D Hyprland -- /usr/share/wayland-sessions/hyprland.desktop\n', 0o755)
+    session_activation = '''# GDM can leave its greeter on the active VT during a slow login.
+# Activate only the authenticated local session supplied by the display manager.
+if [[ -n ${XDG_SESSION_ID:-} && -n ${XDG_SEAT:-} ]]; then
+  timeout 10 loginctl activate "$XDG_SESSION_ID" || exit 1
+  for ((attempt=0; attempt<50; attempt++)); do
+    [[ $(loginctl show-session "$XDG_SESSION_ID" -p Active --value) == yes ]] && break
+    sleep 0.1
+  done
+  if [[ $(loginctl show-session "$XDG_SESSION_ID" -p Active --value) != yes ]]; then
+    echo 'Omadora: the login session did not become active.' >&2
+    exit 1
+  fi
+fi
+'''
+    write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + session_activation + 'exec uwsm start -e -D Hyprland -- /usr/share/wayland-sessions/hyprland.desktop\n', 0o755)
 
     overrides = {
         # The pinned helper is portable; an Arch-only comment previously caused
