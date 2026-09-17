@@ -19,7 +19,7 @@
   "discord": {"name": "Discord", "category": "communication", "source": "flatpak", "id": "com.discordapp.Discord"},
   "vscode": {"name": "Visual Studio Code (Flatpak)", "category": "development", "source": "flatpak", "id": "com.visualstudio.code"},
   "podman": {"name": "Podman", "category": "development", "source": "dnf", "packages": ["podman"]},
-  "node": {"name": "Node.js", "category": "development", "source": "dnf", "packages": ["nodejs", "npm"]},
+  "node": {"name": "Node.js", "category": "development", "source": "dnf", "packages": ["nodejs22", "nodejs22-npm"]},
   "rust": {"name": "Rust", "category": "development", "source": "dnf", "packages": ["rust", "cargo"]},
   "go": {"name": "Go", "category": "development", "source": "dnf", "packages": ["golang"]},
   "kitty": {"name": "Kitty", "category": "terminal", "source": "dnf", "packages": ["kitty"]},

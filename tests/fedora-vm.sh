@@ -49,7 +49,7 @@ qemu_pid=$!
 cleanup() {
   status=$?
   scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/ 2>/dev/null || true
-  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager -n 2000' >vm-results/guest-journal.log 2>&1 || true
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager' >vm-results/guest-journal.log 2>&1 || true
   kill "$qemu_pid" "$xvfb_pid" 2>/dev/null || true
   exit "$status"
 }
@@ -72,7 +72,7 @@ set -euo pipefail
 sudo dnf install -y --allowerasing @workstation-product-environment fedora-release-identity-workstation
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
 # so the emulated sound device has its normal driver after reboot.
-sudo dnf install -y kernel
+sudo dnf install -y kernel python3-pexpect
 mkdir -p ~/source
 tar -xzf /tmp/source.tar.gz -C ~/source
 cd ~/source
@@ -98,6 +98,10 @@ if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
 else
   python3 tests/fedora-vm-interactions.py
+  # Isolate the app suite from any compositor failure in suspend/resume.
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo systemctl restart gdm'
+  sleep 20
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
   ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-apps.py'\'''
 fi
 scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/

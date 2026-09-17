@@ -9,6 +9,7 @@ from pathlib import Path
 import signal
 import subprocess
 import time
+import pexpect
 
 out = Path('/tmp/omadora-vm-results/apps')
 out.mkdir(parents=True, exist_ok=True)
@@ -18,7 +19,7 @@ results = []
 gui = {'steam': ['steam'], 'lutris': ['lutris'], 'gimp': ['gimp'],
        'libreoffice': ['libreoffice', '--writer'], 'kitty': ['kitty'],
        'alacritty': ['alacritty'], 'chromium': ['chromium', '--no-first-run']}
-terminal = {'mangohud': ['mangohud', '--version'], 'gamemode': ['gamemoded', '-t'],
+terminal = {'mangohud': ['mangohud', '--version'], 'gamemode': ['gamemoded', '--version'],
             'podman': ['podman', 'info'], 'node': ['node', '--version'],
             'rust': ['rustc', '--version'], 'go': ['go', 'version']}
 
@@ -32,6 +33,24 @@ def windows():
     return json.loads(subprocess.check_output(['hyprctl', 'clients', '-j']))
 
 
+def transaction(action, app_id, log):
+    # A terminal matters: Flatpak intentionally rejects noninteractive prompts,
+    # and successive DNF processes must not consume each other's buffered input.
+    child = pexpect.spawn(cli[0], cli[1:] + [action, app_id], encoding='utf-8', timeout=600)
+    child.logfile_read = log
+    try:
+        while True:
+            match = child.expect([r'\[[Yy]/[Nn]\]', r'\[[Nn]/[Yy]\]', pexpect.EOF])
+            if match == 2:
+                break
+            child.sendline('y')
+        child.close()
+        return child.exitstatus
+    finally:
+        if child.isalive():
+            child.close(force=True)
+
+
 for app_id, app in catalog.items():
     record = {'app': app_id, 'source': app['source'], 'preexisting': installed(app_id)}
     print('Testing app:', app_id, flush=True)
@@ -40,9 +59,8 @@ for app_id, app in catalog.items():
         try:
             # Answer the same interactive prompts a user sees. No adapter or
             # package-manager shim replaces the real transaction.
-            p = subprocess.run(cli + ['install', app_id], input='y\n' * 1000,
-                               text=True, stdout=log, stderr=log, timeout=600)
-            assert p.returncode == 0 and installed(app_id), 'installation failed'
+            status = transaction('install', app_id, log)
+            assert status == 0 and installed(app_id), 'installation failed'
             record['install'] = 'PASS'
             if app_id in terminal:
                 p = subprocess.run(terminal[app_id], stdout=log, stderr=log, timeout=60)
@@ -76,9 +94,8 @@ for app_id, app in catalog.items():
                     pass
             if not record['preexisting']:
                 try:
-                    p = subprocess.run(cli + ['remove', app_id], input='y\n' * 1000,
-                                       text=True, stdout=log, stderr=log, timeout=300)
-                    assert p.returncode == 0 and not installed(app_id), 'removal failed'
+                    status = transaction('remove', app_id, log)
+                    assert status == 0 and not installed(app_id), 'removal failed'
                     record['remove'] = 'PASS'
                 except Exception as error:
                     record['remove'] = 'FAIL: ' + str(error)

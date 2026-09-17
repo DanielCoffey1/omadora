@@ -9,6 +9,7 @@ import shlex
 import socket
 import subprocess
 import time
+import traceback
 
 OUT = Path('vm-results')
 results = []
@@ -77,7 +78,7 @@ def check(name, action):
         detail = action()
         record = {'test': name, 'status': 'PASS', 'detail': detail}
     except Exception as error:
-        record = {'test': name, 'status': 'FAIL', 'detail': str(error)}
+        record = {'test': name, 'status': 'FAIL', 'detail': repr(error), 'traceback': traceback.format_exc()}
     results.append(record)
     print(json.dumps(record), flush=True)
     (OUT / 'interactions.json').write_text(json.dumps(results, indent=2))
@@ -119,19 +120,23 @@ def keyboard_windows():
 
 
 def clipboard():
-    value = guest("printf 'Omadora clipboard test' | wl-copy; wl-paste --no-newline")
+    value = guest("printf 'Omadora clipboard test' | wl-copy >/dev/null 2>&1; wl-paste --no-newline")
     assert value == 'Omadora clipboard test', value
     return value
 
 
 def power():
+    def set_profile(profile):
+        # Execute through the desktop's user manager, not an inactive SSH
+        # logind session, so normal active-session polkit policy applies.
+        guest('systemd-run --user --wait --pipe /usr/local/share/omadora/bin/powerprofilesctl set ' + profile)
     original = guest('powerprofilesctl get')
     try:
         for profile in ('power-saver', 'balanced', 'performance'):
-            guest('powerprofilesctl set ' + profile)
+            set_profile(profile)
             assert guest('powerprofilesctl get') == profile
     finally:
-        guest('powerprofilesctl set ' + original)
+        set_profile(original)
     return 'All three profiles set, read back, and original restored.'
 
 
