@@ -20,6 +20,7 @@ jobs:
       - name: Bootstrap syntax and ShellCheck
         run: |
           bash -n boot.sh
+          for script in tests/*.sh; do bash -n "$script"; done
           shellcheck -e SC1091 boot.sh
       - name: Validate generated Bash scripts
         run: |

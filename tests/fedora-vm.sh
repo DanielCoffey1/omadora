@@ -47,7 +47,8 @@ qemu-system-x86_64 -accel "$accel" -m 4096 -smp 2 \
 qemu_pid=$!
 cleanup() {
   status=$?
-  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager -n 1000' >vm-results/guest-journal.log 2>&1 || true
+  scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/ 2>/dev/null || true
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager -n 2000' >vm-results/guest-journal.log 2>&1 || true
   kill "$qemu_pid" "$xvfb_pid" 2>/dev/null || true
   exit "$status"
 }

@@ -45,4 +45,4 @@ Use a disposable Fedora Workstation 44 x86_64 VM and take a hypervisor snapshot 
 11. Restore the original config from GNOME. Confirm pre-install content is restored and newer edits remain in the rescue backup.
 12. Repeat with interrupted network, insufficient disk space, a preexisting config symlink, failed dependency resolution and an interrupted installation. Complete partial-install recovery before release.
 
-The GitHub Actions workflow covers source checks only. The [first published run](https://github.com/DanielCoffey1/omadora/actions/runs/35189367740) passed all ten tests, bootstrap Bash syntax and ShellCheck, and syntax validation of the generated Bash scripts. This does not validate installation or the running Fedora desktop.
+The Adapter checks workflow covers source checks. The [first published run](https://github.com/DanielCoffey1/omadora/actions/runs/35189367740) passed all ten tests, bootstrap Bash syntax and ShellCheck, and syntax validation of the generated Bash scripts. Separate Fedora container and graphical VM workflows exercise installation and the running desktop; their results must be assessed independently.
