@@ -133,8 +133,28 @@ def screenshot_keyboard():
     return 'Escape canceled without saving; Ctrl+Enter captured fullscreen; saved PNG and clipboard match; overlays cleaned up.'
 
 
+def font_preferences():
+    path = '~/.config/fontconfig/fonts.conf'
+    # A general, unrelated Fontconfig preference must survive font selection.
+    v.guest(f'test ! -e {path}')
+    sentinel = '<?xml version="1.0"?><fontconfig><!-- preserved user settings --></fontconfig>'
+    import shlex
+    v.guest('printf %s ' + shlex.quote(sentinel) + ' > ' + path)
+    original = v.guest('omarchy-font-current')
+    try:
+        for font in ('JetBrains Mono', original):
+            v.guest('omarchy-font-set ' + shlex.quote(font), timeout=90)
+            v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok')
+            assert v.guest('omarchy-font-current') == font
+            assert v.guest('cat ' + path) == sentinel
+    finally:
+        v.guest('rm -f -- ' + path)
+    return 'Changed and restored monospace font; general Fontconfig preferences remained unchanged.'
+
+
 v.check('Activity shortcut', desktop_shortcuts)
 v.check('screenshot keyboard and clipboard', screenshot_keyboard)
+v.check('font preference preservation', font_preferences)
 v.check('portal file chooser', portal)
 v.check('network reconnect', network)
 v.check('virtual audio controls', sound)

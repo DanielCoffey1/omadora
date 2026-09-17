@@ -128,7 +128,7 @@ def menu_for_fedora(menu, apps, blocked):
             continue
         if key.startswith(('trigger.reminder', 'trigger.transcode', 'trigger.share',
                            'trigger.capture.screenrecord', 'trigger.capture.text',
-                           'trigger.capture.qr')):
+                           'trigger.capture.qr', 'style.about')):
             continue
         result[key] = value
     result['about'] = {'label': 'About Omadora', 'icon': '', 'action': 'foot --hold omadora about'}
@@ -282,6 +282,11 @@ fi
     for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
         path = tree / 'bin' / name
         write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)
+    # Font changes belong to the managed file covered by backup/restore, not
+    # the user's general Fontconfig preferences, which may contain other rules.
+    font_set = tree / 'bin/omarchy-font-set'
+    write(font_set, font_set.read_text().replace(
+        '$HOME/.config/fontconfig/fonts.conf', '$HOME/' + FONT_CONFIG), 0o755)
     # A plain screenshot remains useful without preinstalling the annotation app.
     screenshot = tree / 'bin/omarchy-capture-screenshot'
     write(screenshot, (ROOT / 'assets/scripts/capture-screenshot').read_text(), 0o755)
