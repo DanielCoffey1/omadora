@@ -1,5 +1,6 @@
 """Repeated GDM handoffs and real S3 cycles in the disposable CI VM."""
 import json
+import os
 from pathlib import Path
 import runpy
 import subprocess
@@ -55,7 +56,7 @@ for cycle in range(1, 6):
     if t['results'][-1]['status'] != 'PASS':
         break
 
-if all(r['status'] == 'PASS' for r in t['results']):
+if os.environ.get('VM_SLEEP_DIAGNOSTIC') != 'startup-race' and all(r['status'] == 'PASS' for r in t['results']):
     for cycle in range(1, 4):
         check(f'S3 suspend {cycle}', t['suspend'])
         evidence(f'suspend-{cycle}')

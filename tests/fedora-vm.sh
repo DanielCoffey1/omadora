@@ -104,6 +104,12 @@ mkdir -p ~/.config/hypr
 printf 'pre-install sentinel\n' >~/.config/hypr/original-test-marker
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash
 cmp omadora.py /usr/local/share/omadora/omadora.py
+if [[ $1 == startup-race ]]; then
+  # Reproduce a slow GDM launch that lets the greeter retain the active VT.
+  printf '#!/bin/bash\nsleep 12\nexec /usr/local/bin/omadora-session\n' | sudo tee /usr/local/bin/omadora-test-delayed-session >/dev/null
+  sudo chmod 755 /usr/local/bin/omadora-test-delayed-session
+  sudo sed -i 's|Exec=/usr/local/bin/omadora-session|Exec=/usr/local/bin/omadora-test-delayed-session|' /usr/share/wayland-sessions/omadora.desktop
+fi
 if [[ $1 == legacy-drm ]]; then
   # Diagnostic only. Upstream discourages legacy DRM for normal use:
   # https://github.com/hyprwm/aquamarine/blob/main/docs/env.md
@@ -126,7 +132,7 @@ ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-gu
 if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
 elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
-  if [[ ${VM_SLEEP_DIAGNOSTIC:-} == reliability || ${VM_SLEEP_DIAGNOSTIC:-} == software-gpu || ${VM_SLEEP_DIAGNOSTIC:-} == quiesce-gpu ]]; then
+  if [[ ${VM_SLEEP_DIAGNOSTIC:-} =~ ^(reliability|startup-race|software-gpu|quiesce-gpu)$ ]]; then
     python3 tests/fedora-vm-reliability.py
   else
     python3 tests/fedora-vm-interactions.py
