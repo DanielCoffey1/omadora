@@ -97,12 +97,10 @@ ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-gu
 if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
 else
-  python3 tests/fedora-vm-interactions.py
-  # Isolate the app suite from any compositor failure in suspend/resume.
-  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo systemctl restart gdm'
-  sleep 20
-  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
+  # Suspend is deliberately last: a driver/compositor hang must not prevent
+  # collection of independent application results from a healthy desktop.
   ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-apps.py'\'''
+  python3 tests/fedora-vm-interactions.py
 fi
 scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/
 python3 - <<'PY'
