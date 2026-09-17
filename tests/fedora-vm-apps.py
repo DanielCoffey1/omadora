@@ -28,7 +28,7 @@ assert not json.loads(subprocess.check_output(['omarchy-shell', 'idle', 'status'
 atexit.register(lambda: subprocess.run(['omarchy-shell', 'idle', 'enable']))
 gui = {'steam': ['steam'], 'lutris': ['lutris'], 'gimp': ['gimp'],
        'libreoffice': ['libreoffice', '--writer'], 'kitty': ['kitty'],
-       'alacritty': ['alacritty'], 'chromium': ['chromium', '--no-first-run']}
+       'alacritty': ['alacritty'], 'chromium': ['chromium-browser', '--no-first-run']}
 terminal = {'mangohud': ['mangohud', '--version'], 'gamemode': ['gamemoded', '--version'],
             'podman': ['podman', 'info'], 'node': ['node', '--version'],
             'rust': ['rustc', '--version'], 'go': ['go', 'version']}
@@ -41,6 +41,16 @@ def installed(app_id):
 
 def windows():
     return json.loads(subprocess.check_output(['hyprctl', 'clients', '-j']))
+
+
+def app_window(app_id, window):
+    # A setup dialog, updater, keyring prompt or splash is not the application.
+    aliases = {'protonup': 'pupgui2', 'obs': 'obsproject', 'libreoffice': 'libreoffice',
+               'vscode': 'code'}
+    app_class = window['class'].lower()
+    title = window['title'].lower()
+    return (aliases.get(app_id, app_id) in app_class
+            and not any(part in title for part in ('startup', 'updater', 'steam setup')))
 
 
 def transaction(action, app_id, log):
@@ -81,14 +91,18 @@ for app_id in selection:
                 before = {c['address'] for c in windows()}
                 command = ['flatpak', 'run', app['id']] if app['source'] == 'flatpak' else gui[app_id]
                 process = subprocess.Popen(command, stdout=log, stderr=log, start_new_session=True)
-                deadline = time.monotonic() + 75
+                deadline = time.monotonic() + (300 if app_id == 'steam' else 90)
                 created = []
                 while time.monotonic() < deadline:
-                    created = [c for c in windows() if c['address'] not in before]
+                    created = [c for c in windows() if c['address'] not in before and app_window(app_id, c)]
                     if created:
                         break
                     time.sleep(2)
-                assert created, 'no application window appeared in 75 seconds'
+                if not created:
+                    record['observed_windows'] = [{'class': c['class'], 'title': c['title']}
+                                                  for c in windows() if c['address'] not in before]
+                    subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)
+                assert created, 'no matching application window appeared before timeout'
                 record['windows'] = [{'class': c['class'], 'title': c['title']} for c in created]
                 time.sleep(3)
                 subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)

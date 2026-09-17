@@ -1,6 +1,6 @@
 {
   "steam": {"name": "Steam", "category": "gaming", "source": "rpmfusion", "packages": ["steam"]},
-  "lutris": {"name": "Lutris", "category": "gaming", "source": "dnf", "packages": ["lutris"]},
+  "lutris": {"name": "Lutris", "category": "gaming", "source": "dnf", "packages": ["lutris", "xrandr"]},
   "heroic": {"name": "Heroic (Epic / GOG)", "category": "gaming", "source": "flatpak", "id": "com.heroicgameslauncher.hgl"},
   "bottles": {"name": "Bottles", "category": "gaming", "source": "flatpak", "id": "com.usebottles.bottles"},
   "mangohud": {"name": "MangoHud", "category": "gaming", "source": "dnf", "packages": ["mangohud"]},
