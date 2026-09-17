@@ -73,6 +73,9 @@ mkdir -p ~/source
 tar -xzf /tmp/source.tar.gz -C ~/source
 cd ~/source
 python3 omadora.py install
+# The virtual monitor advertises 640x480 as preferred. Use a normal desktop
+# mode for visual evidence; this file is confined to the disposable test user.
+printf 'hl.monitor({ output = "Virtual-1", mode = "1920x1080@60", position = "0x0", scale = 1 })\n' >>~/.config/hypr/monitors.lua
 sudo mkdir -p /var/lib/AccountsService/users
 printf '[User]\nXSession=omadora\nSession=omadora\nSystemAccount=false\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null
 printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=omadora-test\n' | sudo tee /etc/gdm/custom.conf >/dev/null

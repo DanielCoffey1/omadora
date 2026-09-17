@@ -37,5 +37,7 @@ omarchy-menu toggle
 omarchy-launch-screensaver force
 sleep 5
 timeout 30 grim /tmp/omadora-vm-results/screensaver.png
+sleep 15
+timeout 30 grim /tmp/omadora-vm-results/screensaver-later.png
 pkill -f '[o]rg.omarchy.screensaver' || true
 echo 'PASS: desktop, menu and screensaver reached in booted VM.'
