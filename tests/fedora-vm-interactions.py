@@ -179,6 +179,10 @@ def s2idle():
     wait_for(lambda: lock_status()['secure'])
     try:
         guest("printf s2idle | sudo tee /sys/power/mem_sleep >/dev/null; sudo rtcwake -m no -s 12; sudo systemctl suspend", timeout=60)
+        # systemctl may return as soon as sleep is queued. Wait for the kernel's
+        # completion marker before reading lock state or restoring mem_sleep.
+        wait_for(lambda: 'PM: suspend exit' in guest(
+            'sudo journalctl -k -b --no-pager --since ' + shlex.quote(since)), seconds=60)
         journal = guest('sudo journalctl -k -b --no-pager --since ' + shlex.quote(since))
         (OUT / 's2idle-kernel.log').write_text(journal)
         assert 'PM: suspend entry (s2idle)' in journal and 'PM: suspend exit' in journal, journal[-2000:]
