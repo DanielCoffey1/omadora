@@ -12,9 +12,23 @@ spec.loader.exec_module(v)
 
 def portal():
     v.guest("printf 'Omadora portal fixture' >/tmp/omadora-portal.txt")
+    (v.OUT / 'gtk-settings.log').write_text(v.guest('''python3 - <<'PY'
+import gi, os
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk
+Gtk.init([])
+settings = Gtk.Settings.get_default()
+print('display', Gdk.Display.get_default().__class__.__name__)
+for key in ('gtk-theme-name', 'gtk-icon-theme-name', 'gtk-application-prefer-dark-theme'):
+    print(key, settings.get_property(key))
+PY
+systemctl --user show-environment | grep -E '^(GDK_BACKEND|GTK_THEME|XDG_CURRENT_DESKTOP|WAYLAND_DISPLAY|DISPLAY)='
+gdbus call --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop --method org.freedesktop.portal.Settings.Read org.gnome.desktop.interface gtk-theme
+'''))
     with (v.OUT / 'portal.log').open('w') as log:
         p = subprocess.Popen(v.ssh + ["bash -c 'source ~/source/tests/vm-session.sh; python3 ~/source/tests/portal-chooser.py'"], stdout=log, stderr=log)
         v.wait_for(lambda: any('Omadora portal test' in c['title'] for c in json.loads(v.guest('hyprctl clients -j'))))
+        (v.OUT / 'portal-windows.json').write_text(v.guest('hyprctl clients -j'))
         v.guest('grim /tmp/omadora-vm-results/portal.png')
         v.keys('ctrl', 'l')
         for char in '/tmp/omadora-portal.txt':
