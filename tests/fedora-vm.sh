@@ -49,6 +49,8 @@ xdpyinfo -display "$DISPLAY" >/dev/null
 graphics=(-device virtio-vga-gl -display gtk,gl=on)
 if [[ ${VM_SLEEP_DIAGNOSTIC:-} == software-gpu ]]; then
   graphics=(-device virtio-vga -display gtk,gl=off)
+elif [[ ${VM_SLEEP_DIAGNOSTIC:-} == bochs-gpu ]]; then
+  graphics=(-device bochs-display -display gtk,gl=off)
 fi
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
@@ -132,7 +134,7 @@ ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-gu
 if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
 elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
-  if [[ ${VM_SLEEP_DIAGNOSTIC:-} =~ ^(reliability|startup-race|software-gpu|quiesce-gpu)$ ]]; then
+  if [[ ${VM_SLEEP_DIAGNOSTIC:-} =~ ^(reliability|startup-race|software-gpu|bochs-gpu|quiesce-gpu)$ ]]; then
     python3 tests/fedora-vm-reliability.py
   else
     python3 tests/fedora-vm-interactions.py

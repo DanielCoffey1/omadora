@@ -23,7 +23,7 @@ def evidence(label):
         'kernel': 'sudo journalctl -k -b --no-pager',
         'journal': 'sudo journalctl -b --no-pager -n 1500',
         'graphics': 'cat /run/user/1000/hypr/*/hyprland.log; cat ~/.cache/hyprland/hyprlandCrashReport*.txt',
-        'stacks': 'for p in $(pgrep -x Hyprland); do sudo cat /proc/$p/stack; done',
+        'stacks': "for p in $(pgrep -x Hyprland) $(ps -eo pid=,stat= | awk '$2 ~ /^D/ {print $1}'); do echo PID=$p; sudo cat /proc/$p/stack; done",
         'packages': 'rpm -q hyprland aquamarine mesa-dri-drivers kernel uwsm; cat /usr/share/wayland-sessions/hyprland.desktop',
     }
     for name, command in commands.items():
