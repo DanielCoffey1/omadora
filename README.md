@@ -2,19 +2,19 @@
 
 **Omarchy 4's desktop, a minimal app selection, and Fedora underneath.**
 
-Independent project intended for `DanielCoffey1/omadora`. Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
+Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
 **Development build, not a validated release.** The adapter and generated tree have automated tests. Installation, RPM resolution, GDM login, graphics, PAM unlocking, suspend and visual parity still need a Fedora VM. Do not describe this as a finished 1:1 port yet. See [validation](docs/VALIDATION.md) and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 
-After this repository is published at the intended GitHub destination:
+Development installer (Fedora VM testing is still required):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash
 ```
 
-Run as your regular user. The installer uses sudo for packages and system files. The GitHub command is not live until the repository is published.
+Run as your regular user. The installer uses sudo for packages and system files.
 
 Inspect the plan without changing anything:
 
