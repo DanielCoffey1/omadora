@@ -12,6 +12,7 @@ on:
       - 'omadora_deploy.py'
       - 'omadora_lifecycle.py'
       - 'tests/fedora-lifecycle.py'
+      - 'tests/fedora-legacy.py'
       - 'tests/lifecycle-interrupt.py'
       - 'packages/**'
 permissions:

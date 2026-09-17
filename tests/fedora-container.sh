@@ -31,5 +31,6 @@ cp /tmp/omadora-lifecycle-*.json /results/
 cp /tmp/omadora-maintenance.json /results/
 cp /tmp/omadora-app-resolution.txt /results/
 cp /usr/local/share/omadora/portability-report.json /results/
+python3 /src/tests/fedora-legacy.py
 echo 'PASS: real Fedora package installation, installer, theme generation and staged files.'
 echo 'NOT TESTED: graphical session, GDM, password unlock, suspend, GPU, SELinux.'
