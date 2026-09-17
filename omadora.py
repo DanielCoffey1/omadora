@@ -131,6 +131,10 @@ def menu_for_fedora(menu, apps, blocked):
                            'trigger.capture.qr', 'style.about')):
             continue
         result[key] = value
+        # The shell evaluates checkmarks independently of visibility. Keep a
+        # hidden hardware item's checkmark from invoking an absent utility.
+        if value.get('when') and value.get('checked'):
+            result[key] = value | {'checked': f"{{ {value['when']}; }} && {{ {value['checked']}; }}"}
     result['about'] = {'label': 'About Omadora', 'icon': '', 'action': 'foot --hold omadora about'}
     if 'learn.omarchy' in result:
         result['learn.omarchy']['action'] = 'xdg-open https://github.com/DanielCoffey1/omadora#readme'
@@ -155,7 +159,7 @@ def menu_for_fedora(menu, apps, blocked):
             result[f'{category}.{app_id}'] = {
                 'label': app['name'],
                 'action': f'foot --hold omadora app {action} {app_id}',
-                'disabled' if action == 'install' else 'when': f'omadora app installed {app_id}',
+                'when': f'{"! " if action == "install" else ""}omadora app installed {app_id}',
             }
     result['update'] = {'label': 'Update', 'icon': ''}
     result['update.fedora'] = {'label': 'Fedora packages', 'action': 'foot --hold omadora update'}

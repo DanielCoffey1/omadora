@@ -28,7 +28,7 @@ for key, entry in menu.items():
     visible = True
     for field in ('when', 'disabled', 'checked'):
         command = entry.get(field)
-        if not command or (field != 'when' and not visible):
+        if not command:
             continue
         p = subprocess.run(['bash', '-c', command], capture_output=True, text=True, timeout=20)
         record['predicates'][field] = {'status': p.returncode, 'stderr': p.stderr}

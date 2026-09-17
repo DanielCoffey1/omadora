@@ -12,6 +12,12 @@ workflow works.
   adapted RPM helpers. It now uses the installed Fedora helpers.
 - Menu filtering now checks `checked` expressions as well as actions,
   visibility and disabled expressions.
+- Install entries use the shell's supported `when` visibility condition, so
+  installed apps disappear from Install and appear under Remove. The former
+  `disabled` field was ignored by the upstream parser. Source checks now run
+  the actual JavaScript parser and guard generator to catch schema mismatches.
+- Hardware checkmarks repeat their visibility guard because upstream evaluates
+  checkmarks even for hidden rows; absent vendor utilities are not invoked.
 - Keybinding help no longer advertises the upstream browser extensions' copy
   URL and download-video shortcuts, since those extensions are not installed.
 - The standalone Lua interpreter is installed so keybinding help can recover
@@ -37,7 +43,7 @@ workflow works.
 | Bar and toggles | Position, transparency, idle, nightlight, screensaver, bar, gaps, layout and notification state checks | Physical display color output and idle timing |
 | Screenshot / color | Screenshot keyboard cancellation and clipboard equality tested; `hyprpicker` available | Color selection and every region-picker combination |
 | Audio / network | Virtual audio volume/mute and network reconnect tests | Physical audio, Wi-Fi authentication and Bluetooth pairing |
-| Display / power / Bluetooth panels | Panel screenshots; helpers traced to Fedora tools | Monitor topology, DDC permissions/hardware, battery profiles and radio hardware |
+| Display / power / Bluetooth panels | Display renders with fixed VM brightness; Bluetooth renders “No adapter”; upstream power panel stays hidden without a battery | Monitor topology, DDC permissions/hardware, battery panel/profile controls and radio hardware |
 | Window and clipboard shortcuts | Hyprland Lua dispatchers, source inspection and populated keybinding help | Every tiling/grouping/clipboard combination and multi-monitor behavior |
 | System actions | Prior lock/password and Bochs suspend tests; logout/reboot/shutdown helpers use UWSM/systemd | Full power-action sequence on physical hardware; virtio suspend issue remains |
 | Speed tests | Network uses curl/IP tools; disk uses bounded temporary files and standard utilities | Fast.com availability and real disk throughput run |
@@ -53,6 +59,11 @@ predicates in the disposable Fedora session. False hardware predicates are
 recorded as false, not counted as successful hardware tests. The graphical
 suite captures menus and panels for inspection and tests state transitions;
 merely opening a panel does not validate its hardware controls.
+
+The expanded VM audit inventories 136 menu entries, 73 executable dependencies,
+64 evaluated predicates, and 187 lines of shortcut help. Hardware checkmark
+queries short-circuit when their hardware condition is false. The shortcut help
+count is an inventory, not 187 individually executed shortcut tests.
 
 See [validation results](VALIDATION.md) for workflow evidence and
 [compatibility](COMPATIBILITY.md) for remaining release limitations.

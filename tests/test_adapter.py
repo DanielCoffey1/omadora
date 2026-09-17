@@ -96,6 +96,8 @@ class AdapterTests(unittest.TestCase):
         menu = adapter.menu_for_fedora(original, adapter.read_json(ROOT / 'apps.json'), ['omarchy-setup-disk'])
         self.assertEqual(menu['system.lock'], original['system.lock'])
         self.assertIn('omadora app install steam', menu['install.gaming.steam']['action'])
+        self.assertEqual(menu['install.gaming.steam']['when'], '! omadora app installed steam')
+        self.assertEqual(menu['remove.gaming.steam']['when'], 'omadora app installed steam')
         self.assertNotIn('setup.bad', menu)
         self.assertNotIn('style.bad-check', menu)
         self.assertNotRegex(json.dumps(menu), r'\b(yay|pacman|paru)\b')
@@ -179,6 +181,26 @@ class AdapterTests(unittest.TestCase):
             menu = adapter.read_json(tree / 'default/omarchy/omarchy-menu.jsonc')
             self.assertIn('install.gaming.steam', menu)
             self.assertIn('system.lock', menu)
+            # Exercise the real QML JavaScript model: unknown menu fields are
+            # silently dropped, so inspecting the JSON alone is insufficient.
+            import shutil
+            import subprocess
+            if shutil.which('node'):
+                js = '''const fs = require('fs');
+const model = require(process.argv[1]);
+const input = JSON.parse(fs.readFileSync(0, 'utf8'));
+const normalized = {};
+for (const [id, item] of Object.entries(input)) normalized[id] = model.normalizeItem(id, item);
+console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }));'''
+                parsed = json.loads(subprocess.run(
+                    ['node', '-e', js, str(tree / 'shell/plugins/menu/MenuModel.js')],
+                    input=json.dumps(menu), text=True, encoding='utf-8', capture_output=True, check=True).stdout)
+                for app_id, app in adapter.read_json(ROOT / 'apps.json').items():
+                    for action in ('install', 'remove'):
+                        key = f'{action}.{app["category"]}.{app_id}'
+                        self.assertEqual(parsed['normalized'][key]['when'], menu[key]['when'])
+                        self.assertIn(menu[key]['when'], parsed['script'])
+                self.assertNotRegex(parsed['script'], r'\bpacman\b')
             # Fedora-added entries must not reference removed upstream helpers.
             import re
             for entry in menu.values():

@@ -2,6 +2,8 @@
 
 ## Latest verified results
 
+- [Twenty-five source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35287260943) and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35287260935) pass at `0df1acf`, including the menu guard, dependency, shortcut-help and browser-theme-hook fixes. See the [menu audit](MENU_AUDIT.md) for exact coverage and unsupported hardware paths.
+- [Twelve graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35286572639) pass at `c88d503`: the nine existing checks plus menu dependencies/providers, theme/background/bar controls, and desktop toggle state transitions. Screenshots show populated gaming/font/application menus, Bluetooth's no-adapter state, and fixed-brightness display controls. The battery-only power panel stays hidden in this batteryless VM; its controls are not validated.
 - [Twenty-five source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35284969479) pass at `d535a19`, including deployment interruption, repeatable recovery, ownership checks, previous-desktop restoration and verification of saved desktop preferences.
 - [Fedora lifecycle integration](https://github.com/DanielCoffey1/omadora/actions/runs/35284969338) passes at `d535a19`: killed install/upgrade recovery, actual no-session-bus preference restoration, published-revision update, rollback, and migration/rollback of the real pre-journal release.
 - [Nine graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35284733519) pass at `bb606e5`, including GDM login after upgrade and rollback, followed by the eight existing desktop/service/recovery checks.
