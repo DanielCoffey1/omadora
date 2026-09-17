@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/fedora.yml'
       - 'tests/fedora-container.sh'
+      - 'tests/fedora-config.sh'
       - 'omadora.py'
       - 'packages/**'
 permissions:

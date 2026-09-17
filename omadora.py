@@ -28,9 +28,15 @@ UNPORTED = ('omarchy-install-', 'omarchy-setup-', 'omarchy-provision-',
 
 
 def run(*argv, capture=False, check=True, env=None):
-    return subprocess.run([str(a) for a in argv], check=check, text=True,
-                          stdout=subprocess.PIPE if capture else None,
-                          stderr=subprocess.PIPE if capture else None, env=env)
+    result = subprocess.run([str(a) for a in argv], check=False, text=True,
+                            stdout=subprocess.PIPE if capture else None,
+                            stderr=subprocess.PIPE if capture else None, env=env)
+    if check and result.returncode:
+        if capture:
+            print(result.stdout or '', end='', file=sys.stderr)
+            print(result.stderr or '', end='', file=sys.stderr)
+        result.check_returncode()
+    return result
 
 
 def read_json(path):

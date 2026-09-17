@@ -19,6 +19,7 @@ sudo -iu omadora-test bash -c 'export PATH=/usr/local/share/omadora/bin:/usr/loc
 sudo -iu omadora-test bash -c 'test -s ~/.local/state/omarchy/current/theme/colors.toml; test -e ~/.local/state/omarchy/current/background'
 Hyprland --version
 quickshell --version
+sudo -iu omadora-test bash /src/tests/fedora-config.sh
 Hyprland --help >/results/hyprland-help.txt
 cp /usr/local/share/omadora/portability-report.json /results/
 echo 'PASS: real Fedora package installation, installer, theme generation and staged files.'
