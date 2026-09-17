@@ -1,0 +1,21 @@
+name: Fedora graphical VM
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  graphical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install VM test tools
+        run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb
+      - name: Boot Fedora and test Omadora session
+        run: bash tests/fedora-vm.sh
+      - name: Save VM evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-vm-results
+          path: vm-results/
