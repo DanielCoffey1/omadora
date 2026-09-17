@@ -16,7 +16,7 @@ commands = '''bash awk sed grep find sort cut tr head tail xargs timeout flock
 stat readlink realpath mktemp cmp dd df findmnt lsblk ip ping iw nmcli rfkill
 bluetoothctl eject lua python3 foot nvim firefox nautilus hyprctl Hyprland
 quickshell hyprpicker hyprsunset uwsm-app grim slurp wl-copy wl-paste
-wpctl pactl pamixer playerctl brightnessctl powerprofilesctl notify-send
+wpctl pactl pamixer playerctl brightnessctl ddcutil powerprofilesctl notify-send
 gsettings gdbus xdg-open xdg-mime xkbcli fc-list fc-match fc-cache magick
 jq curl rpm dnf flatpak top pkill pgrep systemctl loginctl setsid'''.split()
 missing = [c for c in commands if not shutil.which(c)]

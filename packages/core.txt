@@ -23,6 +23,7 @@ bluez
 wireplumber
 pipewire-utils
 brightnessctl
+ddcutil
 playerctl
 pamixer
 alsa-utils

@@ -297,6 +297,12 @@ fi
     if count != 1:
         raise ValueError('Upstream menu guards changed; review the adapter')
     write(model, text)
+    # Apple's HID brightness utility is not part of the Fedora profile. Try
+    # ordinary DDC/CI instead of invoking a missing privileged vendor helper.
+    brightness = tree / 'bin/omarchy-brightness-display'
+    write(brightness, brightness.read_text().replace(
+        '  omarchy-hyprland-monitor-focused-apple "$monitor"',
+        '  command -v asdcontrol >/dev/null && omarchy-hyprland-monitor-focused-apple "$monitor"'), 0o755)
     for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
         path = tree / 'bin' / name
         write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)

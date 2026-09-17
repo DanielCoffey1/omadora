@@ -222,6 +222,17 @@ def style_controls():
             v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok')
             assert v.guest('omarchy-theme-current').lower() == theme.lower()
             assert v.guest('hyprctl configerrors') in ('', 'ok')
+        background = v.guest('readlink -f ~/.local/state/omarchy/current/background')
+        backgrounds = v.guest('find -L ~/.local/state/omarchy/current/theme/backgrounds -type f').splitlines()
+        if not backgrounds:
+            backgrounds = v.guest('find /usr/local/share/omadora/upstream/themes -path "*/backgrounds/*" -type f').splitlines()
+        assert backgrounds
+        try:
+            for path in (backgrounds[0], background):
+                v.guest('omarchy-theme-bg-set ' + shlex.quote(path))
+                assert v.guest('readlink -f ~/.local/state/omarchy/current/background') == path
+        finally:
+            v.guest('omarchy-theme-bg-set ' + shlex.quote(background))
         for position in ('bottom', 'left', 'right', 'top'):
             v.guest('omarchy-bar position ' + position)
             assert json.loads(v.guest('cat ~/.config/omarchy/shell.json'))['bar']['position'] == position
@@ -232,7 +243,7 @@ def style_controls():
         v.guest('omarchy-theme-set ' + shlex.quote(original), timeout=90)
         v.guest('omarchy-bar position ' + config['position'])
         v.guest('omarchy-bar transparent ' + str(config['transparent']).lower())
-    return 'Changed/restored theme with valid compositor config; all four bar positions and transparency persisted.'
+    return 'Changed/restored theme and background with valid compositor config; all four bar positions and transparency persisted.'
 
 
 def desktop_toggles():
@@ -268,6 +279,13 @@ def desktop_toggles():
     finally:
         if json.loads(v.guest('hyprctl activeworkspace -j'))['tiledLayout'] != before:
             v.guest('omarchy-hyprland-workspace-layout-toggle')
+    before = v.guest('omarchy-shell notifications isDnd')
+    try:
+        v.guest('omarchy-toggle-notification-silencing')
+        assert v.guest('omarchy-shell notifications isDnd') != before
+    finally:
+        if v.guest('omarchy-shell notifications isDnd') != before:
+            v.guest('omarchy-toggle-notification-silencing')
     assert v.guest('hyprctl configerrors') in ('', 'ok')
     return 'Idle, nightlight, screensaver, bar, gaps and workspace layout changed and were restored.'
 
