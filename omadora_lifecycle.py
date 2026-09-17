@@ -134,6 +134,12 @@ def recover(a):
         atomic_json(path, transaction)
     if pending:
         root(a, 'rollback', transaction['id'])
+    targets = [p for p in (a.PREFIX, Path('/etc/pam.d/omarchy-lock-password'),
+                            Path('/usr/share/wayland-sessions/omadora.desktop')) if p.exists()]
+    if targets:
+        a.run('sudo', 'restorecon', '-RF', *targets)
+    if transaction['operation'] == 'install' and shutil.which('fc-cache'):
+        a.run('fc-cache', '-f')
     path.unlink()
     print('Recovered desktop files and settings. Installed RPMs and enabled repositories were retained.')
 

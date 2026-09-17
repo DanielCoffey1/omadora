@@ -156,6 +156,38 @@ def font_preferences():
     return 'Changed and restored monospace font; general Fontconfig preferences remained unchanged.'
 
 
+def desktop_lifecycle():
+    def switch(session):
+        raw("sudo systemctl stop gdm; sudo systemctl stop accounts-daemon; "
+            f"printf '[User]\\nXSession={session}\\nSession={session}\\nSystemAccount=false\\n' | "
+            "sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null; sudo systemctl start accounts-daemon gdm")
+        executable = 'gnome-shell' if session == 'gnome' else 'Hyprland'
+        v.wait_for(lambda: raw('pgrep -u $(id -u) -x ' + executable), 90)
+        if session == 'omadora':
+            v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok', 90)
+            assert v.guest('hyprctl configerrors') in ('', 'ok')
+
+    v.guest("printf 'keep my config' > ~/.config/foot/lifecycle-sentinel")
+    raw('sudo touch /usr/local/share/omadora/previous-release-marker')
+    switch('gnome')
+    # A bare SSH shell is deliberately independent of the stopped compositor.
+    raw('python3 ~/source/omadora.py upgrade --local', timeout=900)
+    raw('test ! -e /usr/local/share/omadora/previous-release-marker')
+    switch('omadora')
+    v.keys('meta_l', 'ret')
+    v.wait_for(lambda: any(c['class'] == 'foot' for c in json.loads(v.guest('hyprctl clients -j'))))
+    v.guest('grim /tmp/omadora-vm-results/desktop-after-upgrade.png')
+    v.keys('meta_l', 'w')
+    switch('gnome')
+    raw('omadora rollback', timeout=180)
+    raw('test -f /usr/local/share/omadora/previous-release-marker')
+    switch('omadora')
+    assert v.guest('cat ~/.config/foot/lifecycle-sentinel') == 'keep my config'
+    v.guest('grim /tmp/omadora-vm-results/desktop-after-rollback.png')
+    return 'Upgraded from GNOME, logged into Omadora and opened Foot; rolled back from GNOME and logged in again; personal edit retained.'
+
+
+v.check('desktop upgrade and rollback login', desktop_lifecycle)
 v.check('Activity shortcut', desktop_shortcuts)
 v.check('screenshot keyboard and clipboard', screenshot_keyboard)
 v.check('font preference preservation', font_preferences)
