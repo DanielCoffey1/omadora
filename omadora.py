@@ -370,7 +370,14 @@ def install(dry_run=False):
         run('sudo', 'dnf', 'copr', 'enable', '-y', SCREENSAVER_COPR)
         # DNF's complete transaction must resolve. Never skip broken packages.
         run('sudo', 'dnf', 'install', '-y', *packages())
-        version = run('Hyprland', '--version', capture=True).stdout
+        # Hyprland initializes its logger before processing --version and needs
+        # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
+        probe_env = os.environ.copy()
+        if not probe_env.get('XDG_RUNTIME_DIR'):
+            runtime = temp / 'runtime'
+            runtime.mkdir(mode=0o700)
+            probe_env['XDG_RUNTIME_DIR'] = str(runtime)
+        version = run('Hyprland', '--version', capture=True, env=probe_env).stdout
         match = re.search(r'\b(\d+)\.(\d+)\.(\d+)', version)
         if not match or tuple(map(int, match.groups())) < (0, 55, 0):
             raise ValueError('Omarchy 4 Lua configuration requires Hyprland >= 0.55. Desktop files were not installed.')

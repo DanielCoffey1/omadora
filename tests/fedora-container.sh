@@ -17,7 +17,7 @@ test "$(stat -c '%U' /usr/local/share/omadora/omadora.py)" = root
 sudo -iu omadora-test /usr/local/bin/omadora about
 sudo -iu omadora-test bash -c 'export PATH=/usr/local/share/omadora/bin:/usr/local/share/omadora/upstream/bin:$PATH; omadora doctor'
 sudo -iu omadora-test bash -c 'test -s ~/.local/state/omarchy/current/theme/colors.toml; test -e ~/.local/state/omarchy/current/background'
-Hyprland --version
+XDG_RUNTIME_DIR=$(mktemp -d) Hyprland --version
 quickshell --version
 sudo -iu omadora-test bash /src/tests/fedora-config.sh
 Hyprland --help >/results/hyprland-help.txt
