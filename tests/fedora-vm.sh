@@ -18,20 +18,16 @@ ssh-keygen -q -t ed25519 -N '' -f "$vm_dir/key"
 pubkey=$(cat "$vm_dir/key.pub")
 cat >"$vm_dir/user-data" <<EOF
 #cloud-config
+preserve_hostname: true
 users:
   - name: omadora-test
     groups: wheel
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
+    plain_text_passwd: omadora-vm-test-only
     ssh_authorized_keys:
       - $pubkey
-chpasswd:
-  expire: false
-  users:
-    - name: omadora-test
-      password: omadora-vm-test-only
-      type: text
 EOF
 printf 'instance-id: omadora-ci\nlocal-hostname: omadora-ci\n' >"$vm_dir/meta-data"
 cloud-localds "$vm_dir/seed.img" "$vm_dir/user-data" "$vm_dir/meta-data"
@@ -66,7 +62,7 @@ wait_ssh() {
   return 1
 }
 wait_ssh
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo cloud-init status --wait'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo cloud-init status --wait --format json >/tmp/cloud-status.json; cat /tmp/cloud-status.json; python3 -c '\''import json; s=json.load(open("/tmp/cloud-status.json")); assert s["status"] == "done" and not s.get("errors"), s'\'''
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py apps.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -s' <<'GUEST'
