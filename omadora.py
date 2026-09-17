@@ -210,8 +210,6 @@ def assemble(source, output):
     write(output / 'system/omadora-env', env)
     hypr = tree / 'config/hypr/hyprland.lua'
     write(hypr, 'omarchy_preinstalled_bindings = false\n' + hypr.read_text(encoding='utf-8'))
-    autostart = tree / 'config/hypr/autostart.lua'
-    write(autostart, autostart.read_text(encoding='utf-8') + '\nhl.on("hyprland.start", function()\n  hl.exec_cmd("/usr/libexec/polkit-gnome-authentication-agent-1")\nend)\n')
     menu = menu_for_fedora(load_menu(tree / 'default/omarchy/omarchy-menu.jsonc'), read_json(ROOT / 'apps.json'), blocked)
     write(tree / 'default/omarchy/omarchy-menu.jsonc', json.dumps(menu, indent=2, ensure_ascii=False))
     shell_config = read_json(tree / 'config/omarchy/shell.json')

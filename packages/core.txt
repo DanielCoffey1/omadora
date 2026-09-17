@@ -29,7 +29,7 @@ alsa-utils
 power-profiles-daemon
 udiskie
 gnome-keyring
-polkit-gnome
+polkit
 wl-clipboard
 grim
 slurp
@@ -46,7 +46,7 @@ ripgrep
 fd-find
 inotify-tools
 ImageMagick
-libvips-tools
+vips-tools
 fontconfig
 google-noto-sans-fonts
 google-noto-emoji-color-fonts

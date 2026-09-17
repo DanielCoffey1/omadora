@@ -104,6 +104,8 @@ class AdapterTests(unittest.TestCase):
             self.assertNotIn('install.gaming.xbox-controllers', menu)
             self.assertIn('omarchy_preinstalled_bindings = false', (tree / 'config/hypr/hyprland.lua').read_text())
             self.assertFalse((tree / 'install').exists())
+            self.assertNotIn('polkit-gnome', (tree / 'config/hypr/autostart.lua').read_text())
+            self.assertTrue((tree / 'shell/plugins/polkit/PolkitAgent.qml').is_file())
             logo = (tree / 'logo.txt').read_text(encoding='utf-8')
             self.assertEqual(logo, (tree / 'config/omarchy/branding/screensaver.txt').read_text(encoding='utf-8'))
             self.assertNotEqual(logo, (Path(source) / 'logo.txt').read_text(encoding='utf-8'))

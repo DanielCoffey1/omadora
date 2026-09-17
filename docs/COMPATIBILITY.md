@@ -7,7 +7,7 @@
 - Generated Fedora Install/Remove menus for 26 explicitly mapped optional apps.
 - User-visible Omadora branding; original wordmark replaced, including the default screensaver and branding reset target. Upstream author/license attribution and technical names remain.
 - DNF package updates and RPM presence queries; cached DNF update checks for the bar.
-- Separate GDM entry, UWSM session environment, Fedora PAM includes and a polkit authentication agent.
+- Separate GDM entry, UWSM session environment, Fedora PAM includes and the upstream shell's polkit authentication agent.
 - Configuration backup and restore with preservation of post-install edits.
 
 ## Differences from upstream
