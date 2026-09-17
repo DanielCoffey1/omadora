@@ -41,6 +41,7 @@ qemu-system-x86_64 -accel "$accel" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
   -drive "file=$vm_dir/seed.img,format=raw,if=virtio" \
   -device virtio-vga-gl -display gtk,gl=on \
+  -audiodev driver=none,id=audio0 -device intel-hda -device hda-duplex,audiodev=audio0 \
   -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22 -device virtio-net-pci,netdev=net0 \
   -serial "file:$task_root/vm-results/serial.log" \
   -qmp "unix:$vm_dir/qmp.sock,server=on,wait=off" >vm-results/qemu.log 2>&1 &
@@ -72,7 +73,10 @@ sudo dnf install -y --allowerasing @workstation-product-environment fedora-relea
 mkdir -p ~/source
 tar -xzf /tmp/source.tar.gz -C ~/source
 cd ~/source
+mkdir -p ~/.config/hypr
+printf 'pre-install sentinel\n' >~/.config/hypr/original-test-marker
 python3 omadora.py install
+printf 'post-install sentinel\n' >~/.config/hypr/post-install-marker
 # The virtual monitor advertises 640x480 as preferred. Use a normal desktop
 # mode for visual evidence; this file is confined to the disposable test user.
 printf 'hl.monitor({ output = "Virtual-1", mode = "1920x1080@60", position = "0x0", scale = 1 })\n' >>~/.config/hypr/monitors.lua
@@ -86,15 +90,20 @@ ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo systemctl reboot' || true
 sleep 15
 wait_ssh
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
-python3 tests/fedora-vm-interactions.py
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-apps.py'\'''
+if [[ ${VM_SUITE:-apps} == system ]]; then
+  python3 tests/fedora-vm-system.py
+else
+  python3 tests/fedora-vm-interactions.py
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-apps.py'\'''
+fi
 scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/
 python3 - <<'PY'
 import json
 from pathlib import Path
 interactions = json.loads(Path('vm-results/interactions.json').read_text())
-apps = json.loads(Path('vm-results/apps/results.json').read_text())
 assert all(r['status'] == 'PASS' for r in interactions), interactions
-assert len(apps) == 26 and all('error' not in r and not r['remove'].startswith('FAIL') for r in apps), apps
+if Path('vm-results/apps/results.json').exists():
+    apps = json.loads(Path('vm-results/apps/results.json').read_text())
+    assert len(apps) == 26 and all('error' not in r and not r['remove'].startswith('FAIL') for r in apps), apps
 PY
 echo 'PASS: booted Fedora VM, GDM autologin, Hyprland, Quickshell IPC and screenshots.'

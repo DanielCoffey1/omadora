@@ -160,11 +160,12 @@ def suspend():
     return 'Guest entered ACPI suspend, resumed, remained locked, and accepted password.'
 
 
-check('password authentication', authentication)
-check('keyboard and windows', keyboard_windows)
-check('clipboard', clipboard)
-check('power profiles', power)
-check('theme switching', themes)
-check('suspend/resume', suspend)
-print('Interaction tests complete.', flush=True)
+if __name__ == '__main__':
+    check('password authentication', authentication)
+    check('keyboard and windows', keyboard_windows)
+    check('clipboard', clipboard)
+    check('power profiles', power)
+    check('theme switching', themes)
+    check('suspend/resume', suspend)
+    print('Interaction tests complete.', flush=True)
 # Caller continues with app tests even when an individual interaction fails.
