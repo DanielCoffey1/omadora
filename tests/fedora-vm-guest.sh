@@ -30,6 +30,10 @@ hyprctl monitors -j
 powerprofilesctl get
 powerprofilesctl list
 getenforce
+test -z "${FONTCONFIG_FILE:-}"
+fc-match -f '%{family[0]}' monospace | grep 'JetBrainsMonoNL Nerd Font'
+gsettings get org.gnome.desktop.interface color-scheme | grep prefer-dark
+gsettings get org.gnome.desktop.interface icon-theme
 omarchy-menu toggle
 sleep 2
 timeout 30 grim /tmp/omadora-vm-results/menu.png

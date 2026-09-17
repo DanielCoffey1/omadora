@@ -11,6 +11,7 @@ import subprocess
 import time
 import pexpect
 import atexit
+import shutil
 
 out = Path('/tmp/omadora-vm-results/apps')
 out.mkdir(parents=True, exist_ok=True)
@@ -21,6 +22,9 @@ selection_file = Path(__file__).with_name('selected-apps.json')
 selection = json.loads(selection_file.read_text()) if selection_file.exists() else list(catalog)
 assert selection and set(selection) <= set(catalog)
 (out / 'selection.json').write_text(json.dumps(selection))
+with (out / 'environment.log').open('w') as log:
+    subprocess.run(['lscpu'], stdout=log, stderr=log)
+    subprocess.run(['rpm', '-q', 'hyprland', 'aquamarine', 'mesa-dri-drivers', 'glibc'], stdout=log, stderr=log)
 # Long unattended downloads should not auto-lock over app screenshots. This
 # exercises the normal Stay Awake control and restores it when the suite exits.
 subprocess.run(['omarchy-shell', 'idle', 'disable'], check=True)
@@ -83,6 +87,12 @@ for app_id in selection:
             status = transaction('install', app_id, log)
             assert status == 0 and installed(app_id), 'installation failed'
             record['install'] = 'PASS'
+            if app['source'] == 'flatpak':
+                fonts = subprocess.run(['flatpak', 'run', '--command=fc-match', app['id'], 'sans'],
+                                       text=True, capture_output=True, timeout=30)
+                log.write(fonts.stdout + fonts.stderr)
+                assert fonts.returncode == 0 and 'Fontconfig error' not in fonts.stderr, 'sandbox font lookup failed'
+                record['fonts'] = 'PASS: sandbox font lookup'
             if app_id in terminal:
                 p = subprocess.run(terminal[app_id], stdout=log, stderr=log, timeout=60)
                 assert p.returncode == 0, 'CLI smoke failed'
@@ -93,7 +103,22 @@ for app_id in selection:
                 process = subprocess.Popen(command, stdout=log, stderr=log, start_new_session=True)
                 deadline = time.monotonic() + (300 if app_id == 'steam' else 90)
                 created = []
+                acknowledged = False
                 while time.monotonic() < deadline:
+                    if app_id == 'signal' and not acknowledged:
+                        warning = next((c for c in windows() if c['address'] not in before
+                                        and c['class'] == 'zenity' and c['title'] == 'Warning'), None)
+                        if warning:
+                            # Disposable empty profile only: exercise the wrapper's
+                            # default choice without linking an account or changing
+                            # the product's storage configuration.
+                            subprocess.run(['grim', str(out / 'signal-wrapper.png')], timeout=30)
+                            for state in ('down', 'up'):
+                                expression = 'hl.dsp.send_key_state({mods="", key="Return", state="' + state + '", window="address:' + warning['address'] + '"})'
+                                subprocess.run(['hyprctl', 'dispatch', expression], stdout=log, stderr=log, check=True)
+                                time.sleep(.1)
+                            acknowledged = True
+                            record['fixture_warning_acknowledged'] = True
                     created = [c for c in windows() if c['address'] not in before and app_window(app_id, c)]
                     if created:
                         break
@@ -104,12 +129,17 @@ for app_id in selection:
                     subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)
                 assert created, 'no matching application window appeared before timeout'
                 record['windows'] = [{'class': c['class'], 'title': c['title']} for c in created]
-                time.sleep(3)
+                time.sleep(30 if app_id in ('discord', 'signal', 'steam') else 5)
                 subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)
                 record['launch'] = 'PASS: window created'
         except Exception as error:
             record['error'] = str(error)
         finally:
+            if app_id == 'steam':
+                steam_logs = Path.home() / '.local/share/Steam/logs'
+                if steam_logs.is_dir():
+                    shutil.copytree(steam_logs, out / 'steam-client-logs', dirs_exist_ok=True)
+                record['process_exit'] = process.poll() if process else None
             if app['source'] == 'flatpak':
                 subprocess.run(['flatpak', 'kill', app['id']], stdout=log, stderr=log, timeout=20)
             if process is not None:

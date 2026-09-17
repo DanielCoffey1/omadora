@@ -141,13 +141,15 @@ def power():
 
 
 def themes():
-    for theme in ('catppuccin', 'tokyo-night'):
+    for theme in ('catppuccin', 'white', 'tokyo-night'):
         guest('omarchy-theme-set ' + theme, timeout=100)
         time.sleep(4)
         assert guest('hyprctl configerrors') in ('', 'ok')
         assert guest('omarchy-shell shell ping') == 'ok'
+        expected = 'prefer-light' if theme == 'white' else 'prefer-dark'
+        assert expected in guest('gsettings get org.gnome.desktop.interface color-scheme')
         guest(f'grim /tmp/omadora-vm-results/theme-{theme}.png')
-    return 'Catppuccin and Tokyo Night applied without compositor config errors.'
+    return 'Dark/light/dark themes updated shell and GTK color scheme without compositor config errors.'
 
 
 def suspend():

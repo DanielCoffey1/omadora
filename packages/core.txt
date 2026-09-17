@@ -53,6 +53,7 @@ google-noto-sans-fonts
 google-noto-emoji-color-fonts
 jetbrains-mono-fonts
 fontawesome-fonts-all
+yaru-icon-theme
 util-linux
 procps-ng
 psmisc

@@ -32,12 +32,13 @@ EOF
 printf 'instance-id: omadora-ci\nlocal-hostname: omadora-ci\n' >"$vm_dir/meta-data"
 cloud-localds "$vm_dir/seed.img" "$vm_dir/user-data" "$vm_dir/meta-data"
 accel=tcg
-if [[ -e /dev/kvm ]]; then sudo chmod 0666 /dev/kvm; accel=kvm; fi
+cpu=max
+if [[ -e /dev/kvm ]]; then sudo chmod 0666 /dev/kvm; accel=kvm; cpu=host; fi
 echo "VM acceleration: $accel"
 Xvfb :99 -screen 0 1920x1080x24 >vm-results/xvfb.log 2>&1 &
 xvfb_pid=$!
 export DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1
-qemu-system-x86_64 -accel "$accel" -m 4096 -smp 2 \
+qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
   -drive "file=$vm_dir/seed.img,format=raw,if=virtio" \
   -device virtio-vga-gl -display gtk,gl=on \

@@ -62,14 +62,30 @@ class AdapterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
             adapter.write(home / '.config/hypr/original', 'old')
+            adapter.write(home / adapter.FONT_CONFIG, 'original font preference')
             backup = home / '.local/state/omadora/backups/initial'
             adapter.backup_user(home, backup)
             adapter.write(home / '.config/hypr/original', 'edited')
             adapter.write(home / '.config/foot/new', 'created by install')
+            adapter.write(home / adapter.FONT_CONFIG, 'new font preference')
             rescue = adapter.restore_user(home, backup)
             self.assertEqual((home / '.config/hypr/original').read_text(), 'old')
             self.assertEqual((rescue / '.config/hypr/original').read_text(), 'edited')
             self.assertFalse((home / '.config/foot').exists())
+            self.assertEqual((home / adapter.FONT_CONFIG).read_text(), 'original font preference')
+            self.assertEqual((rescue / adapter.FONT_CONFIG).read_text(), 'new font preference')
+
+    def test_legacy_backup_remains_restorable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            adapter.write(home / '.config/hypr/original', 'old')
+            backup = home / 'backup'
+            adapter.backup_user(home, backup)
+            manifest = adapter.read_json(backup / 'manifest.json')
+            adapter.write(backup / 'manifest.json', json.dumps([e for e in manifest if e['path'] != adapter.FONT_CONFIG]))
+            adapter.write(home / '.config/hypr/original', 'edited')
+            adapter.restore_user(home, backup)
+            self.assertEqual((home / '.config/hypr/original').read_text(), 'old')
 
     def test_incomplete_backup_rejected_before_deleting_user_files(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -112,6 +128,8 @@ class AdapterTests(unittest.TestCase):
             self.assertFalse((tree / 'install').exists())
             self.assertNotIn('polkit-gnome', (tree / 'config/hypr/autostart.lua').read_text())
             self.assertTrue((tree / 'shell/plugins/polkit/PolkitAgent.qml').is_file())
+            self.assertNotIn('FONTCONFIG_FILE', (output / 'system/omadora-env').read_text())
+            self.assertIn('gsettings set', (tree / 'bin/omarchy-theme-set-gnome').read_text())
             logo = (tree / 'logo.txt').read_text(encoding='utf-8')
             self.assertEqual(logo, (tree / 'config/omarchy/branding/screensaver.txt').read_text(encoding='utf-8'))
             self.assertNotEqual(logo, (Path(source) / 'logo.txt').read_text(encoding='utf-8'))

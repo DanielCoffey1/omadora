@@ -76,6 +76,11 @@ def recovery():
     assert raw('cat ~/.config/hypr/original-test-marker') == 'pre-install sentinel'
     assert raw('cat ~/.local/state/omadora/backups/before-restore-*/.config/hypr/post-install-marker') == 'post-install sentinel'
     raw('test ! -e ~/.config/hypr/post-install-marker; pgrep -u $(id -u) -x gnome-shell')
+    raw('test ! -e ~/.config/fontconfig/conf.d/99-omadora.conf')
+    original = raw("python3 -c 'import json,pathlib; p=pathlib.Path.home()/\".local/state/omadora/installation.json\"; b=pathlib.Path(json.loads(p.read_text())[\"backup\"]); print(json.dumps(json.loads((b/\"desktop-settings.json\").read_text())))'")
+    import json
+    for key, expected in json.loads(original).items():
+        assert raw('gsettings get org.gnome.desktop.interface ' + key) == expected
     return result + '; GNOME remained running and later edits were rescued.'
 
 

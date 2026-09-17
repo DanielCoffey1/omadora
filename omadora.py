@@ -20,6 +20,8 @@ PREFIX = Path('/usr/local/share/omadora')
 COPR = 'nett00n/hyprland'
 SCREENSAVER_COPR = 'whelanh/omarchy'
 CONFIGS = ('hypr', 'foot', 'omarchy')
+FONT_CONFIG = '.config/fontconfig/conf.d/99-omadora.conf'
+DESKTOP_KEYS = ('color-scheme', 'gtk-theme', 'icon-theme')
 DISALLOWED = re.compile(r'\b(pacman|yay|paru|mkinitcpio|limine|arch-chroot|pacstrap|ufw)\b')
 UNPORTED = ('omarchy-install-', 'omarchy-setup-', 'omarchy-provision-',
             'omarchy-apply-', 'omarchy-dev-', 'omarchy-update-',
@@ -179,7 +181,6 @@ def assemble(source, output):
     # and menu branding are Omadora; wholesale textual renaming breaks IPC.
     env = ('export OMARCHY_PATH=/usr/local/share/omadora/upstream\n'
            'export PATH="/usr/local/share/omadora/bin:$OMARCHY_PATH/bin:$PATH"\n'
-           'export FONTCONFIG_FILE="$HOME/.config/omarchy/fonts.conf"\n'
            'export TERMINAL=foot\nexport EDITOR=nvim\n')
     write(tree / 'default/bash/env-bootstrap', env)
     write(output / 'bin/omadora', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py "$@"\n', 0o755)
@@ -188,6 +189,11 @@ def assemble(source, output):
     write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + 'exec uwsm start -- Hyprland\n', 0o755)
 
     overrides = {
+        # The pinned helper is portable; an Arch-only comment previously caused
+        # the conservative command scanner to block it.
+        'omarchy-theme-set-gnome': '\n'.join(line for line in
+            (source / 'bin/omarchy-theme-set-gnome').read_text().splitlines()
+            if not line.lstrip().startswith('#')),
         'omarchy-launch-terminal': 'exec setsid uwsm-app -- foot "$@"',
         'omarchy-launch-browser': 'args=("$@"); for i in "${!args[@]}"; do [[ ${args[$i]} == --private ]] && args[$i]=--private-window; done; exec uwsm-app -- firefox "${args[@]}"',
         'omarchy-launch-webapp': 'exec uwsm-app -- firefox "$@"',
@@ -215,6 +221,10 @@ def assemble(source, output):
     write(output / 'system/omarchy-lock-password', '#%PAM-1.0\nauth include system-auth\naccount include system-auth\n')
     write(output / 'system/omadora.desktop', '[Desktop Entry]\nName=Omadora\nComment=Minimal Omarchy 4 desktop for Fedora\nExec=/usr/local/bin/omadora-session\nType=Application\nDesktopNames=Hyprland;\n')
     write(output / 'system/omadora-env', env)
+    autostart = tree / 'default/hypr/autostart.lua'
+    write(autostart, autostart.read_text().replace(
+        'hl.exec_cmd("omarchy-launch-shell")',
+        'hl.exec_cmd("omarchy-theme-set-gnome")\n  hl.exec_cmd("omarchy-launch-shell")'))
     hypr = tree / 'config/hypr/hyprland.lua'
     write(hypr, 'omarchy_preinstalled_bindings = false\n' + hypr.read_text(encoding='utf-8'))
     menu = menu_for_fedora(load_menu(tree / 'default/omarchy/omarchy-menu.jsonc'), read_json(ROOT / 'apps.json'), blocked)
@@ -282,7 +292,7 @@ def apply_branding(tree):
 
 def backup_user(home, backup):
     """Copy exact config trees including symlinks; record absence for restore."""
-    paths = [f'.config/{name}' for name in CONFIGS] + ['.config/uwsm/env-hyprland', '.local/state/omarchy']
+    paths = [f'.config/{name}' for name in CONFIGS] + ['.config/uwsm/env-hyprland', '.local/state/omarchy', FONT_CONFIG]
     manifest = []
     for relative in paths:
         source = home / relative
@@ -303,7 +313,9 @@ def backup_user(home, backup):
 def restore_user(home, backup):
     allowed = {f'.config/{name}' for name in CONFIGS} | {'.config/uwsm/env-hyprland', '.local/state/omarchy'}
     manifest = read_json(backup / 'manifest.json')
-    if len(manifest) != len(allowed) or {entry['path'] for entry in manifest} != allowed:
+    paths = {entry['path'] for entry in manifest}
+    # Backups made before the font integration fix remain restorable.
+    if paths not in (allowed, allowed | {FONT_CONFIG}) or len(manifest) != len(paths):
         raise ValueError('Invalid backup manifest')
     for entry in manifest:
         saved = backup / entry['path']
@@ -329,6 +341,21 @@ def restore_user(home, backup):
     return rescue
 
 
+def desktop_settings(action, backup):
+    """Save/restore only the three interface keys modified by theme switching."""
+    path = backup / 'desktop-settings.json'
+    if action == 'save':
+        values = {key: run('gsettings', 'get', 'org.gnome.desktop.interface', key,
+                           capture=True).stdout.strip() for key in DESKTOP_KEYS}
+        write(path, json.dumps(values, indent=2))
+    elif path.exists():
+        values = read_json(path)
+        if set(values) != set(DESKTOP_KEYS) or not all(isinstance(v, str) for v in values.values()):
+            raise ValueError('Invalid desktop settings backup')
+        for key, value in values.items():
+            run('gsettings', 'set', 'org.gnome.desktop.interface', key, value)
+
+
 def timestamp():
     return datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
 
@@ -352,7 +379,8 @@ def install(dry_run=False):
         return
     preflight()
     for relative in ('.config', '.config/uwsm', '.local', '.local/state', '.local/state/omarchy',
-                     '.local/share', '.local/share/fonts', '.local/share/fonts/omadora'):
+                     '.local/share', '.local/share/fonts', '.local/share/fonts/omadora',
+                     '.config/fontconfig', '.config/fontconfig/conf.d'):
         if (Path.home() / relative).is_symlink():
             raise ValueError(f'Fresh-install target must not be a symlink: ~/{relative}')
     if PREFIX.exists():
@@ -388,6 +416,7 @@ def install(dry_run=False):
         home = Path.home()
         backup = home / '.local/state/omadora/backups' / timestamp()
         backup_user(home, backup)
+        desktop_settings('save', backup)
         write(home / '.local/state/omadora/installation.json', json.dumps({'backup': str(backup), 'status': 'installing', 'upstream': read_json(ROOT / 'upstream.lock.json')}, indent=2))
         print(f'Configuration backup: {backup}', flush=True)
         # Deploy root-owned code. User setup below runs without sudo.
@@ -415,9 +444,12 @@ def install(dry_run=False):
         shutil.copy2(PREFIX / 'upstream/default/fonts/omarchy/omarchy.ttf', fonts / 'omarchy.ttf')
         for font in (PREFIX / 'assets/fonts').glob('*.ttf'):
             shutil.copy2(font, fonts / font.name)
-        # Font preference is session-specific through FONTCONFIG_FILE, so GNOME
-        # retains its defaults. Include Fedora's normal font configuration.
-        write(home / '.config/omarchy/fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><include>/etc/fonts/fonts.conf</include><include>/usr/local/share/omadora/system/99-omadora-fonts.conf</include></fontconfig>\n')
+        # Use standard user font configuration. A session-wide FONTCONFIG_FILE
+        # leaks an inaccessible host path into Flatpak sandboxes.
+        font_config = home / FONT_CONFIG
+        if font_config.is_symlink():
+            font_config.unlink()
+        write(font_config, (PREFIX / 'system/99-omadora-fonts.conf').read_text())
         run('fc-cache', '-f', fonts)
         env = dict(os.environ, OMARCHY_PATH=str(PREFIX / 'upstream'), OMARCHY_THEME_HEADLESS='1',
                    XDG_RUNTIME_DIR=probe_env['XDG_RUNTIME_DIR'],
@@ -522,7 +554,10 @@ def main():
         base = Path.home() / '.local/state/omadora/backups'
         if not backup.is_relative_to(base.resolve()):
             raise ValueError('Backup must be inside ~/.local/state/omadora/backups')
-        print('Restored; current edits saved at', restore_user(Path.home(), backup))
+        rescue = restore_user(Path.home(), backup)
+        desktop_settings('save', rescue)
+        desktop_settings('restore', backup)
+        print('Restored; current edits saved at', rescue)
     elif args.command == 'doctor':
         failed = False
         for executable in ('Hyprland', 'quickshell', 'uwsm', 'foot', 'nvim', 'gum', 'jq', 'grim', 'slurp'):

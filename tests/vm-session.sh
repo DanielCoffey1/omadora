@@ -16,4 +16,3 @@ DISPLAY=$(systemctl --user show-environment | sed -n 's/^DISPLAY=//p')
 export XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_TYPE=wayland
 export QT_QPA_PLATFORM='wayland;xcb' QT_QPA_PLATFORMTHEME=gtk3
 export MOZ_ENABLE_WAYLAND=1 ELECTRON_OZONE_PLATFORM_HINT=wayland OZONE_PLATFORM=wayland
-export FONTCONFIG_FILE="$HOME/.config/omarchy/fonts.conf"
