@@ -24,6 +24,8 @@ quickshell --version
 sudo -iu omadora-test bash /src/tests/fedora-config.sh
 XDG_RUNTIME_DIR=$(mktemp -d) Hyprland --help >/results/hyprland-help.txt
 sudo -iu omadora-test python3 /src/tests/fedora-apps.py
+sudo -iu omadora-test python3 /src/tests/fedora-maintenance.py
+cp /tmp/omadora-maintenance.json /results/
 cp /tmp/omadora-app-resolution.txt /results/
 cp /usr/local/share/omadora/portability-report.json /results/
 echo 'PASS: real Fedora package installation, installer, theme generation and staged files.'
