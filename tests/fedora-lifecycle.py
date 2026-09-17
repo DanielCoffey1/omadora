@@ -35,7 +35,13 @@ if sys.argv[1] == 'install':
         path.write_text('pre-install sentinel')
     run('python3', source / 'tests/lifecycle-interrupt.py', 'install', success=False)
     assert (state / 'transaction.json').exists() and prefix.exists()
+    # Verify restoration actually writes dconf even from a shell without a bus.
+    saved = json.loads((Path(json.loads((state / 'transaction.json').read_text())['backup']) / 'desktop-settings.json').read_text())
+    changed = 'prefer-light' if saved['color-scheme'] != "'prefer-light'" else 'prefer-dark'
+    run('dbus-run-session', '--', 'gsettings', 'set', 'org.gnome.desktop.interface', 'color-scheme', changed)
     run('python3', source / 'omadora.py', 'recover')
+    for key, expected in saved.items():
+        assert subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', key], text=True).strip() == expected
     assert not prefix.exists() and not (state / 'transaction.json').exists()
     assert not Path('/usr/local/bin/omadora').is_symlink()
     assert not Path('/usr/share/wayland-sessions/omadora.desktop').exists()
@@ -72,7 +78,8 @@ else:
     user_before = {name: hashes(home / name) for name in (
         '.config/hypr', '.config/foot', '.config/omarchy', '.local/state/omarchy', '.local/share/fonts/omadora')}
     settings = subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'])
-    run('python3', source / 'omadora.py', 'upgrade', '--local')
+    revision = json.loads((prefix / 'release.json').read_text())['revision']
+    run('/usr/local/bin/omadora', 'upgrade', '--ref', revision)
     assert not (prefix / 'previous-release-marker').exists()
     assert user_before == {name: hashes(home / name) for name in user_before}
     assert settings == subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'])

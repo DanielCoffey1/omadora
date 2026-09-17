@@ -393,16 +393,26 @@ def restore_user(home, backup):
 def desktop_settings(action, backup):
     """Save/restore only the three interface keys modified by theme switching."""
     path = backup / 'desktop-settings.json'
+    env = os.environ.copy()
+    bus = Path('/run/user') / str(os.getuid()) / 'bus' if hasattr(os, 'getuid') else None
+    if not env.get('DBUS_SESSION_BUS_ADDRESS') and bus and bus.is_socket():
+        env['DBUS_SESSION_BUS_ADDRESS'] = 'unix:path=' + str(bus)
     if action == 'save':
         values = {key: run('gsettings', 'get', 'org.gnome.desktop.interface', key,
-                           capture=True).stdout.strip() for key in DESKTOP_KEYS}
+                           capture=True, env=env).stdout.strip() for key in DESKTOP_KEYS}
         write(path, json.dumps(values, indent=2))
     elif path.exists():
         values = read_json(path)
         if set(values) != set(DESKTOP_KEYS) or not all(isinstance(v, str) for v in values.values()):
             raise ValueError('Invalid desktop settings backup')
+        # A bare TTY/container can lack a user bus. gsettings otherwise prints
+        # a dconf warning yet exits zero without saving anything.
+        prefix = [] if env.get('DBUS_SESSION_BUS_ADDRESS') else ['dbus-run-session', '--']
         for key, value in values.items():
-            run('gsettings', 'set', 'org.gnome.desktop.interface', key, value)
+            run(*prefix, 'gsettings', 'set', 'org.gnome.desktop.interface', key, value, env=env)
+            actual = run('gsettings', 'get', 'org.gnome.desktop.interface', key, capture=True, env=env).stdout.strip()
+            if actual != value:
+                raise ValueError('Desktop preference was not restored: ' + key)
 
 
 def timestamp():

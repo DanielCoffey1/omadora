@@ -17,7 +17,12 @@ command -v git >/dev/null || sudo dnf install -y git
 command -v python3 >/dev/null || sudo dnf install -y python3
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
-git clone --depth 1 --branch "${OMADORA_REF:-main}" https://github.com/DanielCoffey1/omadora.git "$stage/repo"
+ref=${OMADORA_REF:-main}
+[[ $ref != -* ]] || { echo 'Invalid Omadora Git reference.' >&2; exit 1; }
+git init "$stage/repo"
+git -C "$stage/repo" remote add origin https://github.com/DanielCoffey1/omadora.git
+git -C "$stage/repo" fetch --depth 1 origin "$ref"
+git -C "$stage/repo" checkout --detach FETCH_HEAD
 action=install
 if [[ ${1:-} == upgrade || ${1:-} == recover || ${1:-} == rollback ]]; then
   action=$1

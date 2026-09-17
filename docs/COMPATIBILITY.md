@@ -9,6 +9,7 @@
 - DNF package updates and RPM presence queries; cached DNF update checks for the bar.
 - Separate GDM entry, UWSM session environment, Fedora PAM includes and the upstream shell's polkit authentication agent.
 - Configuration backup and restore with preservation of post-install edits.
+- Journaled desktop upgrades, interrupted-operation recovery and a previous-desktop rollback command. Maintenance runs from GNOME or a TTY and preserves personal configuration; see [maintenance](MAINTENANCE.md).
 
 ## Differences from upstream
 
@@ -29,7 +30,7 @@
 2. Resolve the reproduced QEMU/virtio suspend/resume hang. A [single Bochs display](VIRTUAL_MACHINES.md) provides a verified VM workaround with three passing S3/resume/unlock cycles; the virtio driver issue remains. The GDM/Hyprland startup crash was traced to an inactive login session and fixed; 20 repeated logins passed across four VMs, including deliberately delayed launches. Expand the passing desktop/password/recovery checks to an untouched Workstation ISO installation and physical GPUs. Complete application theme parity and multi-monitor testing remain. The existing fixture uses Workstation packages on the official Fedora Cloud image; it exercises GDM autologin and actual lock-screen password authentication with SELinux enforcing.
 3. Audit every retained menu and keybinding for transitive calls to blocked or uninstalled commands. Text scanning is a conservative first pass, not a complete dependency analysis.
 4. Finish the remaining application launch checks and exercise Flatpak launcher discovery, account/gameplay workflows, real Flatpak version upgrades and offline/error cases. All 26 catalog install commands and 23 attempted removals passed the full run; see [application results](APP_TESTS.md) for failures and limits. The sandbox font fix passed in Signal, Discord and Bottles; expand that retest to the remaining Flatpaks.
-5. Implement versioned Omadora packages, desktop upgrades, partial-install recovery/uninstallation and reproducible RPM sources. Current user-config restore is not an OS rollback.
+5. Implement signed/versioned Omadora packages, uninstallation and reproducible RPM sources. Journaled desktop upgrades and recovery are implemented, but do not merge incompatible user-config migrations, undo RPM transactions, or recover pre-journal partial installations. Desktop/config restoration is not an OS rollback.
 6. Run hardware tests for Intel/AMD; develop a separate NVIDIA driver/Secure Boot path before claiming NVIDIA support.
 
 Silverblue/Kinoite, Fedora spins, Fedora versions other than 44, ARM/Asahi, and existing customized desktops are outside this initial target. GNOME is preserved as a fallback, but applying shared home-directory configuration can still affect tools launched from GNOME.

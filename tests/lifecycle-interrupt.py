@@ -12,8 +12,7 @@ original = omadora.run
 
 
 def interrupted(*args, **kwargs):
-    if (operation == 'install' and str(args[0]) == 'fc-cache') or (
-            operation == 'upgrade' and str(args[0]) == 'Hyprland' and '--verify-config' in args):
+    if operation in ('install', 'upgrade') and str(args[0]) == 'Hyprland' and '--verify-config' in args:
         os.kill(os.getpid(), signal.SIGKILL)
     return original(*args, **kwargs)
 

@@ -211,8 +211,10 @@ def upgrade(a, local=False, ref='main'):
         raise ValueError('Invalid Git reference.')
     with tempfile.TemporaryDirectory(prefix='omadora-release-') as temporary:
         repo = Path(temporary) / 'repo'
-        a.run('git', 'clone', '--depth', '1', '--branch', ref,
-              'https://github.com/DanielCoffey1/omadora.git', repo)
+        a.run('git', 'init', repo)
+        a.run('git', '-C', repo, 'remote', 'add', 'origin', 'https://github.com/DanielCoffey1/omadora.git')
+        a.run('git', '-C', repo, 'fetch', '--depth', '1', 'origin', ref)
+        a.run('git', '-C', repo, 'checkout', '--detach', 'FETCH_HEAD')
         a.run('python3', repo / 'omadora.py', 'upgrade', '--local')
 
 

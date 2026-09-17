@@ -12,6 +12,28 @@ spec.loader.exec_module(adapter)
 
 
 class AdapterTests(unittest.TestCase):
+    def test_desktop_recovery_without_bus_verifies_persisted_values(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            backup = Path(tmp)
+            values = dict(zip(adapter.DESKTOP_KEYS, ("'prefer-dark'", "'Adwaita-dark'", "'Yaru-blue'")))
+            adapter.write(backup / 'desktop-settings.json', json.dumps(values))
+            stored, commands = {}, []
+            def run(*args, **kwargs):
+                commands.append(args)
+                if args[0] == 'dbus-run-session':
+                    stored[args[-2]] = args[-1]
+                    return SimpleNamespace(returncode=0)
+                return SimpleNamespace(stdout=stored[args[-1]] + '\n')
+            with patch.dict(os.environ, {}, clear=True), patch.object(Path, 'is_socket', return_value=False), patch.object(adapter, 'run', side_effect=run):
+                adapter.desktop_settings('restore', backup)
+            self.assertEqual(stored, values)
+            self.assertEqual(sum(c[0] == 'dbus-run-session' for c in commands), 3)
+            with patch.dict(os.environ, {}, clear=True), patch.object(Path, 'is_socket', return_value=False), patch.object(adapter, 'run', return_value=SimpleNamespace(stdout="'unchanged'\n")):
+                with self.assertRaisesRegex(ValueError, 'was not restored'):
+                    adapter.desktop_settings('restore', backup)
+
     def test_only_supported_fedora(self):
         good = {'ID': 'fedora', 'VARIANT_ID': 'workstation', 'VERSION_ID': '44'}
         adapter.validate_target(good, 'x86_64')

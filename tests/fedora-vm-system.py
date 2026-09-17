@@ -171,7 +171,9 @@ def desktop_lifecycle():
     raw('sudo touch /usr/local/share/omadora/previous-release-marker')
     switch('gnome')
     # A bare SSH shell is deliberately independent of the stopped compositor.
-    raw('python3 ~/source/omadora.py upgrade --local', timeout=900)
+    revision = json.loads(raw('cat /usr/local/share/omadora/release.json'))['revision']
+    assert len(revision) == 40 and all(c in '0123456789abcdef' for c in revision)
+    raw('omadora upgrade --ref ' + revision, timeout=900)
     raw('test ! -e /usr/local/share/omadora/previous-release-marker')
     switch('omadora')
     v.keys('meta_l', 'ret')

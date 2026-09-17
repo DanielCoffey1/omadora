@@ -77,11 +77,22 @@ The desktop source is pinned; RPM versions remain controlled by the configured r
 
 ```bash
 omadora update                  # Fedora package upgrades
+omadora upgrade                 # Omadora desktop update; run from GNOME or a TTY
+omadora rollback                # Previous desktop; run from GNOME or a TTY
+omadora recover                 # Complete recovery of an interrupted operation
 flatpak update --user           # Optional Flatpak updates
 omadora doctor                 # Basic executable diagnostics
 ```
 
-Desktop upgrades and system rollback are not implemented in this alpha. Re-running install refuses to overwrite an existing Omadora installation. Fedora's kernel, bootloader, firewalld, SELinux and GNOME display manager remain under Fedora's management. Do not run Omarchy's upstream installation or migration scripts on Fedora.
+Desktop maintenance requires logging out of all Hyprland sessions. Upgrades fetch this repository, assemble the pinned upstream desktop, install required RPM dependencies, snapshot the existing desktop, and validate your Hyprland configuration before completing the change. Personal configuration, selected theme and font are preserved; new user-config defaults are not automatically merged. One previous desktop is kept for `omadora rollback`. See [maintenance and recovery](docs/MAINTENANCE.md).
+
+Older installations that do not recognize `upgrade` can use the bootstrap from GNOME or a TTY:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash -s -- upgrade
+```
+
+Re-running `install` still refuses to overwrite an existing deployment. Desktop recovery/rollback does not undo RPM transactions, enabled repositories, or Fedora upgrades. Fedora's kernel, bootloader, firewalld, SELinux and GNOME display manager remain under Fedora's management. Do not run Omarchy's upstream installation or migration scripts on Fedora.
 
 ## Recover configuration
 

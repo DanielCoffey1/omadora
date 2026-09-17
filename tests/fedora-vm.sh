@@ -94,7 +94,8 @@ PY
 fi
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py omadora_deploy.py omadora_lifecycle.py apps.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default}" <<'GUEST'
+revision=$(git rev-parse HEAD)
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision" <<'GUEST'
 set -euo pipefail
 sudo dnf install -y --allowerasing @workstation-product-environment fedora-release-identity-workstation
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
@@ -105,7 +106,9 @@ tar -xzf /tmp/source.tar.gz -C ~/source
 cd ~/source
 mkdir -p ~/.config/hypr
 printf 'pre-install sentinel\n' >~/.config/hypr/original-test-marker
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash
+# Exercise the public bootstrap at the workflow revision. A newer push must not
+# silently replace the code under test while this VM is still downloading.
+curl -fsSL "https://raw.githubusercontent.com/DanielCoffey1/omadora/$2/boot.sh" | OMADORA_REF="$2" bash
 cmp omadora.py /usr/local/share/omadora/omadora.py
 if [[ $1 == startup-race ]]; then
   # Reproduce a slow GDM launch that lets the greeter retain the active VT.
