@@ -1,0 +1,506 @@
+#!/usr/bin/python3
+"""Omadora's Fedora adapter. Python standard library only; no shell eval."""
+from __future__ import annotations
+
+import argparse
+import datetime
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+
+ROOT = Path(__file__).resolve().parent
+PREFIX = Path('/usr/local/share/omadora')
+COPR = 'nett00n/hyprland'
+SCREENSAVER_COPR = 'whelanh/omarchy'
+CONFIGS = ('hypr', 'foot', 'omarchy')
+DISALLOWED = re.compile(r'\b(pacman|yay|paru|mkinitcpio|limine|arch-chroot|pacstrap|ufw)\b')
+UNPORTED = ('omarchy-install-', 'omarchy-setup-', 'omarchy-provision-',
+            'omarchy-apply-', 'omarchy-dev-', 'omarchy-update-',
+            'omarchy-snapshot-', 'omarchy-migrate', 'omarchy-reinstall-',
+            'omarchy-refresh-', 'omarchy-pkg-')
+
+
+def run(*argv, capture=False, check=True, env=None):
+    return subprocess.run([str(a) for a in argv], check=check, text=True,
+                          stdout=subprocess.PIPE if capture else None,
+                          stderr=subprocess.PIPE if capture else None, env=env)
+
+
+def read_json(path):
+    return json.loads(Path(path).read_text(encoding='utf-8'))
+
+
+def write(path, content, mode=None):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding='utf-8', newline='\n')
+    if mode is not None:
+        path.chmod(mode)
+
+
+def packages():
+    return [s for line in (ROOT / 'packages/core.txt').read_text().splitlines()
+            if (s := line.split('#')[0].strip())]
+
+
+def os_release(path='/etc/os-release'):
+    result = {}
+    for line in Path(path).read_text().splitlines():
+        if '=' in line and not line.startswith('#'):
+            key, value = line.split('=', 1)
+            result[key] = value.strip('"\'')
+    return result
+
+
+def validate_target(info, machine, atomic=False):
+    if info.get('ID') != 'fedora' or info.get('VARIANT_ID') != 'workstation':
+        raise ValueError('This release targets Fedora Workstation, not another edition.')
+    if info.get('VERSION_ID') != '44' or machine != 'x86_64' or atomic:
+        raise ValueError('Target: Fedora Workstation 44, x86_64, non-Atomic.')
+
+
+def preflight():
+    if os.name != 'posix' or not hasattr(os, 'geteuid') or os.geteuid() == 0:
+        raise ValueError('Run as a regular Fedora user. Omadora invokes sudo when needed.')
+    validate_target(os_release(), platform.machine(), Path('/run/ostree-booted').exists())
+
+
+def load_menu(path):
+    # Pinned upstream stores one complete entry per line; parse entries without
+    # stripping // inside URL strings. Fail if upstream changes this format.
+    result = {}
+    for line in Path(path).read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('//') or line in ('{', '}'):
+            continue
+        result.update(json.loads('{' + line.rstrip(',') + '}'))
+    if 'install' not in result or 'system.lock' not in result:
+        raise ValueError('Unexpected upstream menu format')
+    return result
+
+
+def app_commands(app, action, fedora='44'):
+    if action not in ('install', 'remove'):
+        raise ValueError('Invalid app action')
+    if app['source'] == 'flatpak':
+        commands = []
+        if action == 'install':
+            commands.append(['flatpak', 'remote-add', '--user', '--if-not-exists',
+                             'flathub', 'https://flathub.org/repo/flathub.flatpakrepo'])
+        commands.append(['flatpak', 'install' if action == 'install' else 'uninstall',
+                         '--user', *(['flathub'] if action == 'install' else []), app['id']])
+        return commands
+    commands = []
+    if app['source'] == 'rpmfusion' and action == 'install':
+        for kind in ('free', 'nonfree'):
+            commands.append(['sudo', 'dnf', 'install',
+                             f'https://mirrors.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-{fedora}.noarch.rpm'])
+    commands.append(['sudo', 'dnf', action, *app['packages']])
+    return commands
+
+
+def menu_for_fedora(menu, apps, blocked):
+    result = {}
+    for key, value in menu.items():
+        if key.split('.')[0] in ('install', 'remove', 'update', 'setup'):
+            continue
+        if key in ('learn.arch', 'learn.community', 'learn.herdr-keybindings'):
+            continue
+        commands = ' '.join(str(value.get(k, '')) for k in ('action', 'when', 'disabled'))
+        if DISALLOWED.search(commands) or any(name in commands for name in blocked):
+            continue
+        if key.startswith(('trigger.reminder', 'trigger.transcode', 'trigger.share',
+                           'trigger.capture.screenrecord', 'trigger.capture.text',
+                           'trigger.capture.qr')):
+            continue
+        result[key] = value
+    result['about'] = {'label': 'About Omadora', 'icon': '', 'action': 'foot --hold omadora about'}
+    result['learn.fedora'] = {'label': 'Fedora', 'icon': '', 'action': 'xdg-open https://docs.fedoraproject.org/'}
+    result['setup'] = {'label': 'Setup', 'icon': ''}
+    for key, label, action in (
+        ('network', 'Network', 'foot nmtui'),
+        ('audio', 'Audio', 'omarchy-menu-audio'),
+        ('config', 'Hyprland configuration', 'foot nvim ~/.config/hypr/hyprland.lua'),
+    ):
+        if not any(name in action for name in blocked):
+            result[f'setup.{key}'] = {'label': label, 'action': action}
+    for action, label in (('install', 'Install'), ('remove', 'Remove')):
+        result[action] = {'label': label, 'icon': '󰉉'}
+        for app_id, app in apps.items():
+            category = f'{action}.{app["category"]}'
+            result[category] = {'label': app['category'].title()}
+            result[f'{category}.{app_id}'] = {
+                'label': app['name'],
+                'action': f'foot --hold omadora app {action} {app_id}',
+                'disabled' if action == 'install' else 'when': f'omadora app installed {app_id}',
+            }
+    result['update'] = {'label': 'Update', 'icon': ''}
+    result['update.fedora'] = {'label': 'Fedora packages', 'action': 'foot --hold omadora update'}
+    result['update.flatpak'] = {'label': 'Flatpak apps', 'action': 'foot --hold flatpak update --user'}
+    # Remove empty parent menus after pruning unsupported actions.
+    for key in sorted(list(result), key=lambda s: s.count('.'), reverse=True):
+        item = result[key]
+        if not any(k in item for k in ('action', 'provider', 'target')) and not any(
+                child.startswith(key + '.') for child in result):
+            del result[key]
+    return result
+
+
+def assemble(source, output):
+    """Construct a reviewable install tree. Never run upstream install/migrations."""
+    source, output = Path(source), Path(output)
+    if output.exists():
+        raise ValueError('Build output must not already exist')
+    output.mkdir(parents=True)
+    tree = output / 'upstream'
+    for name in ('bin', 'config', 'default', 'themes', 'shell'):
+        shutil.copytree(source / name, tree / name)
+    for name in ('LICENSE', 'version'):
+        shutil.copy2(source / name, tree / name)
+    for name in ('omadora.py', 'apps.json', 'upstream.lock.json'):
+        shutil.copy2(ROOT / name, output / name)
+    shutil.copytree(ROOT / 'packages', output / 'packages')
+    shutil.copytree(ROOT / 'assets', output / 'assets')
+
+    # Keep upstream identifiers for compatibility. Only the product entrypoints
+    # and menu branding are Omadora; wholesale textual renaming breaks IPC.
+    env = ('export OMARCHY_PATH=/usr/local/share/omadora/upstream\n'
+           'export PATH="/usr/local/share/omadora/bin:$OMARCHY_PATH/bin:$PATH"\n'
+           'export FONTCONFIG_FILE="$HOME/.config/omarchy/fonts.conf"\n'
+           'export TERMINAL=foot\nexport EDITOR=nvim\n')
+    write(tree / 'default/bash/env-bootstrap', env)
+    write(output / 'bin/omadora', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py "$@"\n', 0o755)
+    write(output / 'bin/uwsm-app', '#!/bin/sh\nexec uwsm app "$@"\n', 0o755)
+    write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + 'exec uwsm start -- Hyprland\n', 0o755)
+
+    overrides = {
+        'omarchy-launch-terminal': 'exec setsid uwsm-app -- foot "$@"',
+        'omarchy-launch-browser': 'args=("$@"); for i in "${!args[@]}"; do [[ ${args[$i]} == --private ]] && args[$i]=--private-window; done; exec uwsm-app -- firefox "${args[@]}"',
+        'omarchy-launch-webapp': 'exec uwsm-app -- firefox "$@"',
+        'omarchy-launch-about': 'exec foot --hold omadora about',
+        'omarchy-update': 'exec foot --hold omadora update',
+        'omarchy-update-available': 'exec omadora updates-available',
+        'omarchy-update-status': 'if omadora updates-available >/dev/null; then omarchy-shell -q omarchy.system-update refresh; else omarchy-shell -q omarchy.system-update clear; fi',
+        'omarchy-pkg-present': 'exec omadora pkg-present "$@"',
+        'omarchy-pkg-missing': 'omadora pkg-present "$@" && exit 1; exit 0',
+        'omarchy-provision-first-run': ': # Omadora seeds only minimal desktop configuration.',
+    }
+    blocked = []
+    for path in (tree / 'bin').iterdir():
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding='utf-8')
+        if path.name in overrides:
+            write(path, '#!/bin/bash\n' + overrides[path.name] + '\n', 0o755)
+        elif path.name.startswith(UNPORTED) or DISALLOWED.search(content):
+            blocked.append(path.name)
+            write(path, '#!/bin/bash\necho "This system operation is not ported to Omadora. Use the Fedora Install/Update menu." >&2\nexit 1\n', 0o755)
+        else:
+            path.chmod(0o755)
+    # Auth stack delegates to Fedora's authselect-managed system-auth.
+    write(output / 'system/omarchy-lock-password', '#%PAM-1.0\nauth include system-auth\naccount include system-auth\n')
+    write(output / 'system/omadora.desktop', '[Desktop Entry]\nName=Omadora\nComment=Minimal Omarchy 4 desktop for Fedora\nExec=/usr/local/bin/omadora-session\nType=Application\nDesktopNames=Hyprland;\n')
+    write(output / 'system/omadora-env', env)
+    hypr = tree / 'config/hypr/hyprland.lua'
+    write(hypr, 'omarchy_preinstalled_bindings = false\n' + hypr.read_text(encoding='utf-8'))
+    autostart = tree / 'config/hypr/autostart.lua'
+    write(autostart, autostart.read_text(encoding='utf-8') + '\nhl.on("hyprland.start", function()\n  hl.exec_cmd("/usr/libexec/polkit-gnome-authentication-agent-1")\nend)\n')
+    menu = menu_for_fedora(load_menu(tree / 'default/omarchy/omarchy-menu.jsonc'), read_json(ROOT / 'apps.json'), blocked)
+    write(tree / 'default/omarchy/omarchy-menu.jsonc', json.dumps(menu, indent=2, ensure_ascii=False))
+    shell_config = read_json(tree / 'config/omarchy/shell.json')
+    for position, widgets in shell_config['bar']['layout'].items():
+        shell_config['bar']['layout'][position] = [w for w in widgets if w['id'] != 'omarchy.agents']
+    write(tree / 'config/omarchy/shell.json', json.dumps(shell_config, indent=2))
+    foot = tree / 'config/foot/foot.ini'
+    write(foot, foot.read_text().replace('JetBrainsMono Nerd Font', 'JetBrainsMonoNL Nerd Font'))
+    # Keep absent optional programs out of the advertised keybindings.
+    utilities = tree / 'default/hypr/bindings/utilities.lua'
+    optional = ('omacalc', 'tmux-keybindings', 'herdr-keybindings', 'screenrecord', 'webcam-resize', 'capture-text')
+    write(utilities, '\n'.join(line for line in utilities.read_text().splitlines()
+                              if not any(token in line for token in optional)) + '\n')
+    # A plain screenshot remains useful without preinstalling the annotation app.
+    screenshot = tree / 'bin/omarchy-capture-screenshot'
+    write(screenshot, '#!/bin/bash\nset -euo pipefail\n'
+          'directory="${OMARCHY_SCREENSHOT_DIR:-$HOME/Pictures/Screenshots}"\n'
+          'mkdir -p "$directory"\nselection=$(slurp) || exit 0\n'
+          'file="$directory/screenshot-$(date +%Y%m%d-%H%M%S-%N).png"\n'
+          'grim -g "$selection" "$file"\nwl-copy --type image/png <"$file"\n'
+          'notify-send "Screenshot saved" "$file"\n', 0o755)
+    # Explicit monospace fallback supplies Nerd glyphs to the unchanged shell.
+    write(output / 'system/99-omadora-fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><alias><family>monospace</family><prefer><family>JetBrainsMonoNL Nerd Font</family></prefer></alias></fontconfig>\n')
+    apply_branding(tree)
+    write(output / 'portability-report.json', json.dumps({'blocked_commands': sorted(blocked),
+          'upstream': read_json(ROOT / 'upstream.lock.json'), 'status': 'experimental; Fedora VM validation required'}, indent=2))
+    return output
+
+
+def apply_branding(tree):
+    """Replace visible product words, retaining paths, IPC names and credits."""
+    for path in tree.rglob('*'):
+        if not path.is_file() or path.name in ('LICENSE', 'OFL.txt') or path.suffix in ('.md', '.ttf', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'):
+            continue
+        try:
+            content = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        lines = []
+        for line in content.splitlines(keepends=True):
+            if not re.search(r'copyright|"author"|"license"', line, re.IGNORECASE):
+                line = re.sub(r'\bOmarchy\b', 'Omadora', line)
+                line = line.replace('"OMARCHY"', '"OMADORA"').replace("'OMARCHY'", "'OMADORA'")
+            lines.append(line)
+        write(path, ''.join(lines))
+    letters = {
+        'O': [' ███ ', '█   █', '█   █', '█   █', ' ███ '],
+        'M': ['█   █', '██ ██', '█ █ █', '█   █', '█   █'],
+        'A': [' ███ ', '█   █', '█████', '█   █', '█   █'],
+        'D': ['████ ', '█   █', '█   █', '█   █', '████ '],
+        'R': ['████ ', '█   █', '████ ', '█  █ ', '█   █'],
+    }
+    logo = '\n'.join('  '.join(letters[letter][row] for letter in 'OMADORA') for row in range(5)) + '\n'
+    write(tree / 'logo.txt', logo)
+    write(tree / 'icon.txt', 'O\n')
+    write(tree / 'config/omarchy/branding/screensaver.txt', logo)
+    # The minimal profile uses Foot. Do not depend on GNOME's terminal default.
+    launch = tree / 'bin/omarchy-launch-screensaver'
+    write(launch, launch.read_text().replace('terminal=$(xdg-terminal-exec --print-id)', 'terminal=foot'), 0o755)
+    foot = tree / 'default/foot/screensaver.ini'
+    write(foot, foot.read_text().replace('JetBrainsMono Nerd Font', 'JetBrainsMonoNL Nerd Font'))
+
+
+def backup_user(home, backup):
+    """Copy exact config trees including symlinks; record absence for restore."""
+    paths = [f'.config/{name}' for name in CONFIGS] + ['.config/uwsm/env-hyprland', '.local/state/omarchy']
+    manifest = []
+    for relative in paths:
+        source = home / relative
+        exists = source.exists() or source.is_symlink()
+        manifest.append({'path': relative, 'existed': exists})
+        if exists:
+            dest = backup / relative
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_symlink():
+                dest.symlink_to(os.readlink(source), target_is_directory=source.is_dir())
+            elif source.is_dir():
+                shutil.copytree(source, dest, symlinks=True)
+            else:
+                shutil.copy2(source, dest)
+    write(backup / 'manifest.json', json.dumps(manifest, indent=2))
+
+
+def restore_user(home, backup):
+    allowed = {f'.config/{name}' for name in CONFIGS} | {'.config/uwsm/env-hyprland', '.local/state/omarchy'}
+    manifest = read_json(backup / 'manifest.json')
+    if len(manifest) != len(allowed) or {entry['path'] for entry in manifest} != allowed:
+        raise ValueError('Invalid backup manifest')
+    for entry in manifest:
+        saved = backup / entry['path']
+        if entry['existed'] and not (saved.exists() or saved.is_symlink()):
+            raise ValueError(f'Backup is incomplete: {saved}')
+    # Preserve edits made since installation before restoring old configuration.
+    rescue = home / '.local/state/omadora/backups' / ('before-restore-' + timestamp())
+    backup_user(home, rescue)
+    for entry in manifest:
+        dest, saved = home / entry['path'], backup / entry['path']
+        if dest.is_symlink() or dest.is_file():
+            dest.unlink()
+        elif dest.is_dir():
+            shutil.rmtree(dest)
+        if entry['existed']:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if saved.is_symlink():
+                dest.symlink_to(os.readlink(saved), target_is_directory=saved.is_dir())
+            elif saved.is_dir():
+                shutil.copytree(saved, dest, symlinks=True)
+            else:
+                shutil.copy2(saved, dest)
+    return rescue
+
+
+def timestamp():
+    return datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+
+
+def fetch_upstream(destination):
+    lock = read_json(ROOT / 'upstream.lock.json')
+    run('git', 'init', destination)
+    run('git', '-C', destination, 'remote', 'add', 'origin', lock['repository'])
+    run('git', '-C', destination, 'fetch', '--depth', '1', 'origin', lock['tag'])
+    actual = run('git', '-C', destination, 'rev-parse', 'FETCH_HEAD^{commit}', capture=True).stdout.strip()
+    if actual != lock['commit']:
+        raise ValueError('Upstream tag no longer matches the pinned commit')
+    run('git', '-C', destination, 'checkout', '--detach', actual)
+
+
+def install(dry_run=False):
+    if dry_run:
+        print(json.dumps({'target': 'Fedora Workstation 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
+                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages(), 'prefix': str(PREFIX),
+                          'optional_apps_preinstalled': [], 'gnome_removed': False}, indent=2))
+        return
+    preflight()
+    for relative in ('.config', '.config/uwsm', '.local', '.local/state', '.local/state/omarchy',
+                     '.local/share', '.local/share/fonts', '.local/share/fonts/omadora'):
+        if (Path.home() / relative).is_symlink():
+            raise ValueError(f'Fresh-install target must not be a symlink: ~/{relative}')
+    if PREFIX.exists():
+        raise ValueError('Omadora is already installed. This alpha does not support in-place desktop upgrades.')
+    for path in ('/usr/local/bin/omadora', '/usr/local/bin/omadora-session',
+                 '/usr/share/wayland-sessions/omadora.desktop', '/etc/pam.d/omarchy-lock-password'):
+        if os.path.lexists(path):
+            raise ValueError(f'Refusing to replace an existing system file: {path}')
+    print('Omadora development build: adds nett00n/hyprland and whelanh/omarchy COPRs (ttfx screensaver), plus a GDM session. Fedora VM validation pending.', flush=True)
+    with tempfile.TemporaryDirectory(prefix='omadora-') as temporary:
+        temp = Path(temporary)
+        fetch_upstream(temp / 'source')
+        stage = assemble(temp / 'source', temp / 'stage')
+        run('sudo', 'dnf', 'install', '-y', 'dnf5-plugins')
+        run('sudo', 'dnf', 'copr', 'enable', '-y', COPR)
+        run('sudo', 'dnf', 'copr', 'enable', '-y', SCREENSAVER_COPR)
+        # DNF's complete transaction must resolve. Never skip broken packages.
+        run('sudo', 'dnf', 'install', '-y', *packages())
+        version = run('Hyprland', '--version', capture=True).stdout
+        match = re.search(r'\b(\d+)\.(\d+)\.(\d+)', version)
+        if not match or tuple(map(int, match.groups())) < (0, 55, 0):
+            raise ValueError('Omarchy 4 Lua configuration requires Hyprland >= 0.55. Desktop files were not installed.')
+        for command in ('quickshell', 'uwsm', 'foot', 'gum', 'jq', 'nvim'):
+            if not shutil.which(command):
+                raise ValueError(f'Missing required executable: {command}')
+        home = Path.home()
+        backup = home / '.local/state/omadora/backups' / timestamp()
+        backup_user(home, backup)
+        write(home / '.local/state/omadora/installation.json', json.dumps({'backup': str(backup), 'status': 'installing', 'upstream': read_json(ROOT / 'upstream.lock.json')}, indent=2))
+        print(f'Configuration backup: {backup}', flush=True)
+        # Deploy root-owned code. User setup below runs without sudo.
+        run('sudo', 'mkdir', '-p', PREFIX)
+        run('sudo', 'cp', '-a', str(stage) + '/.', PREFIX)
+        run('sudo', 'chown', '-R', 'root:root', PREFIX)
+        for name in ('omadora', 'omadora-session'):
+            run('sudo', 'ln', '-s', PREFIX / 'bin' / name, '/usr/local/bin/' + name)
+        run('sudo', 'install', '-m', '0644', PREFIX / 'system/omarchy-lock-password', '/etc/pam.d/omarchy-lock-password')
+        # Config directories were backed up. Unlink whole destinations to avoid
+        # copying through user symlinks into unrelated locations.
+        for name in CONFIGS:
+            dest = home / '.config' / name
+            if dest.is_symlink() or dest.is_file():
+                dest.unlink()
+            elif dest.is_dir():
+                shutil.rmtree(dest)
+            shutil.copytree(PREFIX / 'upstream/config' / name, dest)
+        uwsm_env = home / '.config/uwsm/env-hyprland'
+        if uwsm_env.is_symlink():
+            uwsm_env.unlink()
+        write(uwsm_env, (PREFIX / 'system/omadora-env').read_text())
+        fonts = home / '.local/share/fonts/omadora'
+        fonts.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(PREFIX / 'upstream/default/fonts/omarchy/omarchy.ttf', fonts / 'omarchy.ttf')
+        for font in (PREFIX / 'assets/fonts').glob('*.ttf'):
+            shutil.copy2(font, fonts / font.name)
+        # Font preference is session-specific through FONTCONFIG_FILE, so GNOME
+        # retains its defaults. Include Fedora's normal font configuration.
+        write(home / '.config/omarchy/fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><include>/etc/fonts/fonts.conf</include><include>/usr/local/share/omadora/system/99-omadora-fonts.conf</include></fontconfig>\n')
+        run('fc-cache', '-f', fonts)
+        env = dict(os.environ, OMARCHY_PATH=str(PREFIX / 'upstream'), OMARCHY_THEME_HEADLESS='1',
+                   PATH=f'{PREFIX}/bin:{PREFIX}/upstream/bin:' + os.environ['PATH'])
+        run(PREFIX / 'upstream/bin/omarchy-theme-set', 'tokyo-night', env=env)
+        # Publish the login session last, after successful config/theme setup.
+        run('sudo', 'install', '-m', '0644', PREFIX / 'system/omadora.desktop', '/usr/share/wayland-sessions/omadora.desktop')
+        run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
+        write(home / '.local/state/omadora/installation.json', json.dumps({'backup': str(backup), 'upstream': read_json(ROOT / 'upstream.lock.json')}, indent=2))
+    print('Installed. Log out and select Omadora at the GDM gear menu. GNOME remains available.')
+
+
+def installed(app):
+    if app['source'] == 'flatpak':
+        if not shutil.which('flatpak'):
+            return False
+        return run('flatpak', 'info', '--user', app['id'], capture=True, check=False).returncode == 0
+    if not shutil.which('rpm'):
+        return False
+    return run('rpm', '-q', *app['packages'], capture=True, check=False).returncode == 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Omadora: minimal Omarchy 4 for Fedora')
+    sub = parser.add_subparsers(dest='command', required=True)
+    p = sub.add_parser('install'); p.add_argument('--dry-run', action='store_true')
+    p = sub.add_parser('build'); p.add_argument('--source', type=Path, required=True); p.add_argument('--output', type=Path, required=True)
+    p = sub.add_parser('app'); p.add_argument('action', choices=('list', 'install', 'remove', 'installed')); p.add_argument('id', nargs='?'); p.add_argument('--dry-run', action='store_true')
+    sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')
+    p = sub.add_parser('pkg-present'); p.add_argument('packages', nargs='+')
+    p = sub.add_parser('restore-config'); p.add_argument('backup', type=Path)
+    args = parser.parse_args()
+    if args.command == 'install':
+        install(args.dry_run)
+    elif args.command == 'build':
+        print(assemble(args.source, args.output))
+    elif args.command == 'about':
+        print('Omadora 0.1.0-dev | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; VM validation pending.\nhttps://github.com/DanielCoffey1/omadora')
+    elif args.command == 'app':
+        apps = read_json(ROOT / 'apps.json')
+        if args.action == 'list':
+            for app_id, app in apps.items():
+                print(f'{app_id:14} {app["category"]:15} {app["source"]:10} {app["name"]}')
+        else:
+            if args.id not in apps:
+                raise ValueError('Unknown app. Run: omadora app list')
+            app = apps[args.id]
+            if args.action == 'installed':
+                return 0 if installed(app) else 1
+            commands = app_commands(app, args.action)
+            if args.dry_run:
+                print('\n'.join(shlex.join(c) for c in commands))
+            else:
+                preflight()
+                for command in commands:
+                    run(*command)
+    elif args.command == 'pkg-present':
+        aliases = {'nvim': 'neovim', 'fd': 'fd-find', 'networkmanager': 'NetworkManager', 'imagemagick': 'ImageMagick'}
+        names = [aliases.get(p, p) for p in args.packages]
+        if any(not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9+_.-]*', p) for p in names):
+            return 1
+        return run('rpm', '-q', *names, capture=True, check=False).returncode
+    elif args.command == 'update':
+        preflight()
+        run('sudo', 'dnf', 'upgrade', '--refresh')
+        print('Fedora packages updated. Omadora desktop stays at its pinned release.')
+    elif args.command == 'updates-available':
+        result = run('dnf', '--cacheonly', 'check-upgrade', capture=True, check=False)
+        if result.returncode == 100:
+            print('Fedora updates available')
+            return 0
+        return 1
+    elif args.command == 'restore-config':
+        preflight()
+        if os.environ.get('HYPRLAND_INSTANCE_SIGNATURE'):
+            raise ValueError('Log out of Hyprland and restore from GNOME or a TTY.')
+        backup = args.backup.resolve()
+        base = Path.home() / '.local/state/omadora/backups'
+        if not backup.is_relative_to(base.resolve()):
+            raise ValueError('Backup must be inside ~/.local/state/omadora/backups')
+        print('Restored; current edits saved at', restore_user(Path.home(), backup))
+    elif args.command == 'doctor':
+        failed = False
+        for executable in ('Hyprland', 'quickshell', 'uwsm', 'foot', 'nvim', 'gum', 'jq', 'grim', 'slurp'):
+            found = shutil.which(executable)
+            print(f'{executable}: {found or "MISSING"}')
+            failed |= not bool(found)
+        print('Upstream:', read_json(ROOT / 'upstream.lock.json')['commit'])
+        print('Graphical login, PAM unlock, suspend and portals require a Fedora VM/hardware test.')
+        return int(failed)
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except (ValueError, OSError, subprocess.CalledProcessError) as error:
+        print(f'Omadora: {error}', file=sys.stderr)
+        sys.exit(1)

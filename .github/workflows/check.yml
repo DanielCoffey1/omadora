@@ -1,0 +1,29 @@
+name: Adapter checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch exact upstream commit
+        run: |
+          git init /tmp/omadora-upstream
+          git -C /tmp/omadora-upstream remote add origin https://github.com/omacom/omarchy.git
+          git -C /tmp/omadora-upstream fetch --depth 1 origin c668141e9c42b13c80c9ca4ea108e11708c5e8a5
+          git -C /tmp/omadora-upstream checkout --detach FETCH_HEAD
+      - name: Unit and upstream assembly checks
+        env:
+          OMADORA_TEST_UPSTREAM: /tmp/omadora-upstream
+        run: python3 -m unittest discover -s tests -v
+      - name: Bootstrap syntax and ShellCheck
+        run: |
+          bash -n boot.sh
+          shellcheck -e SC1091 boot.sh
+      - name: Validate generated Bash scripts
+        run: |
+          python3 omadora.py build --source /tmp/omadora-upstream --output /tmp/omadora-stage
+          find /tmp/omadora-stage/upstream/bin /tmp/omadora-stage/bin -type f -print0 | while IFS= read -r -d '' f; do
+            if head -1 "$f" | grep -Eq '^#!.*(ba)?sh'; then bash -n "$f"; fi
+          done
