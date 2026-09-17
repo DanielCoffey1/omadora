@@ -6,7 +6,7 @@ trap 'status=$?; printf "%s\n" "$status" >/results/exit-status; rpm -qa | sort >
 cat /etc/os-release
 # Supply a Workstation identity so the actual target preflight is exercised.
 # This is a container with Workstation identity, not a full Workstation VM.
-dnf install -y --allowerasing fedora-release-workstation sudo git python3 policycoreutils
+dnf install -y --allowerasing fedora-release-workstation fedora-release-identity-workstation sudo git python3 policycoreutils
 useradd --create-home omadora-test
 printf 'omadora-test ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/omadora-test
 chmod 0440 /etc/sudoers.d/omadora-test
