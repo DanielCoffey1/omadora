@@ -111,7 +111,11 @@ def desktop_shortcuts():
 
 def screenshot_keyboard():
     v.guest('mkdir -p /tmp/omadora-screenshots')
-    command = 'source ~/source/tests/vm-session.sh; OMARCHY_SCREENSHOT_DIR=/tmp/omadora-screenshots omarchy-capture-screenshot'
+    # wl-copy's clipboard owner keeps stderr open after forking. Redirect in
+    # the guest, otherwise SSH waits for that descriptor after capture exits.
+    command = ('source ~/source/tests/vm-session.sh; '
+               'OMARCHY_SCREENSHOT_DIR=/tmp/omadora-screenshots '
+               'omarchy-capture-screenshot > /tmp/omadora-vm-results/capture.log 2>&1')
     def capture():
         return subprocess.Popen(v.ssh + ['bash -c ' + __import__('shlex').quote(command)],
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
