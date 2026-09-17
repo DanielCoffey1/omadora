@@ -106,6 +106,26 @@ class AdapterTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 adapter.restore_user(home, home / 'backup')
 
+    def test_restore_rejects_replaced_parent_before_deleting_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / 'home'
+            outside = Path(tmp) / 'outside'
+            adapter.write(home / '.config/hypr/original', 'original')
+            backup = home / '.local/state/omadora/backups/initial'
+            adapter.backup_user(home, backup)
+            adapter.write(outside / 'conf.d/99-omadora.conf', 'unrelated font config')
+            try:
+                (home / '.config/fontconfig').symlink_to(outside, target_is_directory=True)
+            except OSError as error:
+                if os.name == 'nt' and getattr(error, 'winerror', None) == 1314:
+                    self.skipTest('Windows lacks symlink privilege; exercised in Linux CI')
+                raise
+            adapter.write(home / '.config/hypr/original', 'later edit')
+            with self.assertRaisesRegex(ValueError, 'parent must not be a symlink'):
+                adapter.restore_user(home, backup)
+            self.assertEqual((outside / 'conf.d/99-omadora.conf').read_text(), 'unrelated font config')
+            self.assertEqual((home / '.config/hypr/original').read_text(), 'later edit')
+
     def test_real_upstream_build(self):
         source = os.environ.get('OMADORA_TEST_UPSTREAM')
         if not source:

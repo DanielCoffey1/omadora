@@ -317,6 +317,12 @@ def restore_user(home, backup):
     # Backups made before the font integration fix remain restorable.
     if paths not in (allowed, allowed | {FONT_CONFIG}) or len(manifest) != len(paths):
         raise ValueError('Invalid backup manifest')
+    # A parent may have been replaced with a symlink since installation.
+    # Never follow it while removing managed paths or writing the rescue copy.
+    for relative in paths | {'.local/state/omadora/backups/rescue'}:
+        for parent in Path(relative).parents:
+            if (home / parent).is_symlink():
+                raise ValueError(f'Restore target parent must not be a symlink: ~/{parent}')
     for entry in manifest:
         saved = backup / entry['path']
         if entry['existed'] and not (saved.exists() or saved.is_symlink()):
