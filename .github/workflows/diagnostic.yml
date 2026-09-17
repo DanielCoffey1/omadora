@@ -1,0 +1,23 @@
+name: Fedora suspend diagnostic (legacy DRM)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install VM test tools
+        run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
+      - name: Diagnose virtual GPU suspend with legacy DRM
+        env:
+          VM_SUITE: diagnostic
+        run: bash tests/fedora-vm.sh
+      - name: Save diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-suspend-diagnostic
+          path: vm-results/

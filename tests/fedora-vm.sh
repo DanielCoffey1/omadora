@@ -67,7 +67,7 @@ wait_ssh
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo cloud-init status --wait --format json >/tmp/cloud-status.json; cat /tmp/cloud-status.json; python3 -c '\''import json; s=json.load(open("/tmp/cloud-status.json")); assert s["status"] == "done" and not s.get("errors"), s'\'''
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py apps.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -s' <<'GUEST'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SUITE:-apps}" <<'GUEST'
 set -euo pipefail
 sudo dnf install -y --allowerasing @workstation-product-environment fedora-release-identity-workstation
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
@@ -80,6 +80,11 @@ mkdir -p ~/.config/hypr
 printf 'pre-install sentinel\n' >~/.config/hypr/original-test-marker
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash
 cmp omadora.py /usr/local/share/omadora/omadora.py
+if [[ $1 == diagnostic ]]; then
+  # Diagnostic only. Upstream discourages legacy DRM for normal use:
+  # https://github.com/hyprwm/aquamarine/blob/main/docs/env.md
+  printf '\nexport AQ_NO_ATOMIC=1\n' >>~/.config/uwsm/env-hyprland
+fi
 printf 'post-install sentinel\n' >~/.config/hypr/post-install-marker
 # The virtual monitor advertises 640x480 as preferred. Use a normal desktop
 # mode for visual evidence; this file is confined to the disposable test user.
@@ -96,6 +101,8 @@ wait_ssh
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
 if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
+elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
+  python3 tests/fedora-vm-interactions.py
 else
   # Suspend is deliberately last: a driver/compositor hang must not prevent
   # collection of independent application results from a healthy desktop.
