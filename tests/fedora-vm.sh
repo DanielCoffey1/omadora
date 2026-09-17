@@ -13,7 +13,7 @@ curl -fL --retry 3 "$base/Fedora-Cloud-44-1.7-x86_64-CHECKSUM" -o "$vm_dir/CHECK
 expected=$(sed -n "s/^SHA256 ($image) = //p" "$vm_dir/CHECKSUM")
 [[ $expected =~ ^[0-9a-f]{64}$ ]]
 printf '%s  %s\n' "$expected" "$vm_dir/disk.qcow2" | sha256sum -c -
-qemu-img resize "$vm_dir/disk.qcow2" 30G
+qemu-img resize "$vm_dir/disk.qcow2" 60G
 ssh-keygen -q -t ed25519 -N '' -f "$vm_dir/key"
 pubkey=$(cat "$vm_dir/key.pub")
 cat >"$vm_dir/user-data" <<EOF
@@ -86,5 +86,15 @@ ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo systemctl reboot' || true
 sleep 15
 wait_ssh
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
+python3 tests/fedora-vm-interactions.py
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-apps.py'\'''
 scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/
+python3 - <<'PY'
+import json
+from pathlib import Path
+interactions = json.loads(Path('vm-results/interactions.json').read_text())
+apps = json.loads(Path('vm-results/apps/results.json').read_text())
+assert all(r['status'] == 'PASS' for r in interactions), interactions
+assert len(apps) == 26 and all('error' not in r and not r['remove'].startswith('FAIL') for r in apps), apps
+PY
 echo 'PASS: booted Fedora VM, GDM autologin, Hyprland, Quickshell IPC and screenshots.'
