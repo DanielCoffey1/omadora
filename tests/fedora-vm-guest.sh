@@ -34,6 +34,11 @@ omarchy-menu toggle
 sleep 2
 timeout 30 grim /tmp/omadora-vm-results/menu.png
 omarchy-menu toggle
+network_action=$(jq -r '."setup.network".action' "$OMARCHY_PATH/default/omarchy/omarchy-menu.jsonc")
+bash -c "$network_action"
+sleep 1
+timeout 30 grim /tmp/omadora-vm-results/network-panel.png
+omarchy-shell shell hide omarchy.network
 omarchy-launch-screensaver force
 sleep 5
 timeout 30 grim /tmp/omadora-vm-results/screensaver.png

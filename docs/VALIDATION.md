@@ -43,9 +43,29 @@ The initial screenshot resolution was 640×480. A second [passing run at 1920×1
 
 The first VM attempt reached the shell but hit its default two-second IPC timeout immediately after startup; the fixture now waits for startup to settle and permits ten seconds for IPC on software-rendered graphics. This timeout change applies only to the test.
 
-This fixture installs Workstation onto Fedora Cloud; it is not a test of an untouched Workstation ISO installation. Autologin does not validate password authentication. Profile changes, physical GPU behavior, password unlock, suspend/resume, Bluetooth, audio devices, interactive portal flows, and launching/removing optional apps remain untested. Logs also contain system-service/SELinux warnings and Hyprland's recommendation to use start-hyprland; a passing smoke test does not establish a warning-free session.
+This fixture installs Workstation onto Fedora Cloud; it is not a test of an untouched Workstation ISO installation. The initial autologin smoke test did not validate password authentication, profile changes, device behavior, portals or app transactions; the extended results below cover additional paths. Logs also contain system-service/SELinux warnings and Hyprland's recommendation to use start-hyprland; a passing smoke test does not establish a warning-free session.
 
-## Fedora VM acceptance procedure
+## Extended acceptance testing
+
+The first [extended run](https://github.com/DanielCoffey1/omadora/actions/runs/35228793702) verified two rejected passwords followed by a successful password unlock, compositor lock retention after rejection, terminal/workspace/window shortcuts, and Catppuccin/Tokyo Night theme switching. The run as a whole failed: clipboard output handling, SSH-session polkit authorization, suspend, and app transactions required further investigation. Individual passes must not be read as a passing overall run.
+
+The [service/recovery run](https://github.com/DanielCoffey1/omadora/actions/runs/35230137074) verified actual file selection through the portal, network reconnection, notifications, and a GNOME session with configuration restoration and rescue of post-install edits. Its audio operations succeeded, but the panel assertion expected text from a void IPC method; that assertion was corrected for the rerun.
+
+The corrected [service/recovery suite](https://github.com/DanielCoffey1/omadora/actions/runs/35231577423) passed all five checks, including the real Audio menu action and volume/mute controls on the emulated HDA output. The audio panel screenshot was inspected. This run also exercised the published `curl .../boot.sh | bash` installation command. Virtual controls do not establish physical sound quality, microphone routing or Bluetooth audio behavior.
+
+The [second interaction run](https://github.com/DanielCoffey1/omadora/actions/runs/35230375200) passed authentication, keyboard/windows, clipboard, all three power-profile changes and restoration of the original profile, and theme switching. **Default-configuration suspend/resume failed.** Fedora entered ACPI S3 and resumed, but the compositor did not accept the unlock afterward. On termination, the captured stack showed Aquamarine blocked in `drmModeAtomicCommit`; restarting GDM did not recover the display. This is a failed end-to-end suspend test on QEMU/virtio graphics, not proof of working suspend on physical hardware. The app suite was moved before suspend to avoid contaminating its independent results.
+
+An isolated [legacy-DRM diagnostic](https://github.com/DanielCoffey1/omadora/actions/runs/35233118781) repeated the same five interaction passes and the post-resume unlock failure with `AQ_NO_ATOMIC=1` in the fixture's UWSM environment. It is not a validated workaround and is not enabled by Omadora. Upstream documents the variable in [Aquamarine's environment settings](https://github.com/hyprwm/aquamarine/blob/main/docs/env.md); it was used only to investigate the failing virtual graphics path.
+
+The [maintenance/container run](https://github.com/DanielCoffey1/omadora/actions/runs/35231692616) passed cancellation of a native app install, refusal to overwrite an existing installation, a real Fedora update transaction with byte-for-byte retention of pinned desktop files, and the empty user Flatpak update path. It also repeated the installer/configuration checks and catalog resolution. This does not exercise a Flatpak application version upgrade or an OS release upgrade.
+
+Defects found in the additional audit: Setup → Audio referenced a removed helper, and Setup → Network relied on an absent `nmtui` binary; both now use the current shell panels. Node.js used generic package capabilities instead of Fedora's installed RPM names; the catalog now names `nodejs22` and `nodejs22-npm`, so presence checks and removal address the actual packages.
+
+The app harness now uses a pseudo-terminal to answer each real package prompt. Buffered input had been consumed by the first of multiple DNF calls, and Flatpak rejected the noninteractive prompt. The cloud VM also needed Fedora's kernel metapackage to supply its emulated audio driver. These are fixture corrections, separate from the product fixes.
+
+Visual discrepancy observed: the GTK file chooser uses Fedora's light styling while the shell uses Tokyo Night. Full GTK/application theme parity is still incomplete. GameMode's functional self-test also failed its CPU-governor check in the VM; a binary/version smoke test is not proof of working performance tuning on real hardware.
+
+## Manual and hardware acceptance procedure
 
 Use a disposable Fedora Workstation 44 x86_64 VM and take a hypervisor snapshot before installation. Record package versions, GPU model, compositor version and the Omadora source commit.
 

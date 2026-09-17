@@ -131,7 +131,7 @@ def menu_for_fedora(menu, apps, blocked):
     result['learn.fedora'] = {'label': 'Fedora', 'icon': '', 'action': 'xdg-open https://docs.fedoraproject.org/'}
     result['setup'] = {'label': 'Setup', 'icon': ''}
     for key, label, action in (
-        ('network', 'Network', 'foot nmtui'),
+        ('network', 'Network', 'omarchy-shell shell toggle omarchy.network'),
         ('audio', 'Audio', 'omarchy-shell shell toggle omarchy.audio'),
         ('config', 'Hyprland configuration', 'foot nvim ~/.config/hypr/hyprland.lua'),
     ):
@@ -477,7 +477,7 @@ def main():
     elif args.command == 'build':
         print(assemble(args.source, args.output))
     elif args.command == 'about':
-        print('Omadora 0.1.0-dev | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; VM validation pending.\nhttps://github.com/DanielCoffey1/omadora')
+        print('Omadora 0.1.0-dev | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; see docs/VALIDATION.md for tested behavior and known failures.\nhttps://github.com/DanielCoffey1/omadora')
     elif args.command == 'app':
         apps = read_json(ROOT / 'apps.json')
         if args.action == 'list':
