@@ -28,6 +28,8 @@ pamixer
 alsa-utils
 tuned-ppd
 python3-dbus
+# dbus-run-session supports settings recovery when no user bus is running.
+dbus-daemon
 udiskie
 gnome-keyring
 polkit
