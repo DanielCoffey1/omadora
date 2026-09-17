@@ -47,7 +47,8 @@ def sound():
     time.sleep(.3)
     v.guest('omarchy-audio-output-volume mute-toggle; pactl get-sink-mute @DEFAULT_SINK@ | grep no')
     action = v.guest("python3 -c 'import json; print(json.load(open(\"/usr/local/share/omadora/upstream/default/omarchy/omarchy-menu.jsonc\"))[\"setup.audio\"][\"action\"])'")
-    assert v.guest(action) == 'ok'
+    assert v.guest(action) == ''  # toggle is a void IPC method
+    time.sleep(2)
     v.guest('grim /tmp/omadora-vm-results/audio-panel.png')
     v.guest('omarchy-shell shell hide omarchy.audio')
     return detail
