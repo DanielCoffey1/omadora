@@ -195,9 +195,6 @@ def assemble(source, output):
     write(output / 'bin/omadora', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py "$@"\n', 0o755)
     write(output / 'bin/uwsm-app', '#!/bin/sh\nexec uwsm app "$@"\n', 0o755)
     write(output / 'bin/powerprofilesctl', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py powerprofile "$@"\n', 0o755)
-    # Fedora 44 removed the old bundle path used by Steam's bundled OpenSSL.
-    # Do not export this host-only path to the whole session or to Flatpaks.
-    write(output / 'bin/steam', '#!/bin/sh\nexport SSL_CERT_FILE="${SSL_CERT_FILE:-/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem}"\nexec /usr/bin/steam "$@"\n', 0o755)
     write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + 'exec uwsm start -- Hyprland\n', 0o755)
 
     overrides = {
@@ -382,33 +379,19 @@ def timestamp():
     return datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
 
 
-def steam_launcher(action, home, desktop=Path('/usr/share/applications/steam.desktop')):
-    """Apply Fedora's CA bundle only to Steam, retaining the RPM's desktop actions."""
-    target = home / '.local/share/applications/steam.desktop'
-    state = home / '.local/state/omadora/steam-launcher.json'
-    for path in (target, state):
-        for candidate in (path, *path.parents):
-            if candidate == home:
-                break
-            if candidate.is_symlink():
-                raise ValueError(f'Steam launcher path must not be a symlink: {candidate}')
-    previous = read_json(state)['content'] if state.exists() else None
-    changed = target.exists() and (previous is None or target.read_text(encoding='utf-8') != previous)
-    if action in ('check', 'install') and changed:
-        raise ValueError(f'Preserving custom Steam launcher: move {target} aside before installing through Omadora')
-    if action == 'install':
-        content, count = re.subn(r'^Exec=/usr/bin/steam(?=\s|$)',
-                                f'Exec={PREFIX.as_posix()}/bin/steam', desktop.read_text(encoding='utf-8'), flags=re.M)
-        if not count:
-            raise ValueError('Steam desktop entry changed; cannot apply Fedora certificate integration')
-        write(target, content)
-        write(state, json.dumps({'content': content}))
-    elif action == 'remove':
-        if target.exists() and previous is not None and not changed:
-            target.unlink()
-        elif changed:
-            print(f'Preserved edited Steam launcher: {target}')
-        state.unlink(missing_ok=True)
+def steam_certificates(bundle=Path('/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem'),
+                       alias=Path('/etc/pki/tls/cert.pem')):
+    """Steam's native updater still reads Fedora's former certificate path."""
+    if os.path.lexists(alias):
+        if not alias.is_file():
+            raise ValueError(f'Existing certificate path is not a readable file: {alias}')
+        return  # Never replace an administrator's trust configuration.
+    if not bundle.is_file():
+        raise ValueError(f'Fedora certificate bundle is missing: {bundle}')
+    # A live link follows ca-certificates updates; no copied or alternate roots,
+    # no deprecated update-ca-trust flag, and no disabled TLS verification.
+    run('sudo', 'ln', '-s', bundle, alias)
+    print(f'Steam compatibility: {alias} now points to Fedora’s maintained CA bundle.')
 
 
 def fetch_upstream(destination):
@@ -575,16 +558,14 @@ def main():
             commands = app_commands(app, args.action)
             if args.dry_run:
                 print('\n'.join(shlex.join(c) for c in commands))
-                if args.id == 'steam':
-                    print(f'{args.action}: Omadora Steam launcher with Fedora CA bundle')
+                if args.id == 'steam' and args.action == 'install':
+                    print('If absent, add /etc/pki/tls/cert.pem link to Fedora’s maintained CA bundle for Steam.')
             else:
                 preflight()
-                if args.id == 'steam' and args.action == 'install':
-                    steam_launcher('check', Path.home())
                 for command in commands:
                     run(*command)
-                if args.id == 'steam':
-                    steam_launcher(args.action, Path.home())
+                if args.id == 'steam' and args.action == 'install':
+                    steam_certificates()
     elif args.command == 'pkg-present':
         aliases = {'nvim': 'neovim', 'fd': 'fd-find', 'networkmanager': 'NetworkManager', 'imagemagick': 'ImageMagick'}
         names = [aliases.get(p, p) for p in args.packages]

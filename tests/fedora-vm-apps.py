@@ -88,9 +88,10 @@ for app_id in selection:
             assert status == 0 and installed(app_id), 'installation failed'
             record['install'] = 'PASS'
             if app_id == 'steam':
-                assert shutil.which('steam') == '/usr/local/share/omadora/bin/steam'
-                desktop = Path.home() / '.local/share/applications/steam.desktop'
-                assert 'Exec=/usr/local/share/omadora/bin/steam %U' in desktop.read_text()
+                bundle = Path('/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem')
+                assert Path('/etc/pki/tls/cert.pem').resolve() == bundle
+                assert b'BEGIN CERTIFICATE' in bundle.read_bytes()
+                assert not (Path.home() / '.local/share/applications/steam.desktop').exists()
             if app['source'] == 'flatpak':
                 fonts = subprocess.run(['flatpak', 'run', '--command=fc-match', app['id'], 'sans'],
                                        text=True, capture_output=True, timeout=30)
@@ -158,8 +159,6 @@ for app_id in selection:
                     status = transaction('remove', app_id, log)
                     assert status == 0 and not installed(app_id), 'removal failed'
                     record['remove'] = 'PASS'
-                    if app_id == 'steam':
-                        assert not (Path.home() / '.local/share/applications/steam.desktop').exists()
                 except Exception as error:
                     record['remove'] = 'FAIL: ' + str(error)
             else:
