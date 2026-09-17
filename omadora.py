@@ -184,6 +184,7 @@ def assemble(source, output):
     write(tree / 'default/bash/env-bootstrap', env)
     write(output / 'bin/omadora', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py "$@"\n', 0o755)
     write(output / 'bin/uwsm-app', '#!/bin/sh\nexec uwsm app "$@"\n', 0o755)
+    write(output / 'bin/powerprofilesctl', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py powerprofile "$@"\n', 0o755)
     write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + 'exec uwsm start -- Hyprland\n', 0o755)
 
     overrides = {
@@ -419,8 +420,10 @@ def install(dry_run=False):
         write(home / '.config/omarchy/fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><include>/etc/fonts/fonts.conf</include><include>/usr/local/share/omadora/system/99-omadora-fonts.conf</include></fontconfig>\n')
         run('fc-cache', '-f', fonts)
         env = dict(os.environ, OMARCHY_PATH=str(PREFIX / 'upstream'), OMARCHY_THEME_HEADLESS='1',
+                   XDG_RUNTIME_DIR=probe_env['XDG_RUNTIME_DIR'],
                    PATH=f'{PREFIX}/bin:{PREFIX}/upstream/bin:' + os.environ['PATH'])
         run(PREFIX / 'upstream/bin/omarchy-theme-set', 'tokyo-night', env=env)
+        run('Hyprland', '--verify-config', '--config', home / '.config/hypr/hyprland.lua', env=env)
         # Publish the login session last, after successful config/theme setup.
         run('sudo', 'install', '-m', '0644', PREFIX / 'system/omadora.desktop', '/usr/share/wayland-sessions/omadora.desktop')
         run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
@@ -438,6 +441,26 @@ def installed(app):
     return run('rpm', '-q', *app['packages'], capture=True, check=False).returncode == 0
 
 
+def powerprofile(action, profile=None):
+    # Fedora's TuneD implements the standard PPD D-Bus API but does not ship
+    # powerprofilesctl. Supply only the get/list/set operations upstream uses.
+    import dbus
+    interface = 'net.hadess.PowerProfiles'
+    obj = dbus.SystemBus().get_object(interface, '/net/hadess/PowerProfiles')
+    properties = dbus.Interface(obj, 'org.freedesktop.DBus.Properties')
+    profiles = [str(item['Profile']) for item in properties.Get(interface, 'Profiles')]
+    if action == 'set':
+        if profile not in profiles:
+            raise ValueError('Power profile is not available: ' + str(profile))
+        properties.Set(interface, 'ActiveProfile', dbus.String(profile, variant_level=1))
+    elif action == 'get':
+        print(properties.Get(interface, 'ActiveProfile'))
+    else:
+        active = str(properties.Get(interface, 'ActiveProfile'))
+        for name in profiles:
+            print(('* ' if name == active else '  ') + name + ':')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Omadora: minimal Omarchy 4 for Fedora')
     sub = parser.add_subparsers(dest='command', required=True)
@@ -446,6 +469,7 @@ def main():
     p = sub.add_parser('app'); p.add_argument('action', choices=('list', 'install', 'remove', 'installed')); p.add_argument('id', nargs='?'); p.add_argument('--dry-run', action='store_true')
     sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')
     p = sub.add_parser('pkg-present'); p.add_argument('packages', nargs='+')
+    p = sub.add_parser('powerprofile'); p.add_argument('action', choices=('get', 'list', 'set')); p.add_argument('profile', nargs='?')
     p = sub.add_parser('restore-config'); p.add_argument('backup', type=Path)
     args = parser.parse_args()
     if args.command == 'install':
@@ -478,6 +502,8 @@ def main():
         if any(not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9+_.-]*', p) for p in names):
             return 1
         return run('rpm', '-q', *names, capture=True, check=False).returncode
+    elif args.command == 'powerprofile':
+        powerprofile(args.action, args.profile)
     elif args.command == 'update':
         preflight()
         run('sudo', 'dnf', 'upgrade', '--refresh')

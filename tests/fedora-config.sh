@@ -23,8 +23,15 @@ for path in Path('/usr/local/share/omadora/upstream/shell').rglob('*.qml'):
         if match:
             modules.add(match[1])
 imports = '\n'.join(f'import {module} as M{i}' for i, module in enumerate(sorted(modules)))
-Path(sys.argv[1]).write_text('import QtQuick\nimport Quickshell\n' + imports + '\nShellRoot { Component.onCompleted: { console.log("OMADORA_IMPORTS_OK"); Qt.quit(); } }\n')
+Path(sys.argv[1]).write_text('import QtQuick\nimport Quickshell\n' + imports + '\nShellRoot {}\n')
 print('Checking native imports:', ', '.join(sorted(modules)))
 PY
-QT_QPA_PLATFORM=offscreen timeout 20 quickshell -p "$XDG_RUNTIME_DIR/qml-smoke"
+status=0
+QT_QPA_PLATFORM=offscreen timeout 5 quickshell -p "$XDG_RUNTIME_DIR/qml-smoke" >"$XDG_RUNTIME_DIR/qml.log" 2>&1 || status=$?
+cat "$XDG_RUNTIME_DIR/qml.log"
+# A successfully loaded ShellRoot stays alive; timeout is expected. A load
+# failure exits earlier or never emits Configuration Loaded.
+[[ $status == 124 ]]
+grep -F 'Configuration Loaded' "$XDG_RUNTIME_DIR/qml.log"
+if grep -E 'ERROR|Failed to load' "$XDG_RUNTIME_DIR/qml.log"; then exit 1; fi
 echo 'PASS: Hyprland configuration and required Quickshell import modules.'

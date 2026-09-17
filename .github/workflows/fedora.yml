@@ -6,6 +6,7 @@ on:
       - '.github/workflows/fedora.yml'
       - 'tests/fedora-container.sh'
       - 'tests/fedora-config.sh'
+      - 'tests/fedora-apps.py'
       - 'omadora.py'
       - 'packages/**'
 permissions:

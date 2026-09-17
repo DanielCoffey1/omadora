@@ -26,7 +26,8 @@ brightnessctl
 playerctl
 pamixer
 alsa-utils
-power-profiles-daemon
+tuned-ppd
+python3-dbus
 udiskie
 gnome-keyring
 polkit
