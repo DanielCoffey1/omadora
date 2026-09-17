@@ -1,0 +1,53 @@
+#!/bin/bash
+# omarchy:summary=Capture a screen region to a file, clipboard, or both
+# omarchy:group=capture
+# omarchy:args=[smart|region|windows|fullscreen] [save|copy|save-and-copy]
+# omarchy:aliases=omarchy screenshot
+# Use the upstream picker so Enter, Ctrl+Enter and Tab match the keybindings.
+set -euo pipefail
+mode=${1:-smart}
+processing=${2:-save-and-copy}
+case "$mode" in smart|region|windows|fullscreen) ;; *) echo 'Unknown screenshot selection mode.' >&2; exit 2 ;; esac
+case "$processing" in save|copy|save-and-copy) ;; *) echo 'Use save, copy, or save-and-copy.' >&2; exit 2 ;; esac
+(( $# <= 2 )) || { echo 'Too many screenshot arguments.' >&2; exit 2; }
+
+[[ -f "$HOME/.config/user-dirs.dirs" ]] && source "$HOME/.config/user-dirs.dirs"
+directory=${OMARCHY_SCREENSHOT_DIR:-${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots}
+freeze_pid=''
+temporary=''
+cleanup() {
+  [[ -z $freeze_pid ]] || kill "$freeze_pid" 2>/dev/null || true
+  [[ -z $temporary ]] || rm -f -- "$temporary"
+}
+trap cleanup EXIT
+# --keep-freeze leaves a temporary overlay alive until grim has captured it.
+# A cancelled picker returns no geometry and must not create a file.
+pick_status=0
+pick=$(omarchy-capture-region "$mode" --keep-freeze) || pick_status=$?
+freeze_pid=${pick%%$'\n'*}
+selection=''
+[[ $pick != *$'\n'* ]] || selection=${pick#*$'\n'}
+if [[ -n $freeze_pid && ! $freeze_pid =~ ^[1-9][0-9]*$ ]]; then
+  freeze_pid=''
+  exit 1
+fi
+(( pick_status == 0 )) || exit 0
+[[ $selection =~ ^-?[0-9]+,-?[0-9]+\ [0-9]+x[0-9]+$ ]] || exit 1
+
+if [[ $processing == copy ]]; then
+  temporary=$(mktemp --suffix=.png)
+  file=$temporary
+else
+  mkdir -p -- "$directory"
+  file="$directory/screenshot-$(date +%Y%m%d-%H%M%S-%N).png"
+fi
+if ! grim -g "$selection" "$file"; then
+  rm -f -- "$file"
+  exit 1
+fi
+[[ $processing == save ]] || wl-copy --type image/png <"$file"
+if [[ $processing == copy ]]; then
+  notify-send 'Screenshot copied' 'Image copied to clipboard'
+else
+  notify-send 'Screenshot saved' "$file"
+fi

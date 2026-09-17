@@ -99,6 +99,42 @@ def recovery():
     return result + '; GNOME remained running and later edits were rescued.'
 
 
+def desktop_shortcuts():
+    v.keys('meta_l', 'ctrl', 't')
+    v.wait_for(lambda: 'top' in v.guest('pgrep -a -x top'))
+    window = json.loads(v.guest('hyprctl activewindow -j'))
+    assert v.guest(f'readlink /proc/{int(window["pid"])}/exe').endswith('/foot')
+    v.keys('q')
+    v.wait_for(lambda: v.guest('pgrep -x top >/dev/null; echo $?') == '1')
+    return 'Activity shortcut opened top in Foot and quit normally.'
+
+
+def screenshot_keyboard():
+    v.guest('mkdir -p /tmp/omadora-screenshots')
+    command = 'source ~/source/tests/vm-session.sh; OMARCHY_SCREENSHOT_DIR=/tmp/omadora-screenshots omarchy-capture-screenshot'
+    def capture():
+        return subprocess.Popen(v.ssh + ['bash -c ' + __import__('shlex').quote(command)],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    process = capture()
+    v.wait_for(lambda: v.guest('pgrep -x slurp'))
+    time.sleep(1)
+    v.keys('esc')
+    assert process.wait(30) == 0
+    assert v.guest('find /tmp/omadora-screenshots -type f | wc -l') == '0'
+    v.wait_for(lambda: v.guest('pgrep -x hyprpicker >/dev/null; echo $?') == '1')
+    process = capture()
+    v.wait_for(lambda: v.guest('pgrep -x slurp'))
+    time.sleep(1)
+    v.keys('ctrl', 'ret')
+    assert process.wait(30) == 0
+    assert v.guest('find /tmp/omadora-screenshots -name "*.png" | wc -l') == '1'
+    v.guest('wl-paste --type image/png > /tmp/omadora-vm-results/screenshot-clipboard.png; cmp /tmp/omadora-screenshots/*.png /tmp/omadora-vm-results/screenshot-clipboard.png')
+    v.wait_for(lambda: v.guest('pgrep -x hyprpicker >/dev/null; echo $?') == '1')
+    return 'Escape canceled without saving; Ctrl+Enter captured fullscreen; saved PNG and clipboard match; overlays cleaned up.'
+
+
+v.check('Activity shortcut', desktop_shortcuts)
+v.check('screenshot keyboard and clipboard', screenshot_keyboard)
 v.check('portal file chooser', portal)
 v.check('network reconnect', network)
 v.check('virtual audio controls', sound)

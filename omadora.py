@@ -119,7 +119,9 @@ def menu_for_fedora(menu, apps, blocked):
     for key, value in menu.items():
         if key.split('.')[0] in ('install', 'remove', 'update', 'setup'):
             continue
-        if key in ('learn.arch', 'learn.community', 'learn.herdr-keybindings'):
+        if key in ('learn.arch', 'learn.community', 'learn.herdr-keybindings',
+                   'learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu',
+                   'trigger.toggle.crash-capture'):
             continue
         commands = ' '.join(str(value.get(k, '')) for k in ('action', 'when', 'disabled'))
         if DISALLOWED.search(commands) or any(name in commands for name in blocked):
@@ -130,6 +132,12 @@ def menu_for_fedora(menu, apps, blocked):
             continue
         result[key] = value
     result['about'] = {'label': 'About Omadora', 'icon': '', 'action': 'foot --hold omadora about'}
+    if 'learn.omarchy' in result:
+        result['learn.omarchy']['action'] = 'xdg-open https://github.com/DanielCoffey1/omadora#readme'
+    if 'learn.neovim' in result:
+        result['learn.neovim']['action'] = 'xdg-open https://neovim.io/doc/user/'
+    if 'trigger.capture' in result:
+        result['trigger.capture']['aliases'] = ['capture', 'screenshot']
     result['learn.fedora'] = {'label': 'Fedora', 'icon': '', 'action': 'xdg-open https://docs.fedoraproject.org/'}
     result['setup'] = {'label': 'Setup', 'icon': ''}
     for key, label, action in (
@@ -266,17 +274,17 @@ fi
     write(foot, foot.read_text().replace('JetBrainsMono Nerd Font', 'JetBrainsMonoNL Nerd Font'))
     # Keep absent optional programs out of the advertised keybindings.
     utilities = tree / 'default/hypr/bindings/utilities.lua'
-    optional = ('omacalc', 'tmux-keybindings', 'herdr-keybindings', 'screenrecord', 'webcam-resize', 'capture-text')
+    optional = ('omacalc', 'tmux-keybindings', 'herdr-keybindings', 'screenrecord',
+                'webcam-resize', 'capture-text', 'omarchy-agent', 'omarchy-transcode',
+                'omarchy-reminder', 'toggle reminder-set', 'toggle share')
     write(utilities, '\n'.join(line for line in utilities.read_text().splitlines()
-                              if not any(token in line for token in optional)) + '\n')
+                              if not any(token in line for token in optional)).replace('tui = "btop"', 'tui = "top"') + '\n')
+    for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
+        path = tree / 'bin' / name
+        write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)
     # A plain screenshot remains useful without preinstalling the annotation app.
     screenshot = tree / 'bin/omarchy-capture-screenshot'
-    write(screenshot, '#!/bin/bash\nset -euo pipefail\n'
-          'directory="${OMARCHY_SCREENSHOT_DIR:-$HOME/Pictures/Screenshots}"\n'
-          'mkdir -p "$directory"\nselection=$(slurp) || exit 0\n'
-          'file="$directory/screenshot-$(date +%Y%m%d-%H%M%S-%N).png"\n'
-          'grim -g "$selection" "$file"\nwl-copy --type image/png <"$file"\n'
-          'notify-send "Screenshot saved" "$file"\n', 0o755)
+    write(screenshot, (ROOT / 'assets/scripts/capture-screenshot').read_text(), 0o755)
     # Explicit monospace fallback supplies Nerd glyphs to the unchanged shell.
     write(output / 'system/99-omadora-fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><alias><family>monospace</family><prefer><family>JetBrainsMonoNL Nerd Font</family></prefer></alias></fontconfig>\n')
     apply_branding(tree)

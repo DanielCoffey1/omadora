@@ -164,6 +164,13 @@ class AdapterTests(unittest.TestCase):
             self.assertNotIn('install.gaming.xbox-controllers', menu)
             self.assertIn('omarchy_preinstalled_bindings = false', (tree / 'config/hypr/hyprland.lua').read_text())
             self.assertFalse((tree / 'install').exists())
+            utilities = (tree / 'default/hypr/bindings/utilities.lua').read_text()
+            for unsupported in ('omarchy-agent', 'omarchy-transcode', 'omarchy-reminder', 'toggle share', 'tui = "btop"'):
+                self.assertNotIn(unsupported, utilities)
+            self.assertIn('tui = "top"', utilities)
+            for unsupported in ('learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu', 'trigger.toggle.crash-capture'):
+                self.assertNotIn(unsupported, menu)
+            self.assertIn('github.com/DanielCoffey1/omadora', menu['learn.omarchy']['action'])
             self.assertNotIn('polkit-gnome', (tree / 'config/hypr/autostart.lua').read_text())
             self.assertTrue((tree / 'shell/plugins/polkit/PolkitAgent.qml').is_file())
             self.assertNotIn('FONTCONFIG_FILE', (output / 'system/omadora-env').read_text())
