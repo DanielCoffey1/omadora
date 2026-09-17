@@ -2,7 +2,7 @@
 
 Tested on September 17, 2026 in the booted Fedora 44 Workstation-package VM described in [VALIDATION.md](VALIDATION.md). These are installation, presence-query, removal and basic launch checks. They do not establish gameplay, media capture/playback, account login, container workloads or complete application compatibility.
 
-Current result: every catalog install command passed, as did every removal attempted. The Lutris dependency fix is verified; Chromium and GIMP reached their main interfaces in the retest. Steam launch failed in this VM. Signal stopped at its wrapper warning, and Discord's captured main window still showed a loading indicator, so those account/startup flows remain unverified.
+Every catalog install command passed, as did every removal attempted. The Lutris dependency fix is verified; Chromium and GIMP reached their main interfaces in the retest. Later runs confirmed Steam's client download and sign-in screen, Signal's linking screen, Discord's login form, and corrected sandbox font lookup. Account and gameplay workflows remain unverified. The tables below retain historical failures; subsequent retests record their resolution.
 
 ## Full catalog run
 
@@ -67,10 +67,26 @@ Steam's root cause is not established by the collected log. Its successful RPM t
 
 The corrected Network menu action opened the native Ethernet panel and its screenshot was reviewed. The panel's ping probe showed a timeout in the QEMU network fixture; DNS switching and Wi-Fi were not tested. The separate service suite verified HTTPS connectivity after reconnection. Authentication, keyboard/windows, clipboard, power profiles and theme switching passed again. Suspend/resume failed at post-resume unlock again, so this workflow is correctly marked failed overall.
 
+## Font and startup retest
+
+[Run 35242929475](https://github.com/DanielCoffey1/omadora/actions/runs/35242929475), at `e95ca23`, installed and removed Steam, Signal, Discord and Bottles successfully. Sandboxed font lookup passed in all three Flatpaks, without the previous inaccessible-host-path error. Discord's screenshot showed the complete login form; Bottles showed its welcome interface in dark styling. No account was used.
+
+Steam still did not open. Its newly collected `console-linux.txt` reported inability to load trusted SSL root certificates, and `bootstrap_log.txt` recorded failure to download the client manifest. Exposing the host CPU to the VM did not resolve this failure. Fedora documents the [removal of the legacy certificate bundle paths](https://fedoraproject.org/wiki/Changes/droppingOfCertPemFile), and Valve tracks the [matching Fedora Steam issue](https://github.com/ValveSoftware/steam-for-linux/issues/12318).
+
+Signal's test mistakenly accepted the dialog's default No button. The wrapper log explicitly reported an abort at the user's choice; this is a harness error, not evidence of an application crash. The corrected test selects Yes only in the disposable empty test profile, without linking an account or changing Omadora's storage configuration.
+
+The [Steam/Signal retest](https://github.com/DanielCoffey1/omadora/actions/runs/35246575064), at `80be428`, passed both installation/removal transactions. Signal reached its actual QR-code linking screen after the test selected Yes; no account was linked. Steam still failed with the same root-certificate error when launched through an experimental `SSL_CERT_FILE` wrapper. That approach was ineffective and has been removed, along with its custom desktop entry. The replacement creates the legacy certificate-path symlink only when Steam is installed, points it at Fedora's maintained bundle, and preserves any existing path. It does not use the deprecated `update-ca-trust` compatibility flag or disable verification.
+
+## Native Steam fix verified
+
+[Run 35249426231](https://github.com/DanielCoffey1/omadora/actions/runs/35249426231), at `0eeeebd`, installed Steam through Omadora, verified the live certificate link, launched the RPM's original desktop entry using `gtk-launch steam`, and removed Steam successfully. The client downloaded and installed its approximately 496 MB update, restarted, and rendered the complete **Sign in to Steam** window. The screenshot was reviewed, and the collected client logs no longer contain the former trusted-root loading error. No account was used and no game was run. Persistence of the compatibility link across a later `ca-certificates` package upgrade has not been tested.
+
+The five ordinary desktop checks also passed, including resolved GTK dark/light/dark background colors. The overall workflow is failed because the subsequent S3 test still could not unlock after resume; Steam's independent pass does not change that result.
+
 ## Remaining limits
 
-Signal's Flatpak launcher displayed a warning about its default plaintext password store. The test stopped at that wrapper dialog; it did not change the storage setting, link an account or verify Signal's main window. Keyring prompts in other apps were observed in the empty autologin fixture; account and keyring workflows remain untested.
+Signal's Flatpak launcher displays a warning about its default plaintext password store. The latest test proceeded to the linking screen in an empty disposable profile; it did not change the storage setting or link an account. Keyring prompts in other apps were observed in the empty autologin fixture; account and keyring workflows remain untested.
 
-Several sandboxed applications logged that the session's `FONTCONFIG_FILE` points to a host configuration file they cannot read. Their captured interfaces rendered text, but this is an unresolved font-integration warning, not evidence of complete font/theme parity. The GTK light-style discrepancy is tracked in the main validation record. GameMode's earlier CPU-governor self-test failed in the VM; its version-command pass does not supersede that result.
+The former session-wide `FONTCONFIG_FILE` override has been removed. Signal, Discord and Bottles passed the sandbox font check after this correction; the other Flatpaks have not all been rerun with the new configuration. The native GTK file chooser's dark styling is now verified in the [theme/recovery retest](https://github.com/DanielCoffey1/omadora/actions/runs/35248151319); full application font/theme parity is still incomplete. GameMode's earlier CPU-governor self-test failed in the VM; its version-command pass does not supersede that result.
 
 Raw per-app logs, window identities, screenshots, `apps/results.json`, and the later interaction results are available in each run's `fedora-vm-results` artifact. The raw launch labels should be interpreted using the reviewed results above.

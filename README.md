@@ -4,7 +4,7 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**Development build.** Fedora tests cover installation, all 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. **Suspend/resume and Steam launch currently fail in the QEMU/virtio test environment.** Some application startup flows, physical hardware and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
+**Development build.** Fedora tests cover installation, all 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam's download/startup failure and the light GTK file chooser are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume still fails in QEMU/virtio, and an intermittent Hyprland startup crash was recorded.** Application workloads, physical hardware and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 
@@ -41,6 +41,8 @@ After installation, log out, select **Omadora** using GDM's gear menu, and log i
 
 No games, office suite, media editor, music client, AI agent, container engine or proprietary chat app is installed by Omadora's base profile. Fedora Workstation's own existing applications are left in place.
 
+Theme switching also sets the user's GTK light/dark preference, GTK theme and icon theme. The monospace font preference uses standard user fontconfig configuration. These user-wide settings can affect GNOME and other applications; their original values are backed up for configuration recovery.
+
 ## Optional apps
 
 | Menu selection | Installation source |
@@ -56,6 +58,8 @@ No games, office suite, media editor, music client, AI agent, container engine o
 | Development → Visual Studio Code | User-scoped Flathub; sandboxed distribution |
 
 Full catalog: [apps.json](apps.json). Package-manager prompts remain visible in a terminal. Selecting one app installs that app and its dependencies; selecting a category does not install a bundle. RPM Fusion is enabled only when Steam is requested. Flathub is added to the user's Flatpak configuration only when a Flatpak app is requested. The catalog manages its user-scoped Flatpaks; system-wide installations are outside its removal scope.
+
+Installing native Steam also adds `/etc/pki/tls/cert.pem` as a compatibility link to Fedora's maintained CA bundle if that legacy path is absent. Existing trust configuration is preserved and TLS verification stays enabled. This shared compatibility link remains after app removal, like the RPM Fusion repository configuration; Steam uses its original RPM-provided desktop launcher.
 
 ```bash
 omadora app list

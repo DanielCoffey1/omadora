@@ -1,8 +1,17 @@
 # Validation record
 
+## Latest verified results
+
+- Thirteen source tests and the Fedora integration suite pass at `0eeeebd`.
+- GTK dark file chooser styling, sandbox font lookup in three Flatpaks, and restoration of shared GTK/font preferences are verified.
+- Native Steam downloads its client and reaches sign-in; Signal and Discord reach their linking/login screens. Install/remove checks pass. No accounts or games were used.
+- Default QEMU/virtio S3 resume/unlock still fails. The s2idle diagnostic did not establish a working alternative. One intermittent GDM/Hyprland backend startup crash is also recorded.
+
+The detailed records below distinguish historical failures, fixes, and remaining limitations. Passing individual checks does not imply every workflow passed.
+
 ## Performed in the Windows development workspace
 
-- Ten automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree.
+- Thirteen automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree. Windows runs twelve and skips the real-symlink case when symlink creation is not permitted; Linux CI runs that case.
 - Fedora/edition/architecture rejection rules.
 - Optional-app command construction and catalog input constraints.
 - Arch menu replacement and absence of direct Arch package-manager calls in generated command files.
@@ -68,6 +77,26 @@ Visual discrepancy observed: the GTK file chooser uses Fedora's light styling wh
 The [full catalog run](https://github.com/DanielCoffey1/omadora/actions/runs/35234023393) completed all 26 install commands and all 23 attempted removals. Three entries were already present and retained. Launch review found a missing Lutris display dependency, an incorrect Chromium test command, and several preliminary dialogs that must not count as complete application launches. See the [per-application results](APP_TESTS.md), including the Signal wrapper warning and sandbox font warning. The later suspend/unlock test failed again; the five preceding interaction checks passed.
 
 After the Network menu and Lutris dependency corrections, [source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35237020761) and the [Fedora integration/maintenance suite](https://github.com/DanielCoffey1/omadora/actions/runs/35237020707) passed at commit `eb6b7fa`. The [focused graphical retest](https://github.com/DanielCoffey1/omadora/actions/runs/35237031270) then confirmed the Network panel action and Lutris, Chromium and GIMP interfaces. Discord progressed beyond its updater but its capture still showed loading; Steam failed to create a main window within five minutes, with assertion dumps logged. All five selected app installations/removals passed. The five ordinary interaction checks passed again, while post-suspend unlocking failed again. See the application report for the reviewed results and limits.
+
+## Theme, font and recovery corrections
+
+The [theme/font integration run](https://github.com/DanielCoffey1/omadora/actions/runs/35242901364), at `e95ca23`, passed. The adapter now retains the upstream GTK preference helper (previously blocked because a comment mentioned an Arch-only command), includes the Yaru icons it selects, and uses standard user fontconfig configuration instead of exporting a host-only `FONTCONFIG_FILE` into sandboxes.
+
+The [recovery retest](https://github.com/DanielCoffey1/omadora/actions/runs/35242932206) passed all five service checks and verified restoration of the original GTK color scheme, theme and icon settings, removal of the managed font preference when originally absent, and rescue of later configuration edits. The session reported the expected Nerd Font and dark preference. However, screenshot review still found a light GTK file chooser, so preference-setting success does not establish complete GTK visual integration.
+
+The [s2idle diagnostic](https://github.com/DanielCoffey1/omadora/actions/runs/35243940410) passed authentication, window controls, clipboard, power profiles and dark/light/dark GTK preference switching. Its suspend attempt failed: SSH did not recover after the RTC wake deadline, and the kernel journal could not be retrieved to confirm sleep entry/exit. This does not validate s2idle or isolate the root cause of the earlier S3 failure. No sleep-mode override is installed by Omadora. An earlier diagnostic failed before boot because QEMU's display was not ready; the fixture now waits for Xvfb to accept clients.
+
+The [four-app retest](https://github.com/DanielCoffey1/omadora/actions/runs/35242929475) passed all four installs/removals and font lookup inside Signal, Discord and Bottles without the former host-path fontconfig error. Discord reached its login form and Bottles rendered its welcome interface in dark styling. Steam still failed; its newly collected client log identified inability to load trusted root certificates and download its update manifest. The test accidentally selected No at Signal's wrapper, so that result does not demonstrate an application crash. The five ordinary interaction checks passed; S3 post-resume unlocking failed again.
+
+A [GTK diagnostic run](https://github.com/DanielCoffey1/omadora/actions/runs/35244347989) failed before reaching its portal checks: Hyprland aborted during startup with `CBackend::create() failed` while GDM's greeter also used the virtual GPU. This is a separate intermittent startup failure; the successful earlier startup runs do not erase it. Subsequent fixtures collect Hyprland crash reports as well as the journal.
+
+At `80be428`, [Linux source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35246575514) passed all thirteen tests, including rejection of a replaced configuration-parent symlink before any restoration and preservation of edited Steam desktop entries. The [Fedora integration suite](https://github.com/DanielCoffey1/omadora/actions/runs/35246575513) also passed. The new Steam wrapper uses the current Fedora CA bundle only in Steam's process environment; the optional desktop entry routes all RPM-provided actions through it. Toolkit environment variables now reach UWSM before portal services are activated.
+
+The [service retest at that commit](https://github.com/DanielCoffey1/omadora/actions/runs/35246577948) passed all five checks, including GNOME restoration after the new environment setup. Its diagnostics confirmed a native Wayland portal window and `Adwaita-dark` in both GTK and the settings portal, while the screenshot remained light. The profile lacked the separate Adwaita-dark theme entry supplied by upstream's `gnome-themes-extra` dependency. Omadora now provides a small entry that imports GTK's own bundled dark CSS. A resolved GTK background-color check was added to catch this class of mismatch.
+
+The [final theme/recovery run](https://github.com/DanielCoffey1/omadora/actions/runs/35248151319), at `2e4a544`, passed all five service checks. GTK resolved the window background to RGB `(0.208, 0.208, 0.208)`, and the portal screenshot was visually reviewed: the file chooser now renders dark. GTK settings and the managed font preference restored correctly in GNOME, with later edits rescued. The [source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35248151711) and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35248151808) also passed. This resolves the observed light file chooser; it is not a full visual-parity certification for every application.
+
+The [final native Steam retest](https://github.com/DanielCoffey1/omadora/actions/runs/35249426231), at `0eeeebd`, passed installation, actual client download, sign-in-window rendering and removal after adding the legacy certificate-path link. The ineffective environment wrapper from `80be428` was removed. Authentication, keyboard/windows, clipboard, power profiles and theme switching passed again. The new rendered GTK checks measured dark backgrounds near RGB `(0.208, 0.208, 0.208)` and light near `(0.965, 0.961, 0.957)`. **The workflow still failed at S3 post-resume unlocking.** [Source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35249426900) and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35249426932) passed separately at the same commit.
 
 ## Manual and hardware acceptance procedure
 
