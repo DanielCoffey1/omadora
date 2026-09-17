@@ -2,6 +2,9 @@
 
 ## Latest verified results
 
+- [Twenty-five source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35284969479) pass at `d535a19`, including deployment interruption, repeatable recovery, ownership checks, previous-desktop restoration and verification of saved desktop preferences.
+- [Fedora lifecycle integration](https://github.com/DanielCoffey1/omadora/actions/runs/35284969338) passes at `d535a19`: killed install/upgrade recovery, actual no-session-bus preference restoration, published-revision update, rollback, and migration/rollback of the real pre-journal release.
+- [Nine graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35284733519) pass at `bb606e5`, including GDM login after upgrade and rollback, followed by the eight existing desktop/service/recovery checks.
 - [Fifteen source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35280375545) and the [Fedora integration suite](https://github.com/DanielCoffey1/omadora/actions/runs/35280375560) pass at `ed79167`, including the session-activation fix and the minimal-workflow corrections described below.
 - [All eight desktop/service/recovery checks](https://github.com/DanielCoffey1/omadora/actions/runs/35281940399) pass at `43261d4`: Activity, screenshot keyboard/clipboard, font preservation, portal selection, network, audio, notifications and GNOME/config recovery.
 - GTK dark file chooser styling, sandbox font lookup in three Flatpaks, and restoration of shared GTK/font preferences are verified.
@@ -10,6 +13,20 @@
 - A single Bochs virtual display passed three consecutive S3/resume/password-unlock cycles. This is a [verified VM workaround](VIRTUAL_MACHINES.md), not a virtio driver fix. Default QEMU/virtio S3 still fails; software virtio and pre-sleep display blanking did not provide reliable fixes.
 
 The detailed records below distinguish historical failures, fixes, and remaining limitations. Passing individual checks does not imply every workflow passed.
+
+## Desktop maintenance and interrupted operations
+
+The [initial lifecycle container run](https://github.com/DanielCoffey1/omadora/actions/runs/35284105182), at `0b805bd`, passed actual SIGKILL interruption during install and upgrade, recovery of the old runtime/configuration/fonts, refusal of invalid user Lua with automatic runtime restoration, successful upgrade, and installed-command rollback. Root snapshots are separate from personal configuration backups. Upgrades and rollback leave personal configuration untouched; initial-install recovery preserves post-install edits in a rescue backup. Tests compare runtime files by SHA-256 and distinguish old/new trees with a fixture marker.
+
+Logs from that initial run also showed that `gsettings` can exit successfully without persisting writes when no user DBus session exists. A stronger test deliberately changes a preference before recovery. The [first run of that stronger check](https://github.com/DanielCoffey1/omadora/actions/runs/35284728161) failed because `dbus-run-session` was missing. The adapter now connects to the existing user bus when available, otherwise starts a temporary session bus, and verifies every restored value. Fedora's `dbus-daemon` package provides that fallback helper and is now explicit in the core dependencies. The first run must not be read as proof of successful offline preference restoration.
+
+The [final container run](https://github.com/DanielCoffey1/omadora/actions/runs/35284969338), at `d535a19`, passed the stronger recovery check: the fixture changed the saved color preference after killing installation, and recovery restored all three original values without a running user bus. It repeated interruption, invalid-config refusal and rollback checks, then exercised the installed `upgrade --ref COMMIT` command fetching the published repository. Fedora's existing broker remained installed; the helper package supplies temporary recovery sessions.
+
+That run also installed the actual old `a009dd3` release in a fresh disposable user, upgraded through the new source checkout, and confirmed that the original configuration-backup reference survived. Invoking the newly installed rollback command restored the legacy runtime byte-for-byte, including removing lifecycle helpers absent from that old version; its original About command worked, and the current source recovery command found no pending transaction. This verifies migration of that particular released layout, not arbitrary modified or pre-journal incomplete installations.
+
+The [graphical maintenance run](https://github.com/DanielCoffey1/omadora/actions/runs/35284733519), at `bb606e5`, passed all nine checks. Starting from a real Omadora session, it switched to GNOME, invoked the installed updater against the published commit, logged back into Omadora and opened Foot. It then switched to GNOME for rollback, logged into Omadora again, and verified that a personal edit survived. Both desktop captures were visually inspected. Activity, screenshot keyboard/clipboard, font preservation, portal file selection, network reconnection, virtual audio, notifications and GNOME/config recovery all passed afterward. This VM had a running user bus; the later explicit `dbus-daemon` dependency and no-bus path were verified by the final container run above. The VM fixture now pins the public bootstrap and repository to the tested commit, preventing later pushes from changing an in-flight test.
+
+Linux source tests additionally interrupt deployment between directory renames and interrupt recovery itself, then repeat recovery; refuse mismatched transaction owners, concurrent operations and incomplete snapshots; and verify that the login entry is withheld until validation. These are process-interruption tests, not storage-corruption or hardware power-loss tests. See [maintenance](MAINTENANCE.md) for the user commands and boundaries.
 
 ## Minimal workflow audit
 
@@ -39,7 +56,7 @@ The [single-Bochs control](https://github.com/DanielCoffey1/omadora/actions/runs
 
 ## Performed in the Windows development workspace
 
-- Fifteen automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree. Windows runs twelve and skips the real-symlink case, Linux session execution and Linux screenshot execution; Linux CI runs all fifteen.
+- Twenty-five automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree. Windows runs thirteen and skips twelve Linux/symlink execution cases; Linux CI runs all twenty-five.
 - Fedora/edition/architecture rejection rules.
 - Optional-app command construction and catalog input constraints.
 - Arch menu replacement and absence of direct Arch package-manager calls in generated command files.
