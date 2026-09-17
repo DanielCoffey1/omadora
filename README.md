@@ -4,11 +4,11 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**Development build, not a validated release.** The actual installer, Fedora package resolution, theme generation, native Hyprland configuration and Quickshell imports have passed a Fedora 44 container test. All 26 optional app entries resolve through their configured sources. GDM login, graphics, PAM unlocking, suspend and visual parity still need VM/hardware validation. Do not describe this as a finished 1:1 port yet. See [validation](docs/VALIDATION.md) and [compatibility](docs/COMPATIBILITY.md).
+**Development build.** The installer and all 26 optional app entries passed Fedora package-resolution checks. A booted Fedora 44 VM also passed GDM autologin, Hyprland/Quickshell startup, menu and screensaver launch, and power-profile queries with SELinux enforcing. Password unlocking, suspend, physical hardware, optional-app runtime behavior and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md) and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 
-Development installer (Fedora VM testing is still required):
+Development installer (try in a disposable Fedora VM first):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash
@@ -97,7 +97,7 @@ OMADORA_TEST_UPSTREAM=/tmp/omarchy python3 -m unittest discover -s tests -v
 python3 omadora.py build --source /tmp/omarchy --output build/stage
 ```
 
-The source checkout passed to `build` should be the pinned release. `install` fetches the tag and verifies the exact commit before building. The build output includes `portability-report.json`, listing upstream system commands replaced with explicit unsupported-operation messages. These are incomplete porting work, not silent successes. The GitHub workflow checks Python tests, shell syntax and bootstrap ShellCheck; it does not boot Fedora.
+The source checkout passed to `build` should be the pinned release. `install` fetches the tag and verifies the exact commit before building. The build output includes `portability-report.json`, listing upstream system commands replaced with explicit unsupported-operation messages. These are incomplete porting work, not silent successes. GitHub workflows cover source checks, Fedora container installation and a manually dispatched booted graphical VM. See the validation record for exact coverage and limitations.
 
 ## Credits
 

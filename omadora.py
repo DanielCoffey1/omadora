@@ -361,7 +361,7 @@ def install(dry_run=False):
                  '/usr/share/wayland-sessions/omadora.desktop', '/etc/pam.d/omarchy-lock-password'):
         if os.path.lexists(path):
             raise ValueError(f'Refusing to replace an existing system file: {path}')
-    print('Omadora development build: adds nett00n/hyprland and whelanh/omarchy COPRs (ttfx screensaver), plus a GDM session. Fedora VM validation pending.', flush=True)
+    print('Omadora development build: adds nett00n/hyprland and whelanh/omarchy COPRs (ttfx screensaver), plus a GDM session. See docs/VALIDATION.md for test coverage and remaining limitations.', flush=True)
     with tempfile.TemporaryDirectory(prefix='omadora-') as temporary:
         temp = Path(temporary)
         fetch_upstream(temp / 'source')

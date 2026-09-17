@@ -23,7 +23,7 @@
 ## Release blockers
 
 1. Keep testing the core manifest against Fedora 44 and the selected COPRs. The first real installer, native Hyprland config and Quickshell import run passed on September 17, 2026; graphical behavior and future package combinations still need validation.
-2. Boot a Fedora Workstation VM with graphics acceleration. Verify GDM → UWSM → Hyprland, shell loading, themes, font glyphs, multi-monitor screensaver and password unlocking under SELinux enforcing.
+2. Expand the passing GDM → UWSM → Hyprland VM smoke test to an untouched Workstation ISO installation, full visual parity, multi-monitor screensaver and password unlocking under SELinux enforcing. The existing test uses Workstation packages on the official Fedora Cloud image and autologin.
 3. Audit every retained menu and keybinding for transitive calls to blocked or uninstalled commands. Text scanning is a conservative first pass, not a complete dependency analysis.
 4. Test optional app installation/removal, already-installed apps, Flatpak launch discovery, DNF upgrades and offline/error cases.
 5. Implement versioned Omadora packages, desktop upgrades, partial-install recovery/uninstallation and reproducible RPM sources. Current user-config restore is not an OS rollback.

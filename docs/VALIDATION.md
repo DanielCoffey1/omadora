@@ -26,7 +26,24 @@ These are implementation tests, not evidence of a bootable or visually matching 
 
 Defects fixed during testing: incorrect `polkit-gnome`/`libvips-tools` package names, duplicate external polkit agent, Hyprland version probing without XDG_RUNTIME_DIR, and the conflicting power-management daemon. Container fixture identity and Quickshell smoke-test shutdown behavior were also corrected.
 
-This container does not boot systemd, GDM or a GPU; PAM file creation is not proof of password unlock, and the power-profile adapter still needs a running service test.
+This container does not boot systemd, GDM or a GPU; PAM file creation is not proof of password unlock.
+
+## Booted Fedora VM result
+
+[Run 35191812108](https://github.com/DanielCoffey1/omadora/actions/runs/35191812108), at commit `727b9a2`, passed on September 17, 2026:
+
+- Checksum-verified official Fedora Cloud 44 image with the full Workstation environment installed, under QEMU/KVM with software-rendered virtio graphics.
+- Actual Omadora installation, followed by a reboot and GDM autologin into the Omadora session.
+- UWSM, Hyprland and the Quickshell desktop started; the running compositor reported no configuration errors.
+- Shell IPC responded; the desktop, menu and animated screensaver were captured. The menu visibly showed **About Omadora** and the bar rendered icon glyphs.
+- The power-profile adapter queried the running TuneD service and listed its profiles.
+- SELinux remained **Enforcing**.
+
+The initial screenshot resolution was 640×480. A second [passing run at 1920×1080](https://github.com/DanielCoffey1/omadora/actions/runs/35192513285), at commit `80a0142`, confirmed the complete menu and centered animated **OMADORA** wordmark. Desktop, menu and screensaver screenshots were visually inspected. This is not a complete pixel-by-pixel comparison with upstream or a multi-monitor test.
+
+The first VM attempt reached the shell but hit its default two-second IPC timeout immediately after startup; the fixture now waits for startup to settle and permits ten seconds for IPC on software-rendered graphics. This timeout change applies only to the test.
+
+This fixture installs Workstation onto Fedora Cloud; it is not a test of an untouched Workstation ISO installation. Autologin does not validate password authentication. Profile changes, physical GPU behavior, password unlock, suspend/resume, Bluetooth, audio devices, interactive portal flows, and launching/removing optional apps remain untested. Logs also contain system-service/SELinux warnings and Hyprland's recommendation to use start-hyprland; a passing smoke test does not establish a warning-free session.
 
 ## Fedora VM acceptance procedure
 
