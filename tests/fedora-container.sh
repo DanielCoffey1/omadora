@@ -1,0 +1,25 @@
+#!/bin/bash
+# Disposable-container fixture. This does NOT emulate GDM, a GPU or SELinux.
+set -euo pipefail
+exec > >(tee /results/fedora-install.log) 2>&1
+trap 'status=$?; printf "%s\n" "$status" >/results/exit-status; rpm -qa | sort >/results/packages.txt; exit "$status"' EXIT
+cat /etc/os-release
+# Supply a Workstation identity so the actual target preflight is exercised.
+# This is a container with Workstation identity, not a full Workstation VM.
+dnf install -y --allowerasing fedora-release-workstation sudo git python3 policycoreutils
+useradd --create-home omadora-test
+printf 'omadora-test ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/omadora-test
+chmod 0440 /etc/sudoers.d/omadora-test
+sudo -iu omadora-test bash -c 'cd /src && python3 omadora.py install'
+test -s /usr/share/wayland-sessions/omadora.desktop
+test -s /etc/pam.d/omarchy-lock-password
+test "$(stat -c '%U' /usr/local/share/omadora/omadora.py)" = root
+sudo -iu omadora-test /usr/local/bin/omadora about
+sudo -iu omadora-test bash -c 'export PATH=/usr/local/share/omadora/bin:/usr/local/share/omadora/upstream/bin:$PATH; omadora doctor'
+sudo -iu omadora-test bash -c 'test -s ~/.local/state/omarchy/current/theme/colors.toml; test -e ~/.local/state/omarchy/current/background'
+Hyprland --version
+quickshell --version
+Hyprland --help >/results/hyprland-help.txt
+cp /usr/local/share/omadora/portability-report.json /results/
+echo 'PASS: real Fedora package installation, installer, theme generation and staged files.'
+echo 'NOT TESTED: graphical session, GDM, password unlock, suspend, GPU, SELinux.'

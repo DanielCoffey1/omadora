@@ -1,0 +1,29 @@
+name: Fedora integration
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fedora.yml'
+      - 'tests/fedora-container.sh'
+      - 'omadora.py'
+      - 'packages/**'
+permissions:
+  contents: read
+jobs:
+  fedora-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run real installer in Fedora 44 container
+        run: |
+          mkdir -p test-results
+          docker run --name omadora-fedora-test \
+            -v "$PWD:/src:ro" -v "$PWD/test-results:/results" \
+            quay.io/fedora/fedora:44 bash /src/tests/fedora-container.sh
+      - name: Save Fedora evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-install-results
+          path: test-results/
