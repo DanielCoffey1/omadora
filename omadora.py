@@ -195,7 +195,9 @@ def assemble(source, output):
     write(output / 'bin/omadora', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py "$@"\n', 0o755)
     write(output / 'bin/uwsm-app', '#!/bin/sh\nexec uwsm app "$@"\n', 0o755)
     write(output / 'bin/powerprofilesctl', '#!/bin/sh\nexec python3 /usr/local/share/omadora/omadora.py powerprofile "$@"\n', 0o755)
-    write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + 'exec uwsm start -- Hyprland\n', 0o755)
+    # Match Hyprland's packaged UWSM session: the desktop entry invokes its
+    # supported start-hyprland watchdog and carries the desktop environment ID.
+    write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + 'exec uwsm start -e -D Hyprland -- /usr/share/wayland-sessions/hyprland.desktop\n', 0o755)
 
     overrides = {
         # The pinned helper is portable; an Arch-only comment previously caused

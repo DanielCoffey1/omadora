@@ -46,10 +46,14 @@ for ((attempt=0; attempt<100; attempt++)); do
   sleep 0.1
 done
 xdpyinfo -display "$DISPLAY" >/dev/null
+graphics=(-device virtio-vga-gl -display gtk,gl=on)
+if [[ ${VM_SLEEP_DIAGNOSTIC:-} == software-gpu ]]; then
+  graphics=(-device virtio-vga -display gtk,gl=off)
+fi
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
   -drive "file=$vm_dir/seed.img,format=raw,if=virtio" \
-  -device virtio-vga-gl -display gtk,gl=on \
+  "${graphics[@]}" \
   -audiodev driver=none,id=audio0 -device intel-hda -device hda-duplex,audiodev=audio0 \
   -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22 -device virtio-net-pci,netdev=net0 \
   -serial "file:$task_root/vm-results/serial.log" \
@@ -60,6 +64,7 @@ cleanup() {
   scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/ 2>/dev/null || true
   scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 omadora-test@127.0.0.1:.cache/hyprland vm-results/hyprland-crashes 2>/dev/null || true
   ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager' >vm-results/guest-journal.log 2>&1 || true
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'cat /run/user/1000/hypr/*/hyprland.log' >vm-results/hyprland-runtime.log 2>&1 || true
   kill "$qemu_pid" "$xvfb_pid" 2>/dev/null || true
   exit "$status"
 }
@@ -121,7 +126,11 @@ ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-gu
 if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
 elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
-  python3 tests/fedora-vm-interactions.py
+  if [[ ${VM_SLEEP_DIAGNOSTIC:-} == reliability || ${VM_SLEEP_DIAGNOSTIC:-} == software-gpu ]]; then
+    python3 tests/fedora-vm-reliability.py
+  else
+    python3 tests/fedora-vm-interactions.py
+  fi
 else
   # Suspend is deliberately last: a driver/compositor hang must not prevent
   # collection of independent application results from a healthy desktop.
