@@ -4,7 +4,7 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**Development build, not a validated release.** The adapter and generated tree have automated tests. Installation, RPM resolution, GDM login, graphics, PAM unlocking, suspend and visual parity still need a Fedora VM. Do not describe this as a finished 1:1 port yet. See [validation](docs/VALIDATION.md) and [compatibility](docs/COMPATIBILITY.md).
+**Development build, not a validated release.** The actual installer, Fedora package resolution, theme generation, native Hyprland configuration and Quickshell imports have passed a Fedora 44 container test. All 26 optional app entries resolve through their configured sources. GDM login, graphics, PAM unlocking, suspend and visual parity still need VM/hardware validation. Do not describe this as a finished 1:1 port yet. See [validation](docs/VALIDATION.md) and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 
@@ -68,7 +68,7 @@ omadora app remove heroic
 
 Desktop dependencies come from Fedora and the community `nett00n/hyprland` COPR. `ttfx`, required for the upstream animated screensaver, comes from the community `whelanh/omarchy` COPR. These are external maintainers, not Fedora or Omadora's own package repositories. Enabling them can affect later DNF transactions. Missing or incompatible packages stop installation; the installer never uses `--skip-broken` or disables signature checks.
 
-The desktop source is pinned; RPM versions remain controlled by the configured repositories. This is not yet a reproducible package release. A maintained, versioned Omadora RPM repository is a release requirement.
+The desktop source is pinned; RPM versions remain controlled by the configured repositories. The [Fedora integration run](https://github.com/DanielCoffey1/omadora/actions/runs/35190472661) resolved and installed the core manifest successfully. This is not yet a reproducible package release. A maintained, versioned Omadora RPM repository is a release requirement.
 
 ```bash
 omadora update                  # Fedora package upgrades

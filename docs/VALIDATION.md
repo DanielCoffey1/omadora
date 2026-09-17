@@ -12,6 +12,22 @@
 
 These are implementation tests, not evidence of a bootable or visually matching Fedora desktop.
 
+## Fedora 44 integration result
+
+[Run 35190472661](https://github.com/DanielCoffey1/omadora/actions/runs/35190472661), at commit `1611178`, passed:
+
+- Real installation in a Fedora 44 container with Workstation identity and preinstalled TuneD.
+- The complete core RPM transaction, including Hyprland 0.56.2, Quickshell 0.3.1, and ttfx 0.3.2.
+- Configuration backup, root-owned runtime deployment, user configuration and Tokyo Night theme generation, GDM session-file creation, and PAM configuration-file creation.
+- `Hyprland --verify-config` returned `config ok`.
+- All 13 native Quickshell modules used by the desktop loaded in an offscreen smoke test.
+- TuneD remained installed, without adding the conflicting power-profiles-daemon service.
+- The combined optional native RPM transaction resolved; it was canceled before installing apps. All Flatpak application IDs were found in Flathub's app listing. This verifies availability/resolution, not each app's runtime behavior.
+
+Defects fixed during testing: incorrect `polkit-gnome`/`libvips-tools` package names, duplicate external polkit agent, Hyprland version probing without XDG_RUNTIME_DIR, and the conflicting power-management daemon. Container fixture identity and Quickshell smoke-test shutdown behavior were also corrected.
+
+This container does not boot systemd, GDM or a GPU; PAM file creation is not proof of password unlock, and the power-profile adapter still needs a running service test.
+
 ## Fedora VM acceptance procedure
 
 Use a disposable Fedora Workstation 44 x86_64 VM and take a hypervisor snapshot before installation. Record package versions, GPU model, compositor version and the Omadora source commit.

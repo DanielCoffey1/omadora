@@ -22,7 +22,7 @@
 
 ## Release blockers
 
-1. Resolve the entire core manifest against Fedora 44 and the selected COPRs. Package names and versions are candidates until this test runs. Verify that the supplied Quickshell and Hyprland versions work with the pinned release, rather than relying only on the compositor version gate.
+1. Keep testing the core manifest against Fedora 44 and the selected COPRs. The first real installer, native Hyprland config and Quickshell import run passed on September 17, 2026; graphical behavior and future package combinations still need validation.
 2. Boot a Fedora Workstation VM with graphics acceleration. Verify GDM → UWSM → Hyprland, shell loading, themes, font glyphs, multi-monitor screensaver and password unlocking under SELinux enforcing.
 3. Audit every retained menu and keybinding for transitive calls to blocked or uninstalled commands. Text scanning is a conservative first pass, not a complete dependency analysis.
 4. Test optional app installation/removal, already-installed apps, Flatpak launch discovery, DNF upgrades and offline/error cases.

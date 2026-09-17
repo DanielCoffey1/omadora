@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install VM test tools
-        run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb
+        run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
       - name: Boot Fedora and test Omadora session
         run: bash tests/fedora-vm.sh
       - name: Save VM evidence
