@@ -4,7 +4,7 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**Development build.** Fedora tests cover installation, all 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam's download/startup failure and the light GTK file chooser are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume still fails in QEMU/virtio, and an intermittent Hyprland startup crash was recorded.** Application workloads, physical hardware and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
+**Development build.** Fedora tests cover installation, all 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam startup, GTK dark dialogs and the GDM inactive-session startup crash are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume still fails in QEMU/virtio.** Application workloads, physical hardware and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 

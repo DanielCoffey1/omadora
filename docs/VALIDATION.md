@@ -2,16 +2,31 @@
 
 ## Latest verified results
 
-- Thirteen source tests and the Fedora integration suite pass at `0eeeebd`.
+- Fourteen source tests and the Fedora integration suite pass with the session-activation fix (`64f6c42`, regression coverage at `f01538d`).
 - GTK dark file chooser styling, sandbox font lookup in three Flatpaks, and restoration of shared GTK/font preferences are verified.
 - Native Steam downloads its client and reaches sign-in; Signal and Discord reach their linking/login screens. Install/remove checks pass. No accounts or games were used.
-- Default QEMU/virtio S3 resume/unlock still fails. The s2idle diagnostic did not establish a working alternative. One intermittent GDM/Hyprland backend startup crash is also recorded.
+- The GDM/Hyprland startup crash was traced to an inactive login session and fixed; 15 subsequent GDM relaunches across three fresh VMs passed password authentication, including deliberately delayed startup.
+- Default QEMU/virtio S3 resume/unlock still fails. Software rendering and pre-sleep display blanking did not provide reliable fixes; the earlier s2idle diagnostic also did not establish a working alternative.
 
 The detailed records below distinguish historical failures, fixes, and remaining limitations. Passing individual checks does not imply every workflow passed.
 
+## Session and suspend diagnosis
+
+The [repeated-login baseline](https://github.com/DanielCoffey1/omadora/actions/runs/35252451897) at `bab696e` used Hyprland's packaged desktop entry through UWSM, including `start-hyprland`. Five consecutive GDM restarts passed real wrong-password rejection and correct unlock. S3 still failed: the captured kernel stack placed Hyprland in `drm_atomic_helper_swap_state`, and QEMU displayed "Display output is not active." The host used QEMU 8.2.2 and virglrenderer 1.0.0, with guest Hyprland 0.56.2, Aquamarine 0.15.0 and kernel 7.2.5. This is evidence of a graphics stall, not a failed PAM password check.
+
+The [software-graphics baseline](https://github.com/DanielCoffey1/omadora/actions/runs/35252454364) reproduced the startup crash before any suspend test. Its retained crash report identifies the cause: `Session is not active, waiting for 5s`, followed by `Session could not be activated in time`. Merely using the packaged launcher did not resolve the GDM handoff.
+
+Commit `64f6c42` activates the authenticated local GDM session through logind before starting UWSM, waits for its active state and stops if activation fails. It does not enable autologin or change PAM. [Fourteen source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35254450784), including activation failure and seatless-session behavior, and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35254055898) pass.
+
+The [delayed-startup retest](https://github.com/DanielCoffey1/omadora/actions/runs/35254205679) passed with that fix. The disposable fixture deliberately delayed the session launcher by 12 seconds, allowing the GDM greeter to take the active VT before Omadora starts. Initial boot and five consecutive GDM relaunches succeeded; all five relaunches passed two incorrect-password rejections and a correct password unlock. No backend startup crash was recorded. This verifies the repaired handoff in the tested environment, not every display manager or physical GPU.
+
+Two more fresh VMs with the session fix each passed five GDM relaunches and password checks. [Virtio without 3D acceleration](https://github.com/DanielCoffey1/omadora/actions/runs/35254055711) passed the first S3/resume/unlock cycle but failed the second in the same kernel DRM path. [Blanking the display before S3](https://github.com/DanielCoffey1/omadora/actions/runs/35254131881) failed the first cycle. Neither experiment is enabled in the product or counted as a reliable suspend fix. Multiple cycles are required to avoid treating a single successful wake as resolution.
+
+Related upstream evidence: [QEMU issue 2520](https://gitlab.com/qemu-project/qemu/-/issues/2520) describes the same inactive-display symptom after S3. This similarity alone does not prove an identical cause or establish a fix for Omadora.
+
 ## Performed in the Windows development workspace
 
-- Thirteen automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree. Windows runs twelve and skips the real-symlink case when symlink creation is not permitted; Linux CI runs that case.
+- Fourteen automated tests, including assembly against the actual pinned Omarchy v4.0.4 tree. Windows runs twelve and skips the real-symlink case and Linux session execution; Linux CI runs all fourteen.
 - Fedora/edition/architecture rejection rules.
 - Optional-app command construction and catalog input constraints.
 - Arch menu replacement and absence of direct Arch package-manager calls in generated command files.
