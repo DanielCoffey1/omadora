@@ -11,13 +11,20 @@ spec.loader.exec_module(v)
 
 
 def portal():
+    v.guest("printf 'Omadora portal fixture' >/tmp/omadora-portal.txt")
     with (v.OUT / 'portal.log').open('w') as log:
         p = subprocess.Popen(v.ssh + ["bash -c 'source ~/source/tests/vm-session.sh; python3 ~/source/tests/portal-chooser.py'"], stdout=log, stderr=log)
         v.wait_for(lambda: any('Omadora portal test' in c['title'] for c in json.loads(v.guest('hyprctl clients -j'))))
         v.guest('grim /tmp/omadora-vm-results/portal.png')
-        v.keys('esc')
+        v.keys('ctrl', 'l')
+        for char in '/tmp/omadora-portal.txt':
+            v.keys({'/': 'slash', '-': 'minus', '.': 'dot'}.get(char, char))
+        v.keys('ret')
+        time.sleep(2)
+        if p.poll() is None:
+            v.keys('ret')
         assert p.wait(timeout=30) == 0
-    return 'File chooser displayed through xdg-desktop-portal and returned cancellation.'
+    return 'File chooser displayed and returned the selected fixture file URI.'
 
 
 def network():
@@ -55,12 +62,13 @@ def notifications():
 
 def raw(command, timeout=90):
     p = subprocess.run(v.ssh + [command], text=True, capture_output=True, timeout=timeout)
-    assert p.returncode == 0, p.stdout + p.stderr
+    if p.returncode:
+        raise RuntimeError(command + ': ' + p.stdout + p.stderr)
     return p.stdout.strip()
 
 
 def recovery():
-    raw("printf '[User]\\nXSession=gnome\\nSession=gnome\\nSystemAccount=false\\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null; sudo systemctl restart gdm")
+    raw("sudo systemctl stop gdm; sudo systemctl stop accounts-daemon; printf '[User]\\nXSession=gnome\\nSession=gnome\\nSystemAccount=false\\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null; sudo systemctl start accounts-daemon gdm")
     v.wait_for(lambda: raw('pgrep -u $(id -u) -x gnome-shell'), 90)
     # No Hyprland environment is supplied to restore-config from this SSH/TTY.
     result = raw("omadora restore-config \"$(python3 -c 'import json,pathlib; print(json.loads((pathlib.Path.home()/\".local/state/omadora/installation.json\").read_text())[\"backup\"])')\"")

@@ -1,4 +1,4 @@
-"""Exercise the actual desktop portal and require its cancel response."""
+"""Exercise the actual desktop portal and require the chosen fixture file."""
 import dbus
 import dbus.mainloop.glib
 from gi.repository import GLib
@@ -11,7 +11,8 @@ result = []
 
 def response(code, values):
     result.append(int(code))
-    print('Portal response:', int(code), flush=True)
+    result.append([str(uri) for uri in values.get('uris', [])])
+    print('Portal response:', result, flush=True)
     loop.quit()
 
 
@@ -21,4 +22,4 @@ portal = dbus.Interface(bus.get_object('org.freedesktop.portal.Desktop', '/org/f
 print(portal.OpenFile('', 'Omadora portal test', {'handle_token': dbus.String('omadora_test')}), flush=True)
 GLib.timeout_add_seconds(60, lambda: loop.quit())
 loop.run()
-assert result == [1], result
+assert result == [0, ['file:///tmp/omadora-portal.txt']], result

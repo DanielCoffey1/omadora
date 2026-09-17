@@ -70,6 +70,9 @@ scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -s' <<'GUEST'
 set -euo pipefail
 sudo dnf install -y --allowerasing @workstation-product-environment fedora-release-identity-workstation
+# Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
+# so the emulated sound device has its normal driver after reboot.
+sudo dnf install -y kernel
 mkdir -p ~/source
 tar -xzf /tmp/source.tar.gz -C ~/source
 cd ~/source
