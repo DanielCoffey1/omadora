@@ -18,4 +18,13 @@ command -v python3 >/dev/null || sudo dnf install -y python3
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 git clone --depth 1 --branch "${OMADORA_REF:-main}" https://github.com/DanielCoffey1/omadora.git "$stage/repo"
-python3 "$stage/repo/omadora.py" install "$@"
+action=install
+if [[ ${1:-} == upgrade || ${1:-} == recover || ${1:-} == rollback ]]; then
+  action=$1
+  shift
+fi
+if [[ $action == upgrade ]]; then
+  python3 "$stage/repo/omadora.py" upgrade --local "$@"
+else
+  python3 "$stage/repo/omadora.py" "$action" "$@"
+fi

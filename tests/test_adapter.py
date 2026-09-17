@@ -100,7 +100,7 @@ class AdapterTests(unittest.TestCase):
             backup = home / 'backup'
             adapter.backup_user(home, backup)
             manifest = adapter.read_json(backup / 'manifest.json')
-            adapter.write(backup / 'manifest.json', json.dumps([e for e in manifest if e['path'] != adapter.FONT_CONFIG]))
+            adapter.write(backup / 'manifest.json', json.dumps([e for e in manifest if e['path'] not in (adapter.FONT_CONFIG, '.local/share/fonts/omadora')]))
             adapter.write(home / '.config/hypr/original', 'edited')
             adapter.restore_user(home, backup)
             self.assertEqual((home / '.config/hypr/original').read_text(), 'old')

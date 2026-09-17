@@ -180,8 +180,9 @@ def assemble(source, output):
         shutil.copytree(source / name, tree / name)
     for name in ('LICENSE', 'version'):
         shutil.copy2(source / name, tree / name)
-    for name in ('omadora.py', 'apps.json', 'upstream.lock.json'):
+    for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'apps.json', 'upstream.lock.json'):
         shutil.copy2(ROOT / name, output / name)
+    write(output / 'release.json', json.dumps({'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
     shutil.copytree(ROOT / 'assets', output / 'assets')
 
@@ -334,7 +335,7 @@ def apply_branding(tree):
 
 def backup_user(home, backup):
     """Copy exact config trees including symlinks; record absence for restore."""
-    paths = [f'.config/{name}' for name in CONFIGS] + ['.config/uwsm/env-hyprland', '.local/state/omarchy', FONT_CONFIG]
+    paths = [f'.config/{name}' for name in CONFIGS] + ['.config/uwsm/env-hyprland', '.local/state/omarchy', FONT_CONFIG, '.local/share/fonts/omadora']
     manifest = []
     for relative in paths:
         source = home / relative
@@ -357,7 +358,7 @@ def restore_user(home, backup):
     manifest = read_json(backup / 'manifest.json')
     paths = {entry['path'] for entry in manifest}
     # Backups made before the font integration fix remain restorable.
-    if paths not in (allowed, allowed | {FONT_CONFIG}) or len(manifest) != len(paths):
+    if paths not in (allowed, allowed | {FONT_CONFIG}, allowed | {FONT_CONFIG, '.local/share/fonts/omadora'}) or len(manifest) != len(paths):
         raise ValueError('Invalid backup manifest')
     # A parent may have been replaced with a symlink since installation.
     # Never follow it while removing managed paths or writing the rescue copy.
@@ -434,20 +435,54 @@ def fetch_upstream(destination):
     run('git', '-C', destination, 'checkout', '--detach', actual)
 
 
+def lifecycle():
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    import omadora_lifecycle
+    return omadora_lifecycle
+
+
 def install(dry_run=False):
     if dry_run:
         print(json.dumps({'target': 'Fedora Workstation 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
                           'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages(), 'prefix': str(PREFIX),
                           'optional_apps_preinstalled': [], 'gnome_removed': False}, indent=2))
         return
+    return lifecycle().perform(sys.modules[__name__], 'install')
+
+
+def prepare_runtime(temp):
+    run('sudo', 'dnf', 'install', '-y', 'dnf5-plugins')
+    run('sudo', 'dnf', 'copr', 'enable', '-y', COPR)
+    run('sudo', 'dnf', 'copr', 'enable', '-y', SCREENSAVER_COPR)
+    # DNF's complete transaction must resolve. Never skip broken packages.
+    run('sudo', 'dnf', 'install', '-y', *packages())
+    # Hyprland initializes its logger before processing --version and needs
+    # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
+    probe_env = os.environ.copy()
+    if not probe_env.get('XDG_RUNTIME_DIR'):
+        runtime = temp / 'runtime'
+        runtime.mkdir(mode=0o700)
+        probe_env['XDG_RUNTIME_DIR'] = str(runtime)
+    version = run('Hyprland', '--version', capture=True, env=probe_env).stdout
+    match = re.search(r'\b(\d+)\.(\d+)\.(\d+)', version)
+    if not match or tuple(map(int, match.groups())) < (0, 55, 0):
+        raise ValueError('Omarchy 4 Lua configuration requires Hyprland >= 0.55. Desktop files were not installed.')
+    for command in ('quickshell', 'uwsm', 'foot', 'gum', 'jq', 'nvim'):
+        if not shutil.which(command):
+            raise ValueError(f'Missing required executable: {command}')
+    return probe_env
+
+
+def _install():
     preflight()
     for relative in ('.config', '.config/uwsm', '.local', '.local/state', '.local/state/omarchy',
                      '.local/share', '.local/share/fonts', '.local/share/fonts/omadora',
                      '.config/fontconfig', '.config/fontconfig/conf.d'):
         if (Path.home() / relative).is_symlink():
             raise ValueError(f'Fresh-install target must not be a symlink: ~/{relative}')
-    if PREFIX.exists():
-        raise ValueError('Omadora is already installed. This alpha does not support in-place desktop upgrades.')
+    if os.path.lexists(PREFIX):
+        raise ValueError('Omadora is already installed. Use omadora upgrade from GNOME or a TTY.')
     for path in ('/usr/local/bin/omadora', '/usr/local/bin/omadora-session',
                  '/usr/share/wayland-sessions/omadora.desktop', '/etc/pam.d/omarchy-lock-password'):
         if os.path.lexists(path):
@@ -457,38 +492,10 @@ def install(dry_run=False):
         temp = Path(temporary)
         fetch_upstream(temp / 'source')
         stage = assemble(temp / 'source', temp / 'stage')
-        run('sudo', 'dnf', 'install', '-y', 'dnf5-plugins')
-        run('sudo', 'dnf', 'copr', 'enable', '-y', COPR)
-        run('sudo', 'dnf', 'copr', 'enable', '-y', SCREENSAVER_COPR)
-        # DNF's complete transaction must resolve. Never skip broken packages.
-        run('sudo', 'dnf', 'install', '-y', *packages())
-        # Hyprland initializes its logger before processing --version and needs
-        # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
-        probe_env = os.environ.copy()
-        if not probe_env.get('XDG_RUNTIME_DIR'):
-            runtime = temp / 'runtime'
-            runtime.mkdir(mode=0o700)
-            probe_env['XDG_RUNTIME_DIR'] = str(runtime)
-        version = run('Hyprland', '--version', capture=True, env=probe_env).stdout
-        match = re.search(r'\b(\d+)\.(\d+)\.(\d+)', version)
-        if not match or tuple(map(int, match.groups())) < (0, 55, 0):
-            raise ValueError('Omarchy 4 Lua configuration requires Hyprland >= 0.55. Desktop files were not installed.')
-        for command in ('quickshell', 'uwsm', 'foot', 'gum', 'jq', 'nvim'):
-            if not shutil.which(command):
-                raise ValueError(f'Missing required executable: {command}')
+        probe_env = prepare_runtime(temp)
         home = Path.home()
-        backup = home / '.local/state/omadora/backups' / timestamp()
-        backup_user(home, backup)
-        desktop_settings('save', backup)
-        write(home / '.local/state/omadora/installation.json', json.dumps({'backup': str(backup), 'status': 'installing', 'upstream': read_json(ROOT / 'upstream.lock.json')}, indent=2))
-        print(f'Configuration backup: {backup}', flush=True)
-        # Deploy root-owned code. User setup below runs without sudo.
-        run('sudo', 'mkdir', '-p', PREFIX)
-        run('sudo', 'cp', '-a', str(stage) + '/.', PREFIX)
-        run('sudo', 'chown', '-R', 'root:root', PREFIX)
-        for name in ('omadora', 'omadora-session'):
-            run('sudo', 'ln', '-s', PREFIX / 'bin' / name, '/usr/local/bin/' + name)
-        run('sudo', 'install', '-m', '0644', PREFIX / 'system/omarchy-lock-password', '/etc/pam.d/omarchy-lock-password')
+        transaction = lifecycle().prepare(sys.modules[__name__], 'install')
+        lifecycle().root(sys.modules[__name__], 'deploy', transaction['id'], stage)
         # Config directories were backed up. Unlink whole destinations to avoid
         # copying through user symlinks into unrelated locations.
         for name in CONFIGS:
@@ -520,9 +527,9 @@ def install(dry_run=False):
         run(PREFIX / 'upstream/bin/omarchy-theme-set', 'tokyo-night', env=env)
         run('Hyprland', '--verify-config', '--config', home / '.config/hypr/hyprland.lua', env=env)
         # Publish the login session last, after successful config/theme setup.
-        run('sudo', 'install', '-m', '0644', PREFIX / 'system/omadora.desktop', '/usr/share/wayland-sessions/omadora.desktop')
+        lifecycle().root(sys.modules[__name__], 'activate', transaction['id'])
         run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
-        write(home / '.local/state/omadora/installation.json', json.dumps({'backup': str(backup), 'upstream': read_json(ROOT / 'upstream.lock.json')}, indent=2))
+        lifecycle().commit(sys.modules[__name__], transaction)
     print('Installed. Log out and select Omadora at the GDM gear menu. GNOME remains available.')
 
 
@@ -560,6 +567,8 @@ def main():
     parser = argparse.ArgumentParser(description='Omadora: minimal Omarchy 4 for Fedora')
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('install'); p.add_argument('--dry-run', action='store_true')
+    p = sub.add_parser('upgrade'); p.add_argument('--local', action='store_true', help='Use this source checkout'); p.add_argument('--ref', default='main')
+    sub.add_parser('recover'); sub.add_parser('rollback')
     p = sub.add_parser('build'); p.add_argument('--source', type=Path, required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('app'); p.add_argument('action', choices=('list', 'install', 'remove', 'installed')); p.add_argument('id', nargs='?'); p.add_argument('--dry-run', action='store_true')
     sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')
@@ -569,6 +578,10 @@ def main():
     args = parser.parse_args()
     if args.command == 'install':
         install(args.dry_run)
+    elif args.command == 'upgrade':
+        lifecycle().upgrade(sys.modules[__name__], args.local, args.ref)
+    elif args.command in ('recover', 'rollback'):
+        lifecycle().perform(sys.modules[__name__], args.command)
     elif args.command == 'build':
         print(assemble(args.source, args.output))
     elif args.command == 'about':

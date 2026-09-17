@@ -9,6 +9,10 @@ on:
       - 'tests/fedora-apps.py'
       - 'tests/fedora-maintenance.py'
       - 'omadora.py'
+      - 'omadora_deploy.py'
+      - 'omadora_lifecycle.py'
+      - 'tests/fedora-lifecycle.py'
+      - 'tests/lifecycle-interrupt.py'
       - 'packages/**'
 permissions:
   contents: read

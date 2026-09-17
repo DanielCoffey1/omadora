@@ -92,7 +92,7 @@ assert selection and len(selection) == len(set(selection)) and set(selection) <=
 Path('tests/selected-apps.json').write_text(json.dumps(selection))
 PY
 fi
-tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py apps.json upstream.lock.json packages assets tests
+tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py omadora_deploy.py omadora_lifecycle.py apps.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default}" <<'GUEST'
 set -euo pipefail
