@@ -5,7 +5,7 @@ on:
       mode:
         description: 'Isolated fixture diagnostic; never changes product defaults'
         type: choice
-        options: [reliability, software-gpu, s2idle, legacy-drm]
+        options: [reliability, software-gpu, quiesce-gpu, s2idle, legacy-drm]
         default: s2idle
 permissions:
   contents: read

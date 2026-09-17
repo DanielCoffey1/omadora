@@ -159,6 +159,10 @@ def suspend():
     # Suspend the actual guest OS, not merely the hypervisor.
     guest('omarchy-shell lock lock')
     wait_for(lambda: lock_status()['secure'])
+    if os.environ.get('VM_SLEEP_DIAGNOSTIC') == 'quiesce-gpu':
+        guest('timeout 8 omarchy-brightness-display off')
+        wait_for(lambda: all(not m['dpmsStatus'] for m in json.loads(guest('timeout 5 hyprctl monitors -j'))))
+        time.sleep(2)
     process = subprocess.Popen(ssh + ['sudo systemctl suspend'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     wait_for(lambda: qmp('query-status')['status'] == 'suspended', seconds=60)
     time.sleep(3)

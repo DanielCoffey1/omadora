@@ -126,7 +126,7 @@ ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-gu
 if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
 elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
-  if [[ ${VM_SLEEP_DIAGNOSTIC:-} == reliability || ${VM_SLEEP_DIAGNOSTIC:-} == software-gpu ]]; then
+  if [[ ${VM_SLEEP_DIAGNOSTIC:-} == reliability || ${VM_SLEEP_DIAGNOSTIC:-} == software-gpu || ${VM_SLEEP_DIAGNOSTIC:-} == quiesce-gpu ]]; then
     python3 tests/fedora-vm-reliability.py
   else
     python3 tests/fedora-vm-interactions.py
