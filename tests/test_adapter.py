@@ -189,6 +189,42 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(font.read_bytes()).hexdigest(), 'efd0c812226247ba45bb31a816ec63876fb0d8d930dbb0e633770965fcc81081')
         self.assertIn('SIL OPEN FONT LICENSE', (ROOT / 'assets/fonts/OFL.txt').read_text())
 
+    @unittest.skipIf(os.name == 'nt', 'Generated Linux session is executed in Linux CI')
+    def test_session_activation_failure_stops_compositor(self):
+        import subprocess
+        source = os.environ.get('OMADORA_TEST_UPSTREAM')
+        if not source:
+            self.skipTest('Set OMADORA_TEST_UPSTREAM to the pinned checkout')
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = adapter.assemble(Path(source), root / 'stage')
+            fake = root / 'bin'
+            adapter.write(fake / 'loginctl', '''#!/bin/sh
+printf '%s\\n' "$*" >> "$TEST_TRACE"
+case "$1" in
+  activate) exit "$TEST_ACTIVATE_STATUS" ;;
+  show-session) echo yes ;;
+esac
+''', 0o755)
+            adapter.write(fake / 'uwsm', '#!/bin/sh\nprintf started >> "$TEST_STARTED"\n', 0o755)
+            trace, started = root / 'trace', root / 'started'
+            env = os.environ | {'PATH': str(fake) + ':' + os.environ['PATH'],
+                                'XDG_SESSION_ID': 'test-session', 'XDG_SEAT': 'seat0',
+                                'TEST_TRACE': str(trace), 'TEST_STARTED': str(started),
+                                'TEST_ACTIVATE_STATUS': '1'}
+            command = ['bash', str(stage / 'bin/omadora-session')]
+            failed = subprocess.run(command, env=env, capture_output=True, timeout=15)
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertFalse(started.exists())
+            self.assertIn('activate test-session', trace.read_text())
+            env['TEST_ACTIVATE_STATUS'] = '0'
+            subprocess.run(command, env=env, check=True, capture_output=True, timeout=15)
+            self.assertEqual(started.read_text(), 'started')
+            trace.unlink()
+            env.pop('XDG_SEAT')
+            subprocess.run(command, env=env, check=True, capture_output=True, timeout=15)
+            self.assertFalse(trace.exists(), 'Do not activate a remote or seatless session')
+
 
 if __name__ == '__main__':
     unittest.main()
