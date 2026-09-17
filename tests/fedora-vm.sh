@@ -38,6 +38,14 @@ echo "VM acceleration: $accel"
 Xvfb :99 -screen 0 1920x1080x24 >vm-results/xvfb.log 2>&1 &
 xvfb_pid=$!
 export DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1
+# GTK must connect after Xvfb is accepting clients, otherwise QEMU can fall
+# back to a display backend without OpenGL before the guest even boots.
+for ((attempt=0; attempt<100; attempt++)); do
+  if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then break; fi
+  kill -0 "$xvfb_pid"
+  sleep 0.1
+done
+xdpyinfo -display "$DISPLAY" >/dev/null
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
   -drive "file=$vm_dir/seed.img,format=raw,if=virtio" \
