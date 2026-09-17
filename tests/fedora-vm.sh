@@ -50,7 +50,8 @@ graphics=(-device virtio-vga-gl -display gtk,gl=on)
 if [[ ${VM_SLEEP_DIAGNOSTIC:-} == software-gpu ]]; then
   graphics=(-device virtio-vga -display gtk,gl=off)
 elif [[ ${VM_SLEEP_DIAGNOSTIC:-} == bochs-gpu ]]; then
-  graphics=(-device bochs-display -display gtk,gl=off)
+  # bochs-display is not a VGA device, so suppress QEMU's automatic std VGA.
+  graphics=(-vga none -device bochs-display -display gtk,gl=off)
 fi
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
