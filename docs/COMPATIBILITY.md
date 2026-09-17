@@ -25,7 +25,7 @@
 1. Keep testing the core manifest against Fedora 44 and the selected COPRs. The first real installer, native Hyprland config and Quickshell import run passed on September 17, 2026; graphical behavior and future package combinations still need validation.
 2. Resolve the reproduced QEMU/virtio suspend/resume hang, and expand the passing desktop/password/recovery checks to an untouched Workstation ISO installation and physical GPUs. Complete GTK/application theme parity and multi-monitor testing. The existing fixture uses Workstation packages on the official Fedora Cloud image; it exercises both GDM autologin and actual lock-screen password authentication with SELinux enforcing.
 3. Audit every retained menu and keybinding for transitive calls to blocked or uninstalled commands. Text scanning is a conservative first pass, not a complete dependency analysis.
-4. Test optional app installation/removal, already-installed apps, Flatpak launch discovery, DNF upgrades and offline/error cases.
+4. Finish the remaining application launch checks and exercise Flatpak launcher discovery, account/gameplay workflows, real Flatpak version upgrades and offline/error cases. All 26 catalog install commands and 23 attempted removals passed the full run; see [application results](APP_TESTS.md) for failures and limits. Resolve sandbox font-configuration warnings.
 5. Implement versioned Omadora packages, desktop upgrades, partial-install recovery/uninstallation and reproducible RPM sources. Current user-config restore is not an OS rollback.
 6. Run hardware tests for Intel/AMD; develop a separate NVIDIA driver/Secure Boot path before claiming NVIDIA support.
 

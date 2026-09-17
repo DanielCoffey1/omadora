@@ -65,6 +65,10 @@ The app harness now uses a pseudo-terminal to answer each real package prompt. B
 
 Visual discrepancy observed: the GTK file chooser uses Fedora's light styling while the shell uses Tokyo Night. Full GTK/application theme parity is still incomplete. GameMode's functional self-test also failed its CPU-governor check in the VM; a binary/version smoke test is not proof of working performance tuning on real hardware.
 
+The [full catalog run](https://github.com/DanielCoffey1/omadora/actions/runs/35234023393) completed all 26 install commands and all 23 attempted removals. Three entries were already present and retained. Launch review found a missing Lutris display dependency, an incorrect Chromium test command, and several preliminary dialogs that must not count as complete application launches. See the [per-application results](APP_TESTS.md), including the Signal wrapper warning and sandbox font warning. The later suspend/unlock test failed again; the five preceding interaction checks passed.
+
+After the Network menu and Lutris dependency corrections, [source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35237020761) and the [Fedora integration/maintenance suite](https://github.com/DanielCoffey1/omadora/actions/runs/35237020707) passed at commit `eb6b7fa`. The [focused graphical retest](https://github.com/DanielCoffey1/omadora/actions/runs/35237031270) then confirmed the Network panel action and Lutris, Chromium and GIMP interfaces. Discord progressed beyond its updater but its capture still showed loading; Steam failed to create a main window within five minutes, with assertion dumps logged. All five selected app installations/removals passed. The five ordinary interaction checks passed again, while post-suspend unlocking failed again. See the application report for the reviewed results and limits.
+
 ## Manual and hardware acceptance procedure
 
 Use a disposable Fedora Workstation 44 x86_64 VM and take a hypervisor snapshot before installation. Record package versions, GPU model, compositor version and the Omadora source commit.

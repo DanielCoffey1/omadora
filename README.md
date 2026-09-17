@@ -4,7 +4,7 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**Development build.** Fedora tests cover installation, all 26 catalog entries resolving, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. **Suspend/resume currently fails in the QEMU/virtio test environment.** Physical hardware, full application behavior and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md) and [compatibility](docs/COMPATIBILITY.md).
+**Development build.** Fedora tests cover installation, all 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. **Suspend/resume and Steam launch currently fail in the QEMU/virtio test environment.** Some application startup flows, physical hardware and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 
