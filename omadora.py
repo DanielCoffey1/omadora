@@ -132,7 +132,7 @@ def menu_for_fedora(menu, apps, blocked):
     result['setup'] = {'label': 'Setup', 'icon': ''}
     for key, label, action in (
         ('network', 'Network', 'foot nmtui'),
-        ('audio', 'Audio', 'omarchy-menu-audio'),
+        ('audio', 'Audio', 'omarchy-shell shell toggle omarchy.audio'),
         ('config', 'Hyprland configuration', 'foot nvim ~/.config/hypr/hyprland.lua'),
     ):
         if not any(name in action for name in blocked):

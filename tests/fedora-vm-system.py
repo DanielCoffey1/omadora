@@ -24,7 +24,7 @@ def network():
     v.qmp('set_link', {'name': 'net0', 'up': False})
     time.sleep(4)
     v.qmp('set_link', {'name': 'net0', 'up': True})
-    v.wait_for(lambda: v.guest('curl -fsI --max-time 10 https://fedoraproject.org >/dev/null; echo online') == 'online', 60)
+    v.wait_for(lambda: v.guest('curl -fsI --max-time 10 https://fedoraproject.org >/dev/null && echo online') == 'online', 60)
     return v.guest('nmcli -t -f DEVICE,STATE device')
 
 
@@ -35,6 +35,14 @@ def sound():
     assert 'alsa_output' in detail, detail
     v.guest('wpctl set-mute @DEFAULT_AUDIO_SINK@ 1; wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep MUTED')
     v.guest('wpctl set-mute @DEFAULT_AUDIO_SINK@ 0; wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.4')
+    v.guest('omarchy-audio-output-volume raise; pactl get-sink-volume @DEFAULT_SINK@ | grep "45%"')
+    v.guest('omarchy-audio-output-volume mute-toggle; pactl get-sink-mute @DEFAULT_SINK@ | grep yes')
+    time.sleep(.3)
+    v.guest('omarchy-audio-output-volume mute-toggle; pactl get-sink-mute @DEFAULT_SINK@ | grep no')
+    action = v.guest("python3 -c 'import json; print(json.load(open(\"/usr/local/share/omadora/upstream/default/omarchy/omarchy-menu.jsonc\"))[\"setup.audio\"][\"action\"])'")
+    assert v.guest(action) == 'ok'
+    v.guest('grim /tmp/omadora-vm-results/audio-panel.png')
+    v.guest('omarchy-shell shell hide omarchy.audio')
     return detail
 
 

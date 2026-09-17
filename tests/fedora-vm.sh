@@ -75,7 +75,8 @@ tar -xzf /tmp/source.tar.gz -C ~/source
 cd ~/source
 mkdir -p ~/.config/hypr
 printf 'pre-install sentinel\n' >~/.config/hypr/original-test-marker
-python3 omadora.py install
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash
+cmp omadora.py /usr/local/share/omadora/omadora.py
 printf 'post-install sentinel\n' >~/.config/hypr/post-install-marker
 # The virtual monitor advertises 640x480 as preferred. Use a normal desktop
 # mode for visual evidence; this file is confined to the disposable test user.

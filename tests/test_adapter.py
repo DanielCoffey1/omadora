@@ -101,6 +101,12 @@ class AdapterTests(unittest.TestCase):
             menu = adapter.read_json(tree / 'default/omarchy/omarchy-menu.jsonc')
             self.assertIn('install.gaming.steam', menu)
             self.assertIn('system.lock', menu)
+            # Fedora-added entries must not reference removed upstream helpers.
+            import re
+            for entry in menu.values():
+                for field in ('action', 'when', 'disabled', 'provider'):
+                    for command in re.findall(r'\bomarchy-[a-z0-9-]+\b', str(entry.get(field, ''))):
+                        self.assertTrue((tree / 'bin' / command).is_file(), command)
             self.assertNotIn('install.gaming.xbox-controllers', menu)
             self.assertIn('omarchy_preinstalled_bindings = false', (tree / 'config/hypr/hyprland.lua').read_text())
             self.assertFalse((tree / 'install').exists())
