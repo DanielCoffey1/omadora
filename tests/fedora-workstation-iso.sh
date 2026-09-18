@@ -12,9 +12,22 @@ expected=$(sed -n "s/^SHA256 ($image) = //p" "$vm_dir/workstation-CHECKSUM")
 [[ $expected =~ ^[0-9a-f]{64}$ ]]
 printf '%s  %s\n' "$expected" "$vm_dir/workstation.iso" | sha256sum -c -
 cp "$vm_dir/workstation-CHECKSUM" vm-results/
-xorriso -osirrox on -indev "$vm_dir/workstation.iso" -extract /images/pxeboot/vmlinuz "$vm_dir/vmlinuz"
-xorriso -osirrox on -indev "$vm_dir/workstation.iso" -extract /images/pxeboot/initrd.img "$vm_dir/initrd.img"
-label=$(xorriso -indev "$vm_dir/workstation.iso" -pvd_info 2>/dev/null | sed -n 's/^Volume Id *: //p' | tr -d "'")
+xorriso -indev "$vm_dir/workstation.iso" -find / -type f -exec echo >"$vm_dir/iso-files.txt"
+cp "$vm_dir/iso-files.txt" vm-results/iso-files.txt
+mapfile -t boot_files < <(python3 - "$vm_dir/iso-files.txt" <<'PY'
+import shlex, sys
+from pathlib import PurePosixPath
+paths = shlex.split(open(sys.argv[1]).read())
+for names in ({'vmlinuz', 'linux'}, {'initrd.img', 'initrd'}):
+    matches = [p for p in paths if PurePosixPath(p).name in names]
+    assert len(matches) == 1, matches
+    print(matches[0])
+PY
+)
+[[ ${#boot_files[@]} == 2 ]]
+xorriso -osirrox on -indev "$vm_dir/workstation.iso" -extract "${boot_files[0]}" "$vm_dir/vmlinuz"
+xorriso -osirrox on -indev "$vm_dir/workstation.iso" -extract "${boot_files[1]}" "$vm_dir/initrd.img"
+label=$(xorriso -indev "$vm_dir/workstation.iso" -pvd_info 2>/dev/null | sed -n 's/^Volume [Ii]d *: //p' | tr -d "'")
 [[ -n $label ]]
 qemu-img create -f qcow2 "$vm_dir/disk.qcow2" 60G
 ssh-keygen -q -t ed25519 -N '' -f "$vm_dir/key"
