@@ -43,7 +43,7 @@ else:
     opt.asset_install(key, recipe)
 assert opt.installed(key), key
 if key in ('bun', 'deno', 'scala', 'symfony', 'laravel', 'openclaw'):
-    workflows.launch(key, root, ['--version'])
+    workflows.launch(key, root, ['version'] if key == 'symfony' else ['--version'])
     print('PASS: real command launch', key, flush=True)
 elif key == 'phoenix':
     workflows.launch(key, root, ['--version'])

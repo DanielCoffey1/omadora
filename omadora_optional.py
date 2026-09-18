@@ -155,7 +155,11 @@ def asset_install(key, recipe):
     final = location(key)
     if final.exists():
         if not (final / 'installed.json').exists():
-            raise ValueError('Incomplete installation retained at ' + str(final))
+            pending = final / 'pending.json'
+            if not pending.is_file() or json.loads(pending.read_text()).get('recipe') != recipe:
+                raise ValueError('Unrecognized or different incomplete installation retained at ' + str(final))
+            register_asset(key, recipe, final)
+            return
         print('Already installed. Remove this app before installing another pinned version; application data is retained.')
         return
     dependencies = recipe.get('dependencies', [])
@@ -185,23 +189,26 @@ def asset_install(key, recipe):
         if executable:
             (payload / executable).chmod((payload / executable).stat().st_mode | 0o755)
         # Stage first; no half-downloaded tree becomes an installed application.
+        (payload / 'pending.json').write_text(json.dumps({'recipe': recipe}))
         payload.rename(final)
-    try:
-        if kind == 'font':
-            fontdir = Path.home() / '.local/share/fonts' / ('omadora-' + key)
+    register_asset(key, recipe, final)
+
+
+def register_asset(key, recipe, final):
+    if recipe['kind'] == 'font':
+        fontdir = Path.home() / '.local/share/fonts' / ('omadora-' + key)
+        if not (fontdir.is_symlink() and fontdir.resolve() == final):
             if fontdir.exists() or fontdir.is_symlink():
                 raise ValueError('Font directory already exists: ' + str(fontdir))
             fontdir.parent.mkdir(parents=True, exist_ok=True)
             fontdir.symlink_to(final, target_is_directory=True)
-            run('fc-cache', '-f')
-        else:
-            if recipe.get('command'):
-                command_link(key, recipe['command'])
-            launcher(key, recipe['name'], ['python3', str(ROOT / 'omadora_optional.py'), 'launch', key], recipe.get('terminal', False))
-        (final / 'installed.json').write_text(json.dumps({'recipe': recipe, 'version': recipe.get('version')}))
-    except Exception:
-        # Keep the complete payload for diagnosis instead of claiming success.
-        raise
+        run('fc-cache', '-f')
+    else:
+        if recipe.get('command'):
+            command_link(key, recipe['command'])
+        launcher(key, recipe['name'], ['python3', str(ROOT / 'omadora_optional.py'), 'launch', key], recipe.get('terminal', False))
+    (final / 'installed.json').write_text(json.dumps({'recipe': recipe, 'version': recipe.get('version')}))
+    (final / 'pending.json').unlink(missing_ok=True)
 
 
 def remove(key, recipe):
@@ -211,8 +218,12 @@ def remove(key, recipe):
     final = location(key)
     if not final.exists():
         return
-    if not (final / 'installed.json').is_file():
+    marker = final / 'installed.json'
+    if not marker.is_file():
+        marker = final / 'pending.json'
+    if not marker.is_file() or 'recipe' not in json.loads(marker.read_text()):
         raise ValueError('Refusing to remove an unrecognized installation: ' + str(final))
+    recipe = json.loads(marker.read_text())['recipe']
     if recipe['kind'] == 'workflow':
         import omadora_workflows
         omadora_workflows.remove(key, final)
@@ -263,9 +274,13 @@ def main():
         elif recipe['kind'] == 'workflow':
             import omadora_workflows
             final = location(args.key)
+            if final.exists() and not any((final / marker).is_file() for marker in ('installed.json', 'pending.json')):
+                raise ValueError('Unrecognized installation retained at ' + str(final))
             final.mkdir(exist_ok=True)
+            (final / 'pending.json').write_text(json.dumps({'recipe': recipe}))
             omadora_workflows.install(args.key, final)
             (final / 'installed.json').write_text(json.dumps({'recipe': recipe}))
+            (final / 'pending.json').unlink(missing_ok=True)
         else:
             asset_install(args.key, recipe)
 

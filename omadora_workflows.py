@@ -51,6 +51,8 @@ def mise_environment(path):
 
 def runtime(key, path):
     # Exact versions are stored in the committed workflow recipe.
+    if key == 'symfony':
+        deps('php-cli', 'php-mbstring', 'php-xml', 'php-pdo', 'composer')
     versions = opt.recipes()[key]['tools']
     env = mise_environment(path)
     opt.run(opt.location('mise') / 'mise', 'install', *versions, env=env)
@@ -142,9 +144,17 @@ def database(key, path):
         fd = os.open(envfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, 'w') as out:
             out.write('\n'.join(values) + '\n')
-    opt.run('podman', 'pull', image)
-    opt.run('podman', 'create', '--name', name, '--env-file', envfile,
-            '--publish', f'127.0.0.1:{port}:{port}', '--volume', f'{name}-data:{mount}:Z', image)
+    existing = subprocess.run(['podman', 'container', 'exists', name], check=False).returncode
+    if existing == 0:
+        label = subprocess.check_output(['podman', 'inspect', '--format', '{{index .Config.Labels "org.omadora.recipe"}}', name], text=True).strip()
+        if label != key:
+            raise ValueError('Existing container is not owned by this installer: ' + name)
+    elif existing == 1:
+        opt.run('podman', 'pull', image)
+        opt.run('podman', 'create', '--name', name, '--label', 'org.omadora.recipe=' + key, '--env-file', envfile,
+                '--publish', f'127.0.0.1:{port}:{port}', '--volume', f'{name}-data:{mount}:Z', image)
+    else:
+        raise ValueError('Podman could not inspect the existing container')
     opt.run('podman', 'start', name)
     own_launcher(key, True)
     print(f'Local database on port {port}. Credentials: {envfile}. Named data volume is retained on removal.')
@@ -307,8 +317,16 @@ def launch(key, path, args):
 
 def remove(key, path):
     if key.startswith('db-'):
-        subprocess.run(['podman', 'stop', 'omadora-' + key], check=False)
-        opt.run('podman', 'rm', 'omadora-' + key)
+        name = 'omadora-' + key
+        exists = subprocess.run(['podman', 'container', 'exists', name], check=False).returncode
+        if exists == 0:
+            label = subprocess.check_output(['podman', 'inspect', '--format', '{{index .Config.Labels "org.omadora.recipe"}}', name], text=True).strip()
+            if label != key:
+                raise ValueError('Refusing to remove an unowned container: ' + name)
+            opt.run('podman', 'stop', name)
+            opt.run('podman', 'rm', name)
+        elif exists != 1:
+            raise ValueError('Podman could not inspect the existing container')
     elif key in ('tui', 'retro-launcher'):
         registry = path / 'launchers.json'
         for item in json.loads(registry.read_text()) if registry.exists() else {}:
@@ -331,6 +349,7 @@ def remove(key, path):
     elif key == 'xbox-controllers':
         opt.run('sudo', 'dkms', 'remove', 'hid-xpadneo/' + opt.recipes()['xpadneo-source']['version'], '--all')
     elif key == 'openclaw':
-        launch(key, path, ['gateway', 'uninstall'])
+        if (path / 'node_modules/.bin/openclaw').exists():
+            launch(key, path, ['gateway', 'uninstall'])
     # Framework caches and dependencies in this managed tree are removed by
     # the caller. Project directories, app profiles and database data are not.

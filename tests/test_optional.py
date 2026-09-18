@@ -104,7 +104,8 @@ class OptionalTests(unittest.TestCase):
                 optional.location('test')
 
     def test_databases_bind_only_loopback_and_keep_named_volumes(self):
-        with tempfile.TemporaryDirectory() as tmp, patch.object(Path, 'home', return_value=Path(tmp)), patch.object(workflows, 'deps'), patch.object(workflows, 'own_launcher'), patch.object(optional, 'run') as run:
+        with tempfile.TemporaryDirectory() as tmp, patch.object(Path, 'home', return_value=Path(tmp)), patch.object(workflows, 'deps'), patch.object(workflows, 'own_launcher'), patch.object(workflows.subprocess, 'run') as inspect, patch.object(optional, 'run') as run:
+            inspect.return_value.returncode = 1
             workflows.database('db-postgres', Path(tmp))
             create = next(call.args for call in run.call_args_list if call.args[:2] == ('podman', 'create'))
             self.assertIn('127.0.0.1:5432:5432', create)
@@ -113,6 +114,25 @@ class OptionalTests(unittest.TestCase):
             self.assertIn('POSTGRES_PASSWORD=', envfile.read_text())
             self.assertNotIn('trust', str(create))
             if os.name != 'nt': self.assertEqual(envfile.stat().st_mode & 0o777, 0o600)
+
+    def test_failed_registration_can_resume_without_download(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(Path, 'home', return_value=Path(tmp)):
+            recipe = {'name': 'Test', 'kind': 'binary', 'command': 'test-app'}
+            final = optional.location('test'); final.parent.mkdir(parents=True)
+            command = Path(tmp) / '.local/bin/test-app'; command.parent.mkdir(parents=True)
+            command.write_text('# existing user command')
+            with patch.object(optional, 'download', side_effect=lambda spec, target: target.write_bytes(b'payload')) as download:
+                with self.assertRaisesRegex(ValueError, 'not owned'):
+                    optional.asset_install('test', recipe)
+                self.assertFalse((final / 'installed.json').exists())
+                self.assertTrue((final / 'pending.json').exists())
+                command.unlink()
+                optional.asset_install('test', recipe)
+                self.assertEqual(download.call_count, 1)
+            self.assertTrue((final / 'installed.json').is_file())
+            self.assertFalse((final / 'pending.json').exists())
+            optional.remove('test', recipe)
+            self.assertFalse(final.exists())
 
 
 if __name__ == '__main__':
