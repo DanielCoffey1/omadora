@@ -123,8 +123,13 @@ if [[ $1 == legacy-drm ]]; then
 fi
 printf 'post-install sentinel\n' >~/.config/hypr/post-install-marker
 # The virtual monitor advertises 640x480 as preferred. Use a normal desktop
-# mode for visual evidence; this file is confined to the disposable test user.
-printf 'hl.monitor({ output = "Virtual-1", mode = "1920x1080@60", position = "0x0", scale = 1 })\n' >>~/.config/hypr/monitors.lua
+# mode for visual evidence through the default rule. A second connector rule
+# pinned to scale=1 overrides every scaling change when this file reloads.
+# This file is confined to the disposable test user.
+sed -i \
+  -e 's/^local omarchy_monitor_scale = .*/local omarchy_monitor_scale = 1/' \
+  -e 's/^local omarchy_gdk_scale = .*/local omarchy_gdk_scale = 1/' \
+  -e 's/mode = "preferred"/mode = "1920x1080@60"/' ~/.config/hypr/monitors.lua
 sudo mkdir -p /var/lib/AccountsService/users
 printf '[User]\nXSession=omadora\nSession=omadora\nSystemAccount=false\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null
 printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=omadora-test\n' | sudo tee /etc/gdm/custom.conf >/dev/null

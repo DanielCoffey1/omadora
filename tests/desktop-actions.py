@@ -100,6 +100,9 @@ def run_checks(v):
             v.keys('meta_l', 'alt', 'slash')
             v.wait_for(lambda: abs(float(v.guest('omarchy-hyprland-monitor-scaling')) - original) < .001)
         finally:
+            (v.OUT / 'display-scaling-state.log').write_text(v.guest(
+                'cat ~/.local/state/omarchy/monitor-scaling.log; '
+                'cat ~/.config/hypr/monitors.lua; hyprctl monitors -j'))
             v.guest('omarchy-hyprland-monitor-scaling ' + str(original))
         assert v.guest('omarchy-shell shell ping') == 'ok'
         return 'Display scaling increased through Super+/ and returned through Super+Alt+/; compositor configuration stayed valid.'
