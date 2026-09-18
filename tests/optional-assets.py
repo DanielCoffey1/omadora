@@ -53,6 +53,14 @@ elif key == 'phoenix':
     print('PASS: Phoenix generator launch', flush=True)
 elif key == 'mise':
     subprocess.run([root / recipe['executable'], '--version'], check=True)
+elif key == 'voxtype-rpm':
+    # The vendor RPM does not declare every OSD dependency. Check the actual
+    # optional visualizer, not just the daemon's package-presence predicate.
+    check = subprocess.run(['ldd', '/usr/lib/voxtype/voxtype-osd-gtk4'], capture_output=True, text=True, check=True)
+    print(check.stdout)
+    assert 'not found' not in check.stdout, check.stdout
+    subprocess.run(['/usr/lib/voxtype/voxtype-osd-gtk4', '--help'], check=True)
+    print('PASS: Voxtype visualizer libraries and executable startup', flush=True)
 elif key in ('codex', 'claude'):
     wrapper = Path.home() / '.local/bin' / key
     subprocess.run([wrapper, '--version'], check=True)

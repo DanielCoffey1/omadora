@@ -415,6 +415,7 @@ def optional_chooser():
 def dictation_keyboard():
     try:
         v.guest('yes | omadora app install dictation >/tmp/omadora-vm-results/dictation-install.log 2>&1', timeout=600)
+        assert 'not found' not in v.guest('ldd /usr/lib/voxtype/voxtype-osd-gtk4')
         v.wait_for(lambda: v.guest('systemctl --user is-active voxtype.service') == 'active')
         assert v.guest('hyprctl configerrors') in ('', 'ok')
         v.keyboard_windows()
