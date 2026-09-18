@@ -7,7 +7,7 @@ exec > >(tee vm-results/host.log) 2>&1
 task_root=$PWD
 vm_dir=/tmp/omadora-vm
 if [[ ${VM_BASE:-cloud} == workstation-iso ]]; then
-  bash tests/fedora-workstation-iso.sh
+  if [[ ${VM_ISO_PREPARED:-0} != 1 ]]; then bash tests/fedora-workstation-iso.sh; fi
 else
 image=Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2
 base=https://download.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images
@@ -94,7 +94,7 @@ wait_ssh
 if [[ ${VM_BASE:-cloud} != workstation-iso ]]; then
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo cloud-init status --wait --format json >/tmp/cloud-status.json; cat /tmp/cloud-status.json; python3 -c '\''import json; s=json.load(open("/tmp/cloud-status.json")); assert s["status"] == "done" and not s.get("errors"), s'\'''
 else
-  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'cat /etc/os-release; test -d /sys/firmware/efi; test "$(getenforce)" = Enforcing; rpm -q fedora-release-workstation; findmnt /; lsblk -f' | tee vm-results/workstation-baseline.log
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'set -e; cat /etc/os-release; cat /proc/cmdline; ! grep -Eq "systemd.debug_shell|inst.webui.remote" /proc/cmdline; test -d /sys/firmware/efi; test "$(getenforce)" = Enforcing; rpm -q fedora-release-workstation; findmnt /; lsblk -f' | tee vm-results/workstation-baseline.log
 fi
 if [[ -n ${OMADORA_TEST_APPS:-} ]]; then
   python3 - <<'PY'

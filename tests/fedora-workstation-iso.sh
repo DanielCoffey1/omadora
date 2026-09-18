@@ -53,6 +53,18 @@ qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
 qemu_pid=$!
 cleanup() {
   status=$?
+  python3 - <<'PY' || true
+import json, socket
+from pathlib import Path
+s = socket.socket(socket.AF_UNIX); s.settimeout(5)
+s.connect('/tmp/omadora-vm/iso-qmp.sock')
+f = s.makefile('rwb'); f.readline()
+for command in ({'execute': 'qmp_capabilities'}, {'execute': 'screendump', 'arguments': {'filename': str(Path('vm-results/iso-console.png').resolve()), 'format': 'png'}}):
+    f.write((json.dumps(command)+'\n').encode()); f.flush()
+    while True:
+        response = json.loads(f.readline())
+        if 'return' in response or 'error' in response: break
+PY
   ssh -i "$vm_dir/key" -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 root@127.0.0.1 'journalctl -b --no-pager' >vm-results/iso-journal.log 2>&1 || true
   kill "$qemu_pid" "$xvfb_pid" 2>/dev/null || true
   wait "$qemu_pid" 2>/dev/null || true

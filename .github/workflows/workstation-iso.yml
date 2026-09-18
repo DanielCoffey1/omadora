@@ -15,9 +15,15 @@ jobs:
           sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils ovmf xorriso xvfb x11-utils libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
           python3 -m pip install playwright
           python3 -m playwright install --with-deps chromium
-      - name: Install official Workstation ISO and test Omadora
+      - name: Install official Workstation ISO
+        run: |
+          set -o pipefail
+          mkdir -p vm-results
+          bash tests/fedora-workstation-iso.sh 2>&1 | tee vm-results/iso-host.log
+      - name: Test Omadora on the installed Workstation disk
         env:
           VM_BASE: workstation-iso
+          VM_ISO_PREPARED: '1'
           VM_SUITE: system
         run: bash tests/fedora-vm.sh
       - uses: actions/upload-artifact@v4
