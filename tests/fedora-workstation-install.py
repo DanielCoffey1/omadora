@@ -67,6 +67,11 @@ else:
 # Keep draining while Anaconda runs so the boot console never blocks the guest.
 (OUT / 'iso-baseline.log').write_text(guest('cat /etc/os-release; cat /proc/cmdline; rpm -q anaconda-core anaconda-webui; lsblk -f'))
 guest("nohup env PKEXEC_UID=1000 liveinst >/tmp/omadora-liveinst.log 2>&1 </dev/null &")
+# Fedora 44 liveinst serves the local installer over HTTP on guest loopback:80.
+# Tunnel that existing service rather than depending on newer remote boot flags.
+tunnel = subprocess.Popen(SSH[:-1] + ['-N', '-o', 'ExitOnForwardFailure=yes',
+                                    '-L', '127.0.0.1:9080:127.0.0.1:80', SSH[-1]],
+                          stdout=subprocess.DEVNULL, stderr=(OUT / 'iso-tunnel.log').open('w'))
 
 with sync_playwright() as pw:
     browser = pw.chromium.launch(headless=True, args=['--no-sandbox'])
@@ -76,7 +81,8 @@ with sync_playwright() as pw:
         deadline = time.monotonic() + 240
         while True:
             try:
-                page.goto('https://127.0.0.1:9443/cockpit/@localhost/anaconda-webui/index.html', timeout=15000)
+                assert tunnel.poll() is None, 'Installer SSH tunnel exited'
+                page.goto('http://127.0.0.1:9080/cockpit/@localhost/anaconda-webui/index.html', timeout=15000)
                 break
             except Exception:
                 if time.monotonic() > deadline:
@@ -123,6 +129,7 @@ with sync_playwright() as pw:
         (OUT / 'iso-last.html').write_text(page.content())
         (OUT / 'iso-installer.log').write_text(guest('cat /tmp/omadora-liveinst.log; cat /tmp/anaconda.log 2>/dev/null || true'))
         browser.close()
+        tunnel.terminate()
 
 # Anaconda installed the disk. Add only the CI access settings needed by the
 # existing acceptance suite, not a replacement desktop environment or kernel.
