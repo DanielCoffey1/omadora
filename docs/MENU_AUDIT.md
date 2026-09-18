@@ -8,6 +8,10 @@ workflow works.
 
 ## Issues corrected
 
+- The optional Install menu was reduced too far when creating the minimal base.
+  It now includes 51 catalog entries and restores portable web-app/style
+  installers. [Install coverage](INSTALL_MENU.md) records exact mappings,
+  Fedora differences and remaining upstream ports.
 - The shell menu had an embedded `pacman` package cache that shadowed the
   adapted RPM helpers. It now uses the installed Fedora helpers.
 - Menu filtering now checks `checked` expressions as well as actions,
@@ -60,10 +64,12 @@ recorded as false, not counted as successful hardware tests. The graphical
 suite captures menus and panels for inspection and tests state transitions;
 merely opening a panel does not validate its hardware controls.
 
-The expanded VM audit inventories 136 menu entries, 73 executable dependencies,
+The earlier VM audit inventories 136 menu entries, 73 executable dependencies,
 64 evaluated predicates, and 187 lines of shortcut help. Hardware checkmark
 queries short-circuit when their hardware condition is false. The shortcut help
 count is an inventory, not 187 individually executed shortcut tests.
+Those counts predate the optional Install expansion; its new mappings have
+source/parser and Fedora package-resolution coverage, not a new graphical audit.
 
 See [validation results](VALIDATION.md) for workflow evidence and
 [compatibility](COMPATIBILITY.md) for remaining release limitations.

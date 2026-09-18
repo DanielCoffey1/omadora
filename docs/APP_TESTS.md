@@ -2,9 +2,11 @@
 
 Tested on September 17, 2026 in the booted Fedora 44 Workstation-package VM described in [VALIDATION.md](VALIDATION.md). These are installation, presence-query, removal and basic launch checks. They do not establish gameplay, media capture/playback, account login, container workloads or complete application compatibility.
 
-Every catalog install command passed, as did every removal attempted. The Lutris dependency fix is verified; Chromium and GIMP reached their main interfaces in the retest. Later runs confirmed Steam's client download and sign-in screen, Signal's linking screen, Discord's login form, and corrected sandbox font lookup. Account and gameplay workflows remain unverified. The tables below retain historical failures; subsequent retests record their resolution.
+Every original 26-entry catalog install command passed, as did every removal attempted. The Lutris dependency fix is verified; Chromium and GIMP reached their main interfaces in the retest. Later runs confirmed Steam's client download and sign-in screen, Signal's linking screen, Discord's login form, and corrected sandbox font lookup. Account and gameplay workflows remain unverified. The tables below retain historical failures; subsequent retests record their resolution.
 
-## Full catalog run
+The expanded 51-entry catalog adds apps not covered by these historical runtime results. See [Install coverage](INSTALL_MENU.md) and [latest validation](VALIDATION.md).
+
+## Original catalog run
 
 [Run 35234023393](https://github.com/DanielCoffey1/omadora/actions/runs/35234023393), commit `b578c75`, exercised all 26 entries through the real Omadora CLI and interactive package managers:
 

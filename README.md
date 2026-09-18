@@ -4,7 +4,7 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**Development build.** Fedora tests cover installation, all 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam startup, GTK dark dialogs and the GDM inactive-session startup crash are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume passed three cycles with a [Bochs virtual display](docs/VIRTUAL_MACHINES.md); QEMU/virtio still fails.** Application workloads, physical hardware and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
+**Development build.** Fedora tests cover installation, the original 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam startup, GTK dark dialogs and the GDM inactive-session startup crash are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume passed three cycles with a [Bochs virtual display](docs/VIRTUAL_MACHINES.md); QEMU/virtio still fails.** Application workloads, physical hardware and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 
@@ -37,7 +37,7 @@ After installation, log out, select **Omadora** using GDM's gear menu, and log i
 - Foot terminal, Neovim, Firefox and Files, plus desktop infrastructure for networking, sound, brightness, clipboard and screenshots.
 - Activity opens `top` in Foot. Screenshot selection supports Escape to cancel and Ctrl+Enter for fullscreen, saving and copying the image without an extra editor.
 - Omarchy's additional app and web-app shortcuts disabled; essential desktop shortcuts remain.
-- Optional software in **Install**, grouped by Gaming, Creative, Media, Productivity, Communication, Development, Terminal and Browser. Matching Remove menus.
+- Optional software in **Install**, including Gaming, Editor, Browser, Terminal, Services, Development and Style → Font, plus creative/media/productivity apps. Matching Remove menus. Web App, Theme and Background installers are also available; see [Install coverage](docs/INSTALL_MENU.md).
 - Configuration backups before setup and a restore command that preserves later edits in a second backup.
 
 No games, office suite, media editor, music client, AI agent, container engine or proprietary chat app is installed by Omadora's base profile. Fedora Workstation's own existing applications are left in place.
@@ -54,11 +54,13 @@ Theme switching also sets the user's GTK light/dark preference, GTK theme and ic
 | Creative → GIMP | Fedora RPM |
 | Creative → OBS Studio, Kdenlive | User-scoped Flathub |
 | Productivity → LibreOffice | Fedora RPM |
-| Productivity → Obsidian, Bitwarden | User-scoped Flathub |
-| Development → Podman, Node.js, Go, Rust | Fedora RPMs |
-| Development → Visual Studio Code | User-scoped Flathub; sandboxed distribution |
+| Productivity → Obsidian; Services → Bitwarden, Signal, Spotify, Dropbox | User-scoped Flathub |
+| Development → Podman, JavaScript → Node.js, Go, Rust and additional language tools | Fedora RPMs |
+| Editor → Visual Studio Code, Zed | User-scoped Flathub; sandboxed distribution |
+| Editor → Sublime Text | Official signed vendor RPM repository |
+| Terminal → Ghostty | Community `scottames/ghostty` COPR |
 
-Full catalog: [apps.json](apps.json). Package-manager prompts remain visible in a terminal. Selecting one app installs that app and its dependencies; selecting a category does not install a bundle. RPM Fusion is enabled only when Steam is requested. Flathub is added to the user's Flatpak configuration only when a Flatpak app is requested. The catalog manages its user-scoped Flatpaks; system-wide installations are outside its removal scope.
+The expanded catalog contains 51 entries. Full catalog: [apps.json](apps.json); [upstream coverage and pending ports](docs/INSTALL_MENU.md). Package-manager prompts remain visible in a terminal. Selecting one app installs that app and its dependencies; selecting a category does not install a bundle. RPM Fusion is enabled only when Steam is requested. Ghostty enables the community `scottames/ghostty` COPR only when selected; its repository remains configured after removal. Sublime Text adds its official stable RPM repository and signing key only when selected; these remain after removing the app. Flathub is added to the user's Flatpak configuration only when a Flatpak app is requested. The catalog manages its user-scoped Flatpaks; system-wide installations are outside its removal scope.
 
 Installing native Steam also adds `/etc/pki/tls/cert.pem` as a compatibility link to Fedora's maintained CA bundle if that legacy path is absent. Existing trust configuration is preserved and TLS verification stays enabled. This shared compatibility link remains after app removal, like the RPM Fusion repository configuration; Steam uses its original RPM-provided desktop launcher.
 
