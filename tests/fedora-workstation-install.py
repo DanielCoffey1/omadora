@@ -4,6 +4,7 @@ import json
 import shlex
 import socket
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -22,7 +23,7 @@ def guest(command):
 
 # A debug shell is enabled only for this live boot. It is not written to the
 # installed kernel command line. The public SSH key is disposable test access.
-deadline = time.monotonic() + 180
+deadline = time.monotonic() + 360
 while not (VM / 'iso-serial.sock').exists():
     assert time.monotonic() < deadline, 'QEMU serial socket unavailable'
     time.sleep(1)
@@ -33,20 +34,31 @@ key = base64.b64encode((VM / 'key.pub').read_bytes()).decode()
 command = (f"mkdir -p /root/.ssh; echo {key} | base64 -d >/root/.ssh/authorized_keys; "
            "chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys; "
            "echo root:omadora-live-test-only | chpasswd; systemctl start sshd; echo ISO_SSH_READY")
-with (OUT / 'iso-console.log').open('wb') as log:
-    while time.monotonic() < deadline:
-        serial.sendall(('\n' + command + '\n').encode())
-        try:
-            data = serial.recv(65536)
-            log.write(data); log.flush()
-        except socket.timeout:
-            pass
-        if subprocess.run(SSH + ['true'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-            break
-        time.sleep(3)
-    else:
-        raise RuntimeError('Live ISO debug-shell SSH bootstrap did not finish')
-serial.close()
+def drain_serial():
+    # Drain continuously: pausing reads around slow SSH probes backpressures
+    # QEMU's emulated UART and can stall each kernel/systemd console write.
+    with (OUT / 'iso-console.log').open('wb') as log:
+        while True:
+            try:
+                data = serial.recv(65536)
+                if not data:
+                    return
+                log.write(data); log.flush()
+            except socket.timeout:
+                continue
+            except OSError:
+                return
+
+
+threading.Thread(target=drain_serial, daemon=True).start()
+while time.monotonic() < deadline:
+    serial.sendall(('\n' + command + '\n').encode())
+    if subprocess.run(SSH + ['true'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+        break
+    time.sleep(3)
+else:
+    raise RuntimeError('Live ISO debug-shell SSH bootstrap did not finish')
+# Keep draining while Anaconda runs so the boot console never blocks the guest.
 (OUT / 'iso-baseline.log').write_text(guest('cat /etc/os-release; cat /proc/cmdline; rpm -q anaconda-core anaconda-webui; lsblk -f'))
 guest("nohup env PKEXEC_UID=1000 liveinst >/tmp/omadora-liveinst.log 2>&1 </dev/null &")
 
