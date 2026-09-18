@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Resolve optional apps in the disposable Fedora test system; install none."""
 import importlib.util
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -9,6 +10,22 @@ spec = importlib.util.spec_from_file_location('omadora', '/src/omadora.py')
 adapter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(adapter)
 apps = adapter.read_json('/src/apps.json')
+
+# Exercise restored launcher creation/removal using the installed helpers.
+# No browser/account or network request is needed for an installed icon name.
+runtime = Path('/usr/local/share/omadora')
+env = dict(os.environ, PATH=f'{runtime}/bin:{runtime}/upstream/bin:' + os.environ['PATH'],
+           OMARCHY_REMOVE_NOTIFY='false')
+launcher = Path.home() / '.local/share/applications/Omadora installer test.desktop'
+subprocess.run(['omarchy-webapp-install', 'Omadora installer test',
+                'https://example.org/?source=omadora&test=1', 'web-browser'], env=env, check=True)
+assert launcher.is_file()
+subprocess.run(['desktop-file-validate', str(launcher)], check=True)
+assert 'Exec=omarchy-launch-webapp ' in launcher.read_text()
+subprocess.run(['omarchy-webapp-remove', 'Omadora installer test'], env=env, check=True)
+assert not launcher.exists()
+subprocess.run(['file', '--version'], check=True, stdout=subprocess.DEVNULL)
+print('PASS: installed web-app launcher creation, desktop-file validation and removal.')
 
 # Only the disposable test fixture enables these repositories up front.
 repositories = set()
