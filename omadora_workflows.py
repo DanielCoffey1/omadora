@@ -54,7 +54,7 @@ def runtime(key, path):
     if key == 'symfony':
         deps('php-cli', 'php-mbstring', 'php-xml', 'php-pdo', 'composer')
     elif key == 'scala':
-        deps('java-devel')
+        deps('java-devel', 'which')
     versions = opt.recipes()[key]['tools']
     env = mise_environment(path)
     opt.run(opt.location('mise') / 'mise', 'install', *versions, env=env)
