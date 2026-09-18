@@ -6,6 +6,9 @@ mkdir -p vm-results /tmp/omadora-vm
 exec > >(tee vm-results/host.log) 2>&1
 task_root=$PWD
 vm_dir=/tmp/omadora-vm
+if [[ ${VM_BASE:-cloud} == workstation-iso ]]; then
+  bash tests/fedora-workstation-iso.sh
+else
 image=Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2
 base=https://download.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images
 curl -fL --retry 3 "$base/$image" -o "$vm_dir/disk.qcow2"
@@ -31,6 +34,12 @@ users:
 EOF
 printf 'instance-id: omadora-ci\nlocal-hostname: omadora-ci\n' >"$vm_dir/meta-data"
 cloud-localds "$vm_dir/seed.img" "$vm_dir/user-data" "$vm_dir/meta-data"
+fi
+boot_drives=(-drive "file=$vm_dir/seed.img,format=raw,if=virtio")
+if [[ ${VM_BASE:-cloud} == workstation-iso ]]; then
+  boot_drives=(-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd
+               -drive "if=pflash,format=raw,file=$vm_dir/OVMF_VARS.fd")
+fi
 accel=tcg
 cpu=max
 if [[ -e /dev/kvm ]]; then sudo chmod 0666 /dev/kvm; accel=kvm; cpu=host; fi
@@ -55,7 +64,7 @@ elif [[ ${VM_SLEEP_DIAGNOSTIC:-} == bochs-gpu ]]; then
 fi
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
-  -drive "file=$vm_dir/seed.img,format=raw,if=virtio" \
+  "${boot_drives[@]}" \
   "${graphics[@]}" \
   -audiodev driver=none,id=audio0 -device intel-hda -device hda-duplex,audiodev=audio0 \
   -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22 -device virtio-net-pci,netdev=net0 \
@@ -82,7 +91,11 @@ wait_ssh() {
   return 1
 }
 wait_ssh
+if [[ ${VM_BASE:-cloud} != workstation-iso ]]; then
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo cloud-init status --wait --format json >/tmp/cloud-status.json; cat /tmp/cloud-status.json; python3 -c '\''import json; s=json.load(open("/tmp/cloud-status.json")); assert s["status"] == "done" and not s.get("errors"), s'\'''
+else
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'cat /etc/os-release; test -d /sys/firmware/efi; test "$(getenforce)" = Enforcing; rpm -q fedora-release-workstation; findmnt /; lsblk -f' | tee vm-results/workstation-baseline.log
+fi
 if [[ -n ${OMADORA_TEST_APPS:-} ]]; then
   python3 - <<'PY'
 import json, os
@@ -92,15 +105,20 @@ assert selection and len(selection) == len(set(selection)) and set(selection) <=
 Path('tests/selected-apps.json').write_text(json.dumps(selection))
 PY
 fi
-tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py omadora_deploy.py omadora_lifecycle.py apps.json upstream.lock.json packages assets tests
+tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py omadora_deploy.py omadora_lifecycle.py omadora_optional.py omadora_workflows.py apps.json optional.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
 revision=$(git rev-parse HEAD)
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision" <<'GUEST'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision ${VM_BASE:-cloud}" <<'GUEST'
 set -euo pipefail
+if [[ $3 != workstation-iso ]]; then
 sudo dnf --setopt=max_parallel_downloads=10 install -y --allowerasing @workstation-product-environment fedora-release-identity-workstation
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
 # so the emulated sound device has its normal driver after reboot.
 sudo dnf install -y kernel python3-pexpect
+else
+  # Test instrumentation only; the desktop and kernel came from the Live ISO.
+  sudo dnf install -y python3-pexpect
+fi
 mkdir -p ~/source
 tar -xzf /tmp/source.tar.gz -C ~/source
 cd ~/source
