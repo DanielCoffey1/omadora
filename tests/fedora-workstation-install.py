@@ -66,7 +66,21 @@ else:
     raise RuntimeError('Live ISO debug-shell SSH bootstrap did not finish')
 # Keep draining while Anaconda runs so the boot console never blocks the guest.
 (OUT / 'iso-baseline.log').write_text(guest('cat /etc/os-release; cat /proc/cmdline; rpm -q anaconda-core anaconda-webui; lsblk -f'))
-guest("nohup env PKEXEC_UID=1000 liveinst >/tmp/omadora-liveinst.log 2>&1 </dev/null &")
+# SSH can become ready before GNOME exports DISPLAY. Anaconda's browser exits
+# immediately when that variable is absent, taking its backend down with it.
+deadline = time.monotonic() + 180
+while True:
+    session_env = dict(line.split('=', 1) for line in guest(
+        'runuser -u liveuser -- env XDG_RUNTIME_DIR=/run/user/1000 '
+        'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus '
+        'systemctl --user show-environment 2>/dev/null || true').splitlines() if '=' in line)
+    if session_env.get('DISPLAY') and session_env.get('WAYLAND_DISPLAY'):
+        break
+    assert time.monotonic() < deadline, 'Live GNOME display environment unavailable'
+    time.sleep(2)
+display_env = ' '.join(shlex.quote(key + '=' + session_env[key]) for key in
+                       ('DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY') if session_env.get(key))
+guest('nohup env PKEXEC_UID=1000 ' + display_env + ' liveinst >/tmp/omadora-liveinst.log 2>&1 </dev/null &')
 # Fedora 44 liveinst serves the local installer over HTTP on guest loopback:80.
 # Tunnel that existing service rather than depending on newer remote boot flags.
 tunnel = subprocess.Popen(SSH[:-1] + ['-N', '-o', 'ExitOnForwardFailure=yes',

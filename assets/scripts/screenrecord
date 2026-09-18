@@ -72,7 +72,7 @@ def worker(args, directory, state):
                 state.unlink(missing_ok=True)
                 refresh()
         if code in (0, -signal.SIGINT) and filename.exists() and filename.stat().st_size:
-            notify('Screen recording saved', str(filename), '--exec', 'xdg-open', '--', str(filename))
+            notify('Screen recording saved', str(filename), '--exec', 'xdg-open', str(filename))
             return 0
         notify('Screen recording failed', f'See {directory / "recorder.log"}')
         return 1

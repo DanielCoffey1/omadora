@@ -18,12 +18,14 @@ bluetoothctl eject lua python3 foot nvim firefox nautilus hyprctl Hyprland
 quickshell hyprpicker hyprsunset uwsm-app grim slurp wl-copy wl-paste
 wpctl pactl pamixer playerctl brightnessctl ddcutil powerprofilesctl notify-send
 gsettings gdbus xdg-open xdg-mime xkbcli fc-list fc-match fc-cache magick
-jq curl rpm dnf flatpak top pkill pgrep systemctl loginctl setsid'''.split()
+jq curl rpm dnf flatpak top pkill pgrep systemctl loginctl setsid wf-recorder ffprobe'''.split()
 missing = [c for c in commands if not shutil.which(c)]
 assert not missing, missing
 subprocess.run(['python3', '-c', 'from gi.repository import Gio, GLib'], check=True)
 report = {'commands': commands, 'entries': []}
 for key, entry in menu.items():
+    if key.startswith(('install.', 'remove.')):
+        assert entry.get('icon'), key
     record = {'id': key, 'entry': entry, 'predicates': {}}
     visible = True
     for field in ('when', 'disabled', 'checked'):

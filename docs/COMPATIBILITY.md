@@ -15,8 +15,10 @@
 
 - Firefox is the default browser; web links open as normal Firefox windows rather than Chromium app-mode windows.
 - Theme changes do not install machine-wide browser color policies. Chromium toolbar-color synchronization and Apple vendor HID brightness controls are not ported.
-- Screenshots retain the upstream keyboard region picker, including Escape cancellation and Ctrl+Enter for fullscreen, with grim/slurp capture and save/copy modes. The annotation editor and advanced capture tools are not installed.
-- Activity opens the installed `top` monitor in Foot. TUI launchers use Foot directly. Shortcuts for omitted agents, reminders, sharing and transcoding are removed alongside their menu entries.
+- Screenshots retain the upstream keyboard region picker, including Escape cancellation and Ctrl+Enter for fullscreen, with grim/slurp capture and save/copy modes. The annotation editor, OCR and QR capture tools are not installed.
+- The recording indicator opens region/full-display recording and stops an active recording. Fedora's `wf-recorder` saves VP8 WebM files to the Videos folder, with optional desktop or microphone audio. Encoding uses the CPU; simultaneous audio mixing, webcam overlays and upstream GPU encoder options are not implemented.
+- Activity opens the installed `top` monitor in Foot. TUI launchers use Foot directly. Shortcuts for omitted agents, sharing, transcoding and the upstream recording/reminder bindings are removed. Recording and reminders are available through the menu and bar.
+- The Dictation indicator opens optional Dictation installation when `voxtype` is absent, then its configuration once installed. Dictation remains outside the minimal base. The Updates indicator opens one terminal and lets Enter close it after completion.
 - About uses Omadora's text information; Fastfetch styling entries are omitted. Documentation links point to Omadora and the installed plain Neovim.
 - Font selection updates the managed `fontconfig/conf.d/99-omadora.conf` file and preserves unrelated `fontconfig/fonts.conf` preferences.
 - Omarchy's optional app shortcuts and AI status widget are disabled in the minimal profile.

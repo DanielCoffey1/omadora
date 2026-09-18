@@ -14,7 +14,7 @@ picker. Selecting a category never installs a bundle.
 
 | Area | Fedora implementation |
 | --- | --- |
-| Package / AUR | DNF package prompt; AUR becomes a validated COPR owner/project and package prompt |
+| Package / AUR | Searchable available RPM list; AUR becomes a validated COPR owner/project and package prompt |
 | TUI / Web App | Foot launchers for installed terminal commands; Firefox web launchers |
 | Theme / Background | Upstream theme import and current-theme background folder |
 | Fonts | Fedora Cascadia Mono, Fira Code and Bitstream Vera Mono; pinned Meslo, Victor Mono and Iosevka Nerd Font archives |
@@ -33,6 +33,15 @@ catalog is [apps.json](../apps.json); download pins and workflow versions are in
 [optional.json](../optional.json).
 
 ## Installation and removal
+
+**Fedora package** lists packages from enabled repositories under Install and
+all installed RPM names under Remove. Type to narrow the list, press Tab to
+select several packages, and press Enter to review the DNF transaction. Escape
+cancels. DNF still previews dependencies and asks for confirmation before
+changing packages. Its protected-package rules remain enabled.
+
+Every Install and Remove menu entry has an icon. Web-app installation and the
+package picker finish with **Press Enter to close this window**.
 
 Native apps use Fedora, RPM Fusion, explicit COPRs or vendor RPM repositories.
 Vendor signing checks remain enabled. Repository files and signing keys remain

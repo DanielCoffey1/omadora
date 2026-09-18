@@ -198,7 +198,7 @@ def menu_audit():
         assert label in bindings, label
     assert 'Download Video from Web App' not in bindings
     assert 'Copy URL from Web App' not in bindings
-    for route in ('root', 'apps', 'style.font', 'install.gaming', 'system'):
+    for route in ('root', 'apps', 'style.font', 'install', 'remove', 'install.gaming', 'system'):
         v.guest('omarchy-menu summon ' + route)
         time.sleep(1)
         v.guest('grim /tmp/omadora-vm-results/menu-' + route.replace('.', '-') + '.png')
@@ -320,12 +320,31 @@ def package_picker_and_completion():
 
 
 def screen_recording_and_reminder():
+    def region():
+        command = ('source ~/source/tests/vm-session.sh; '
+                   'OMARCHY_SCREENRECORD_DIR=/tmp/omadora-vm-results/recordings '
+                   'omarchy-capture-screenrecording >/tmp/omadora-vm-results/record-picker.log 2>&1')
+        process = subprocess.Popen(v.ssh + ['bash -c ' + shlex.quote(command)],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        v.wait_for(lambda: v.guest('pgrep -x slurp'))
+        time.sleep(1)
+        return process
+
     v.guest('omarchy-menu summon trigger.capture.screenrecord')
     time.sleep(2)
     v.guest('grim /tmp/omadora-vm-results/recording-menu.png')
     v.keys('esc')
+    process = region()
+    v.keys('esc')
+    assert process.wait(30) == 0
+    assert v.guest('omarchy-capture-screenrecording --status; echo $?') == '1'
     for mode in ('', '--with-desktop-audio', '--with-microphone-audio'):
-        v.guest('OMARCHY_SCREENRECORD_DIR=/tmp/omadora-vm-results/recordings omarchy-capture-screenrecording --fullscreen ' + mode)
+        if mode:
+            v.guest('OMARCHY_SCREENRECORD_DIR=/tmp/omadora-vm-results/recordings omarchy-capture-screenrecording --fullscreen ' + mode)
+        else:
+            process = region()
+            v.keys('ctrl', 'ret')
+            assert process.wait(30) == 0
         try:
             v.wait_for(lambda: v.guest('omarchy-capture-screenrecording --status; echo $?') == '0')
             # Move the pointer to ensure frames arrive even on a static desktop.
