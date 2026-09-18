@@ -53,6 +53,11 @@ elif key == 'phoenix':
     print('PASS: Phoenix generator launch', flush=True)
 elif key == 'mise':
     subprocess.run([root / recipe['executable'], '--version'], check=True)
+elif key in ('codex', 'claude'):
+    wrapper = Path.home() / '.local/bin' / key
+    subprocess.run([wrapper, '--version'], check=True)
+    subprocess.run([wrapper, '--help'], check=True, stdout=subprocess.DEVNULL)
+    print('PASS: installed CLI wrapper version and help', key, flush=True)
 desktop = Path.home() / '.local/share/applications' / ('omadora-' + key + '.desktop')
 if desktop.exists():
     subprocess.run(['desktop-file-validate', desktop], check=True)
@@ -69,7 +74,14 @@ print('PASS: pinned install, presence and desktop registration', key, flush=True
 personal = Path.home() / '.config' / ('test-' + key)
 personal.mkdir(parents=True, exist_ok=True)
 (personal / 'keep').write_text('personal data')
+if key in ('codex', 'claude'):
+    profile = Path.home() / ('.' + key)
+    profile.mkdir(exist_ok=True)
+    (profile / 'omadora-test-preserve').write_text('keep profile')
 opt.remove(key, recipe)
 assert not opt.installed(key)
 assert (personal / 'keep').read_text() == 'personal data'
+if key in ('codex', 'claude'):
+    assert (profile / 'omadora-test-preserve').read_text() == 'keep profile'
+    assert not wrapper.exists()
 print('PASS: removal retains personal files', key, flush=True)

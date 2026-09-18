@@ -250,6 +250,7 @@ def launch(key, recipe, args):
         return omadora_workflows.launch(key, location(key), args)
     executable = location(key) / recipe.get('executable', 'app')
     env = dict(os.environ)
+    env.update(recipe.get('env', {}))
     if recipe['kind'] == 'appimage':
         env['APPIMAGE_EXTRACT_AND_RUN'] = '1'
     os.execvpe(str(executable), [str(executable), *recipe.get('args', []), *args], env)

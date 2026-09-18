@@ -390,5 +390,39 @@
   "preinstalls": {
     "kind": "workflow",
     "name": "Choose optional apps"
+  },
+  "codex": {
+    "name": "Codex CLI",
+    "kind": "archive",
+    "version": "0.155.0",
+    "url": "https://github.com/openai/codex/releases/download/rust-v0.155.0/codex-package-x86_64-unknown-linux-musl.tar.gz",
+    "sha256": "135bfe1af2d8d5954c12f03bee2cf8b40dffb06f76bb0ec3bd6105de5357e009",
+    "archive": "tar",
+    "executable": "bin/codex",
+    "command": "codex",
+    "terminal": true,
+    "dependencies": [
+      "git",
+      "ripgrep",
+      "ca-certificates"
+    ]
+  },
+  "claude": {
+    "name": "Claude Code",
+    "kind": "binary",
+    "version": "2.1.267",
+    "url": "https://downloads.claude.ai/claude-code-releases/2.1.267/linux-x64/claude",
+    "sha256": "0399c793ff571d5946ef923d80b4f330d05ac4b6842a6b0775468f5d389403c0",
+    "executable": "claude",
+    "command": "claude",
+    "terminal": true,
+    "env": {
+      "DISABLE_UPDATES": "1"
+    },
+    "dependencies": [
+      "git",
+      "ripgrep",
+      "ca-certificates"
+    ]
   }
 }

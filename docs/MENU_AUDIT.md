@@ -9,7 +9,7 @@ workflow works.
 ## Issues corrected
 
 - The optional Install menu was reduced too far when creating the minimal base.
-  It now includes 91 catalog entries and restores portable web-app/style
+  It now includes 93 catalog entries and restores portable web-app/style
   installers. [Install coverage](INSTALL_MENU.md) records exact mappings,
   Fedora differences and interactive/hardware validation limits. Every pinned upstream Install action now has a mapping, including existing base Firefox and Foot.
 - The shell menu had an embedded `pacman` package cache that shadowed the

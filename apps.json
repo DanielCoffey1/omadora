@@ -53,6 +53,8 @@
   "meslo": {"name": "Meslo LG Mono Nerd Font", "category": "style.font", "source": "optional", "recipe": "meslo"},
   "victor": {"name": "Victor Mono Nerd Font", "category": "style.font", "source": "optional", "recipe": "victor"},
   "iosevka": {"name": "Iosevka Nerd Font", "category": "style.font", "source": "optional", "recipe": "iosevka"},
+  "codex": {"name": "Codex CLI", "category": "ai", "source": "optional", "recipe": "codex"},
+  "claude": {"name": "Claude Code", "category": "ai", "source": "optional", "recipe": "claude"},
   "ollama": {"name": "Ollama", "category": "ai", "source": "optional", "recipe": "ollama"},
   "chatgpt": {"name": "ChatGPT Desktop", "category": "ai", "source": "optional", "recipe": "chatgpt"},
   "perplexity": {"name": "Perplexity", "category": "ai", "source": "optional", "recipe": "perplexity"},

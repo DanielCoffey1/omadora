@@ -1,6 +1,6 @@
 # Install menu coverage
 
-The catalog contains 91 optional choices. Every actionable Install entry in the
+The catalog contains 93 optional choices. Every actionable Install entry in the
 pinned Omarchy 4.0.4 menu now has a Fedora mapping; Firefox and Foot are already
 in the base desktop. An automated test compares the upstream menu with the
 generated menu to prevent omissions. Menu coverage does not establish complete
@@ -22,7 +22,7 @@ picker. Selecting a category never installs a bundle.
 | Editor | VS Code, Zed, Sublime Text, Helix, Vim, Emacs and Cursor |
 | Terminal | Alacritty, Kitty and Ghostty; Foot is in the base |
 | Services | Dropbox, Spotify, Signal, Bitwarden, 1Password, Tailscale, NordVPN, ONCE and Chromium Account |
-| AI | Ollama, ChatGPT Desktop, Perplexity, Grok Bot, T3 Code, LM Studio, Hermes Desktop, OpenClaw and Dictation |
+| AI | Codex CLI, Claude Code, Ollama, ChatGPT Desktop, Perplexity, Grok Bot, T3 Code, LM Studio, Hermes Desktop, OpenClaw and Dictation |
 | Gaming | Steam, RetroArch, Minecraft, Lutris, Heroic, Bottles, MangoHud, GameMode, ProtonUp-Qt, GeForce NOW, Xbox Cloud Gaming, Xbox Controllers, Battle.net setup and RetroArch Game Launcher |
 | Development | Existing Fedora language packages plus Bun, Deno, Scala/compiler/Scala CLI, Laravel, Symfony and Phoenix |
 | Databases | Rootless Podman PostgreSQL, MySQL, MariaDB, Redis, MongoDB and SQL Server Developer containers |
@@ -104,3 +104,19 @@ Those Arch recipes are not executed by Omadora. Official references include
 [Tailscale](https://pkgs.tailscale.com/stable/),
 [Voxtype](https://voxtype.io/download), and
 [xpadneo](https://github.com/atar-axis/xpadneo).
+
+Codex CLI and Claude Code use pinned, checksum-verified official Linux binaries
+and open in Foot. The `codex` and `claude` commands are available in the terminal.
+Their account/configuration directories are preserved on removal. Claude self-updates
+are disabled for this managed copy; update the Omadora recipe and remove/reinstall
+to apply a newer pin. Sign-in and model requests remain user-driven. Sources:
+[Codex CLI](https://learn.chatgpt.com/docs/codex/cli) and
+[Claude Code setup](https://code.claude.com/docs/en/setup).
+
+Codex CLI and Claude Code use pinned, checksum-verified official Linux binaries
+and open in Foot. The `codex` and `claude` commands are available in the terminal.
+Their account/configuration directories are preserved on removal. Claude self-updates
+are disabled for this managed copy; update the Omadora recipe and remove/reinstall
+to apply a newer pin. Sign-in and model requests remain user-driven. Sources:
+[Codex CLI](https://learn.chatgpt.com/docs/codex/cli) and
+[Claude Code setup](https://code.claude.com/docs/en/setup).
