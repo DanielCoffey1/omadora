@@ -31,7 +31,7 @@
   "zen": {"name": "Zen", "category": "browser", "source": "flatpak", "id": "app.zen_browser.zen"},
   "dropbox": {"name": "Dropbox", "category": "service", "source": "flatpak", "id": "com.dropbox.Client"},
   "zed": {"name": "Zed (community Flatpak)", "category": "editor", "source": "flatpak", "id": "dev.zed.Zed"},
-  "sublime": {"name": "Sublime Text (Flatpak)", "category": "editor", "source": "flatpak", "id": "com.sublimetext.three"},
+  "sublime": {"name": "Sublime Text", "category": "editor", "source": "vendor", "repo": "https://download.sublimetext.com/rpm/stable/x86_64/sublime-text.repo", "key": "https://download.sublimetext.com/sublimehq-rpm-pub.gpg", "packages": ["sublime-text"]},
   "minecraft": {"name": "Minecraft Launcher", "category": "gaming", "source": "flatpak", "id": "com.mojang.Minecraft"},
   "helix": {"name": "Helix", "category": "editor", "source": "dnf", "packages": ["helix"]},
   "vim": {"name": "Vim", "category": "editor", "source": "dnf", "packages": ["vim-enhanced"]},

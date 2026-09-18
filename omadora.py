@@ -106,6 +106,13 @@ def app_commands(app, action, fedora='44'):
                          '--user', *(['flathub'] if action == 'install' else []), app['id']])
         return commands
     commands = []
+    if app['source'] == 'vendor' and action == 'install':
+        for url in (app['repo'], app['key']):
+            if not re.fullmatch(r'https://[A-Za-z0-9./_-]+', url):
+                raise ValueError('Invalid vendor repository URL')
+        commands.append(['sudo', 'rpm', '--import', app['key']])
+        commands.append(['sudo', 'dnf', 'config-manager', 'addrepo', '--overwrite',
+                         '--from-repofile=' + app['repo']])
     if app['source'] == 'copr' and action == 'install':
         if not re.fullmatch(r'[A-Za-z0-9_-]+/[A-Za-z0-9_-]+', app['copr']):
             raise ValueError('Invalid COPR repository')

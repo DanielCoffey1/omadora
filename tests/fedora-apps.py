@@ -30,11 +30,12 @@ print('PASS: installed web-app launcher creation, desktop-file validation and re
 # Only the disposable test fixture enables these repositories up front.
 repositories = set()
 for app in apps.values():
-    if app['source'] not in ('rpmfusion', 'copr'):
+    if app['source'] not in ('rpmfusion', 'copr', 'vendor'):
         continue
     for command in adapter.app_commands(app, 'install')[:-1]:
         if tuple(command) not in repositories:
-            subprocess.run([*command[:2], '-y', *command[2:]], check=True)
+            prepared = [*command[:2], '-y', *command[2:]] if command[1] == 'dnf' else command
+            subprocess.run(prepared, check=True)
             repositories.add(tuple(command))
 
 packages = sorted({package for app in apps.values() for package in app.get('packages', [])})
@@ -53,4 +54,4 @@ available = set(listing.splitlines())
 missing = [app['id'] for app in apps.values() if app['source'] == 'flatpak' and app['id'] not in available]
 if missing:
     sys.exit('Unavailable Flatpak IDs: ' + ', '.join(missing))
-print(f'PASS: {len(apps)} optional apps resolve in Fedora/RPM Fusion/COPR/Flathub; none installed.')
+print(f'PASS: {len(apps)} optional apps resolve in Fedora/RPM Fusion/COPR/vendor RPM/Flathub; none installed.')

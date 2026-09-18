@@ -46,6 +46,15 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             adapter.app_commands(app | {'copr': '--bad'}, 'install')
 
+    def test_vendor_repository_retains_signature_checks_and_removes_only_package(self):
+        app = adapter.read_json(ROOT / 'apps.json')['sublime']
+        commands = adapter.app_commands(app, 'install')
+        self.assertEqual(commands[0], ['sudo', 'rpm', '--import', app['key']])
+        self.assertNotIn('--nogpgcheck', str(commands))
+        self.assertEqual(adapter.app_commands(app, 'remove'), [['sudo', 'dnf', 'remove', 'sublime-text']])
+        with self.assertRaises(ValueError):
+            adapter.app_commands(app | {'repo': 'http://example.org/repo'}, 'install')
+
     def test_desktop_recovery_without_bus_verifies_persisted_values(self):
         from types import SimpleNamespace
         from unittest.mock import patch
@@ -116,7 +125,7 @@ class AdapterTests(unittest.TestCase):
         import re
         for app_id, app in adapter.read_json(ROOT / 'apps.json').items():
             self.assertRegex(app_id, r'^[a-z0-9-]+$')
-            self.assertIn(app['source'], ('dnf', 'flatpak', 'rpmfusion', 'copr'))
+            self.assertIn(app['source'], ('dnf', 'flatpak', 'rpmfusion', 'copr', 'vendor'))
             for p in app.get('packages', [app.get('id')]):
                 self.assertTrue(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]*', p))
 
