@@ -379,6 +379,26 @@ def screen_recording_and_reminder():
     return 'Three saved and decoded WebM recordings: silent, desktop audio and microphone; reminder panel and timer creation/clear.'
 
 
+def update_password_window():
+    # Require DNF's real sudo prompt in this otherwise passwordless test guest.
+    v.guest("printf 'omadora-test ALL=(ALL) PASSWD: /usr/bin/dnf\\n' | sudo tee /etc/sudoers.d/zz-omadora-update-test >/dev/null; sudo -k")
+    try:
+        before = {c['address'] for c in json.loads(v.guest('hyprctl clients -j'))}
+        v.guest('omarchy-menu close; setsid foot --app-id=omadora-update-test omadora-terminal-action omarchy-update >/tmp/omadora-vm-results/update-window.log 2>&1 </dev/null &')
+        v.wait_for(lambda: any(c['class'] == 'omadora-update-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+        time.sleep(3)
+        opened = [c for c in json.loads(v.guest('hyprctl clients -j')) if c['address'] not in before]
+        assert len(opened) == 1 and opened[0]['class'] == 'omadora-update-test', opened
+        v.guest('grim /tmp/omadora-vm-results/update-password.png')
+        v.keys('ctrl', 'c')
+        time.sleep(2)
+        v.keys('ret')
+        v.wait_for(lambda: not any(c['class'] == 'omadora-update-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+        return 'Real sudo password prompt opened in exactly one updater terminal; cancellation closed it.'
+    finally:
+        v.guest('sudo -n rm -f /etc/sudoers.d/zz-omadora-update-test')
+
+
 def optional_chooser():
     v.guest('omarchy-menu close; setsid foot --app-id=omadora-optional-test omadora-terminal-action omadora app install preinstalls >/tmp/omadora-vm-results/optional-chooser.log 2>&1 </dev/null &')
     v.wait_for(lambda: any(c['class'] == 'omadora-optional-test' for c in json.loads(v.guest('hyprctl clients -j'))))
@@ -408,6 +428,7 @@ def dictation_keyboard():
 
 
 v.check('desktop upgrade and rollback login', desktop_lifecycle)
+v.check('single update password window', update_password_window)
 v.check('optional app chooser', optional_chooser)
 v.check('Dictation installation and Super shortcuts', dictation_keyboard)
 v.check('package pickers and terminal completion', package_picker_and_completion)
