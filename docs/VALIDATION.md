@@ -2,6 +2,8 @@
 
 ## Latest verified results
 
+The newest results are in [Complete optional Install mapping](#complete-optional-install-mapping-september-17-2026): 91 choices, 38 source tests, 23 automated recipe jobs with passing results across fixes, and 15 graphical regression checks. Hardware, accounts and interactive workflows have separate limits.
+
 - At `e7008cd`, [all 29 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35295603414) and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35295603480) pass. The expanded 51-entry optional catalog resolves against Fedora, RPM Fusion, Ghostty's community COPR, Sublime's official RPM repository and Flathub. Installed web-app helpers create a valid desktop launcher and remove it successfully. The integration run also repeats installation, configuration, maintenance and recovery checks. New catalog entries were resolved, not installed or launched in this run; the earlier 26-app runtime results do not cover them. See [Install coverage](INSTALL_MENU.md) for mappings and remaining ports.
 - At `56d72f7`, [all 25 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35292980665) and [all 15 graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35292980209) pass. The expanded suite uses real keyboard input to exercise window creation, fullscreen/floating toggles, workspace movement and closing; GTK copy/cut/paste and exact-text paste into Foot; and display scaling from 1x to 1.25x and back. Existing desktop, service and recovery checks also pass. This verifies a single virtual display using the default monitor rule, not custom monitor rules, multiple displays or physical hardware.
 - At `64be78a`, [all 25 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35287939908), [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35287939933), and [all 12 graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35287939476) pass. The audit records 136 menu entries, 73 command dependencies, 64 predicates and 187 shortcut-help entries. These counts are inventories, not that many fully exercised workflows. The gaming screenshot confirms already-installed GameMode is hidden from Install; its Remove predicate succeeds. Hidden Dell haptic checkmarks return false without invoking the unavailable utility. The [coverage matrix](MENU_AUDIT.md) lists remaining interactive and hardware tests.
@@ -182,3 +184,57 @@ Use a disposable Fedora Workstation 44 x86_64 VM and take a hypervisor snapshot 
 12. Repeat with interrupted network, insufficient disk space, a preexisting config symlink, failed dependency resolution and an interrupted installation. Complete partial-install recovery before release.
 
 The Adapter checks workflow covers source checks. The [first published run](https://github.com/DanielCoffey1/omadora/actions/runs/35189367740) passed all ten tests, bootstrap Bash syntax and ShellCheck, and syntax validation of the generated Bash scripts. Separate Fedora container and graphical VM workflows exercise installation and the running desktop; their results must be assessed independently.
+
+## Complete optional Install mapping (September 17, 2026)
+
+The catalog now has 91 choices. Every actionable Install entry in the pinned
+Omarchy menu has a Fedora mapping, with Firefox and Foot already installed by
+the base. No optional catalog applications were added to the base profile.
+
+- [38 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35298728935)
+  pass at `f41b034`, including full upstream Install-action coverage, tampered
+  download rejection, archive traversal protection, registration recovery,
+  foreign-file preservation and database loopback/credential checks.
+- [Fedora integration at d34f1ea](https://github.com/DanielCoffey1/omadora/actions/runs/35297931722)
+  resolves every declared catalog RPM/Flatpak and workflow RPM dependency,
+  including official vendor repositories and NVIDIA's Flatpak remote. This is
+  metadata/transaction resolution, not installation of every native app.
+- [The initial 23-job optional matrix](https://github.com/DanielCoffey1/omadora/actions/runs/35297699054)
+  passed 17 jobs: Meslo, Victor, Iosevka, Ollama, ONCE binary, ChatGPT, Perplexity,
+  Grok Bot, T3 Code, LM Studio, Mise, Cursor, Hermes build, Laravel, Voxtype RPM,
+  Hermes source and xpadneo source. Assets were actually downloaded and verified;
+  installed payloads/launchers were checked and removed. Source-only jobs verify
+  extraction, not application installation. Desktop files and ELF dependencies
+  are checked where applicable; graphical app launch is not established.
+- [Runtime retries](https://github.com/DanielCoffey1/omadora/actions/runs/35298276691)
+  pass Bun, Deno and Phoenix installation, command launch and removal after
+  correcting Mise's executable name and the Fedora Erlang dependency. That
+  overall run still failed for entries corrected by the runs below.
+- [Laravel and Symfony](https://github.com/DanielCoffey1/omadora/actions/runs/35298436578)
+  pass actual install, command launch and removal. Symfony's test uses its
+  supported `version` subcommand and the installer includes PHP/Composer.
+- [OpenClaw](https://github.com/DanielCoffey1/omadora/actions/runs/35298537914)
+  passes install, version-command launch and removal with private Node 24.19.0.
+  Removal no longer attempts to uninstall a nonexistent gateway service.
+  Onboarding, account use and a running systemd gateway remain untested.
+- [Scala](https://github.com/DanielCoffey1/omadora/actions/runs/35298729354)
+  passes install, Scala/scalac/Scala CLI version commands and removal using
+  Fedora's JDK and the required `which` helper.
+- [All 15 graphical regression checks](https://github.com/DanielCoffey1/omadora/actions/runs/35297930644)
+  pass at `d34f1ea`: 288 menu entries, providers/dependencies, upgrade/rollback
+  login, windows/workspaces, GTK/Foot clipboard, scaling, themes, audio, portals,
+  notifications and recovery. The gaming menu screenshot was visually checked
+  and includes the new entries. These are desktop regressions, not 288 fully
+  exercised workflows. Later optional-runtime fixes were tested separately.
+
+All 23 selected noninteractive matrix recipes therefore have passing results
+across the recorded runs; this is not a claim that all 91 choices have undergone
+fresh end-to-end installation and workload testing. New native vendor apps have
+resolution evidence only. Windows guest creation, ONCE service workloads,
+rootless database workloads, Bluetooth/xpadneo/Secure Boot, microphone/model
+inference, game installation/play and account login remain unvalidated. The VM
+uses Fedora Cloud plus Workstation packages, not an untouched Workstation ISO.
+
+The first matrix exposed and fixed actual dependency/runtime defects. Historical
+red runs are retained as evidence rather than relabeled successful. See
+[Install mapping details](INSTALL_MENU.md) for removal/data-retention behavior.

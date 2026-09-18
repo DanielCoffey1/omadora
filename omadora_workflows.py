@@ -44,7 +44,8 @@ def own_launcher(key, terminal=False):
 
 def mise_environment(path):
     with opt.locked('mise'):
-        opt.asset_install('mise', opt.recipes()['mise'])
+        if not opt.installed('mise'):
+            opt.asset_install('mise', opt.recipes()['mise'])
     return dict(os.environ, MISE_DATA_DIR=str(path / 'data'),
                 MISE_CONFIG_FILE=str(path / 'mise.toml'))
 

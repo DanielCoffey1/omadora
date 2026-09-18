@@ -10,3 +10,11 @@
 - Heroic Flatpak source: https://github.com/flathub/com.heroicgameslauncher.hgl . Other Flatpak application IDs are listed explicitly in `apps.json`.
 
 Omadora is not an official release of Fedora, Omarchy or any third-party application.
+
+Optional download URL/checksum research also used
+[omacom/omarchy-pkgs at 03ef2e3](https://github.com/omacom/omarchy-pkgs/tree/03ef2e3ef7b2219fae97b1c2578a99d4cd9e3f8f).
+Arch build/install recipes are not executed. Downloaded applications and fonts
+retain their upstream licenses; Omadora's license does not relicense them.
+`optional.json` records URLs, hashes and selected tool versions. Vendor RPM
+repositories are stored under `assets/repos`; package signature checks remain
+active. See [Install sources and differences](INSTALL_MENU.md).

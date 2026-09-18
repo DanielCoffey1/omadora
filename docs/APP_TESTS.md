@@ -4,7 +4,7 @@ Tested on September 17, 2026 in the booted Fedora 44 Workstation-package VM desc
 
 Every original 26-entry catalog install command passed, as did every removal attempted. The Lutris dependency fix is verified; Chromium and GIMP reached their main interfaces in the retest. Later runs confirmed Steam's client download and sign-in screen, Signal's linking screen, Discord's login form, and corrected sandbox font lookup. Account and gameplay workflows remain unverified. The tables below retain historical failures; subsequent retests record their resolution.
 
-The expanded 51-entry catalog adds apps not covered by these historical runtime results. See [Install coverage](INSTALL_MENU.md) and [latest validation](VALIDATION.md).
+The expanded 91-entry catalog adds apps not covered by these historical runtime results. Its 23 automated optional recipe jobs now have passing results across the recorded fixes (including source-only helper jobs); developer runtime commands were launched. New graphical app workloads and interactive setup are separate. See [Install coverage](INSTALL_MENU.md) and [latest validation](VALIDATION.md).
 
 ## Original catalog run
 
