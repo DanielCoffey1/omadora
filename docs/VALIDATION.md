@@ -2,6 +2,7 @@
 
 ## Latest verified results
 
+- At `56d72f7`, [all 25 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35292980665) and [all 15 graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35292980209) pass. The expanded suite uses real keyboard input to exercise window creation, fullscreen/floating toggles, workspace movement and closing; GTK copy/cut/paste and exact-text paste into Foot; and display scaling from 1x to 1.25x and back. Existing desktop, service and recovery checks also pass. This verifies a single virtual display using the default monitor rule, not custom monitor rules, multiple displays or physical hardware.
 - At `64be78a`, [all 25 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35287939908), [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35287939933), and [all 12 graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35287939476) pass. The audit records 136 menu entries, 73 command dependencies, 64 predicates and 187 shortcut-help entries. These counts are inventories, not that many fully exercised workflows. The gaming screenshot confirms already-installed GameMode is hidden from Install; its Remove predicate succeeds. Hidden Dell haptic checkmarks return false without invoking the unavailable utility. The [coverage matrix](MENU_AUDIT.md) lists remaining interactive and hardware tests.
 - [Twenty-five source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35287260943) and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35287260935) pass at `0df1acf`, including the menu guard, dependency, shortcut-help and browser-theme-hook fixes. See the [menu audit](MENU_AUDIT.md) for exact coverage and unsupported hardware paths.
 - [Twelve graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35286572639) pass at `c88d503`: the nine existing checks plus menu dependencies/providers, theme/background/bar controls, and desktop toggle state transitions. Screenshots show populated gaming/font/application menus, Bluetooth's no-adapter state, and fixed-brightness display controls. The battery-only power panel stays hidden in this batteryless VM; its controls are not validated.
@@ -16,6 +17,14 @@
 - A single Bochs virtual display passed three consecutive S3/resume/password-unlock cycles. This is a [verified VM workaround](VIRTUAL_MACHINES.md), not a virtio driver fix. Default QEMU/virtio S3 still fails; software virtio and pre-sleep display blanking did not provide reliable fixes.
 
 The detailed records below distinguish historical failures, fixes, and remaining limitations. Passing individual checks does not imply every workflow passed.
+
+## Window, clipboard and display interaction tests
+
+The [initial expanded run](https://github.com/DanielCoffey1/omadora/actions/runs/35289170609), at `d23129c`, passed 14 of 15 graphical checks. Display scaling failed because the VM fixture appended an explicit monitor rule fixed at 1x, overriding the default rule updated by the scaling helper. The fixture now sets its test resolution through the default rule. This was a test configuration conflict, not a demonstrated defect in the default Omadora configuration.
+
+The [first retry](https://github.com/DanielCoffey1/omadora/actions/runs/35290685867), at `c78c206`, reached the workflow's 30-minute limit while downloading and installing the Workstation environment, before Omadora installation or desktop checks. It provides no scaling result. The fixture now allows ten parallel package downloads and the workflow allows 45 minutes.
+
+The [verified retry](https://github.com/DanielCoffey1/omadora/actions/runs/35292980209), at `56d72f7`, passed all 15 checks. The scaling audit records 1x to 1.25x to 1x, with valid Hyprland configuration and a responsive shell. Window/workspace, GTK clipboard and scaled-display captures were visually inspected. These additions change the test harness and CI configuration; they do not add applications to the minimal product. The VM still uses Fedora Cloud plus the Workstation environment, not an untouched Workstation ISO installation.
 
 ## Desktop maintenance and interrupted operations
 

@@ -43,8 +43,8 @@ workflow works.
 | Bar and toggles | Position, transparency, idle, nightlight, screensaver, bar, gaps, layout and notification state checks | Physical display color output and idle timing |
 | Screenshot / color | Screenshot keyboard cancellation and clipboard equality tested; `hyprpicker` available | Color selection and every region-picker combination |
 | Audio / network | Virtual audio volume/mute and network reconnect tests | Physical audio, Wi-Fi authentication and Bluetooth pairing |
-| Display / power / Bluetooth panels | Display renders with fixed VM brightness; Bluetooth renders “No adapter”; upstream power panel stays hidden without a battery | Monitor topology, DDC permissions/hardware, battery panel/profile controls and radio hardware |
-| Window and clipboard shortcuts | Hyprland Lua dispatchers, source inspection and populated keybinding help | Every tiling/grouping/clipboard combination and multi-monitor behavior |
+| Display / power / Bluetooth panels | Display renders with fixed VM brightness; keyboard scaling changes 1x to 1.25x and back using the default monitor rule; Bluetooth renders “No adapter”; upstream power panel stays hidden without a battery | Custom monitor rules, monitor topology, DDC permissions/hardware, battery panel/profile controls and radio hardware |
+| Window and clipboard shortcuts | Real key input creates two Foot windows, toggles fullscreen/floating, moves a window to workspace 2 and closes it; Super+C/X/V works in a GTK entry; Super+V pastes exact text into Foot | Grouping, other tiling combinations, other applications and multi-monitor behavior |
 | System actions | Prior lock/password and Bochs suspend tests; logout/reboot/shutdown helpers use UWSM/systemd | Full power-action sequence on physical hardware; virtio suspend issue remains |
 | Speed tests | Network uses curl/IP tools; disk uses bounded temporary files and standard utilities | Fast.com availability and real disk throughput run |
 
