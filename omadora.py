@@ -256,7 +256,7 @@ def choose_packages(action):
         print('No packages found.')
         return []
     env = {k: v for k, v in os.environ.items() if not k.startswith('FZF_DEFAULT_')}
-    picked = subprocess.run(['fzf', '--multi', '--layout=reverse', '--border',
+    picked = subprocess.run(['fzf', '--multi', '--layout=reverse', '--border', '--bind', 'result:first',
                              '--prompt', action.title() + ' package > ',
                              '--header', 'Type to filter | Tab: select multiple | Enter: review DNF transaction | Esc: cancel'],
                             input='\n'.join(names), text=True, stdout=subprocess.PIPE, env=env)

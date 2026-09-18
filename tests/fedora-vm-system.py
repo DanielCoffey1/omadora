@@ -203,7 +203,7 @@ def menu_audit():
         time.sleep(1)
         v.guest('grim /tmp/omadora-vm-results/menu-' + route.replace('.', '-') + '.png')
         if route == 'install':
-            for _ in range(18):
+            for _ in range(15):
                 v.keys('down')
             v.guest('grim /tmp/omadora-vm-results/menu-install-bottom.png')
         v.guest('omarchy-menu close')
