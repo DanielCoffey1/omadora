@@ -22,7 +22,7 @@ def guest(command):
 
 # A debug shell is enabled only for this live boot. It is not written to the
 # installed kernel command line. The public SSH key is disposable test access.
-deadline = time.monotonic() + 360
+deadline = time.monotonic() + 180
 while not (VM / 'iso-serial.sock').exists():
     assert time.monotonic() < deadline, 'QEMU serial socket unavailable'
     time.sleep(1)

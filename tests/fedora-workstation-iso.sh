@@ -14,6 +14,9 @@ printf '%s  %s\n' "$expected" "$vm_dir/workstation.iso" | sha256sum -c -
 cp "$vm_dir/workstation-CHECKSUM" vm-results/
 xorriso -indev "$vm_dir/workstation.iso" -find / -type f -exec echo >"$vm_dir/iso-files.txt"
 cp "$vm_dir/iso-files.txt" vm-results/iso-files.txt
+xorriso -osirrox on -indev "$vm_dir/workstation.iso" -extract /boot/grub2/grub.cfg "$vm_dir/iso-grub.cfg"
+cp "$vm_dir/iso-grub.cfg" vm-results/iso-grub.cfg
+cat "$vm_dir/iso-grub.cfg"
 mapfile -t boot_files < <(python3 - "$vm_dir/iso-files.txt" <<'PY'
 import shlex, sys
 from pathlib import PurePosixPath
@@ -34,6 +37,7 @@ ssh-keygen -q -t ed25519 -N '' -f "$vm_dir/key"
 cp /usr/share/OVMF/OVMF_VARS_4M.fd "$vm_dir/OVMF_VARS.fd"
 accel=tcg; cpu=max
 if [[ -e /dev/kvm ]]; then sudo chmod 0666 /dev/kvm; accel=kvm; cpu=host; fi
+echo "Live ISO acceleration: $accel"
 Xvfb :98 -screen 0 1920x1080x24 >vm-results/iso-xvfb.log 2>&1 &
 xvfb_pid=$!
 export DISPLAY=:98 LIBGL_ALWAYS_SOFTWARE=1
@@ -44,7 +48,7 @@ qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
   -drive "file=$vm_dir/workstation.iso,media=cdrom,readonly=on" \
   -kernel "$vm_dir/vmlinuz" -initrd "$vm_dir/initrd.img" \
-  -append "root=live:CDLABEL=$label rd.live.image edd=off console=tty0 systemd.debug_shell=ttyS0 inst.graphical inst.webui inst.webui.remote inst.webui.remote.noauth" \
+  -append "root=live:CDLABEL=$label rd.live.image edd=off console=tty0 console=ttyS0,115200 systemd.debug_shell=ttyS0 inst.graphical inst.webui inst.webui.remote inst.webui.remote.noauth" \
   -device virtio-vga-gl -display gtk,gl=on \
   -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22,hostfwd=tcp:127.0.0.1:9443-:443,hostfwd=tcp:127.0.0.1:9090-:9090 \
   -device virtio-net-pci,netdev=net0 \
