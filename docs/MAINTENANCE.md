@@ -5,10 +5,10 @@ Log out of every Hyprland session and use GNOME or a TTY for these commands. Oma
 ## Upgrade
 
 ```bash
-omadora upgrade
+omadora upgrade --ref v0.1.0-alpha
 ```
 
-The command fetches the current `main` branch from `DanielCoffey1/omadora`, then runs its update code. `--ref NAME` selects a published branch, tag or commit instead. This uses the same repository trust as the installer; it is not yet a signed package-release channel.
+The command fetches `v0.1.0-alpha` from `DanielCoffey1/omadora`, then runs its update code. On this alpha, plain `omadora upgrade` also stays on that release. Use `--ref NAME` to choose a future published tag explicitly. Development installs may deliberately use `--ref main`; older development versions defaulted to `main`, so specify the alpha tag when upgrading them. This uses the same repository trust as the installer; it is not yet a signed package-release channel.
 
 The updater assembles the pinned Omarchy source before changing the desktop. Required RPM dependencies must install successfully. A root-owned journal snapshots the existing runtime, launcher links, PAM file and GDM session file. The new runtime must pass Hyprland configuration validation with your actual configuration. Errors trigger recovery; the GDM entry is published only after validation. Log into Omadora to use the new desktop.
 
@@ -17,7 +17,7 @@ Updates preserve personal config files, the selected theme/font, user fonts and 
 For an older installation without the command, use:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash -s -- upgrade
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.1.0-alpha/boot.sh | bash -s -- upgrade
 ```
 
 Developers can run `python3 omadora.py upgrade --local` from a trusted source checkout without fetching the repository again.
@@ -41,7 +41,7 @@ omadora recover
 If the launcher was not yet created, or an interruption occurred during runtime replacement, use:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | bash -s -- recover
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.1.0-alpha/boot.sh | bash -s -- recover
 ```
 
 A saved source checkout also works offline: `python3 /path/to/omadora/omadora.py recover`. Use the same regular user who started the operation.

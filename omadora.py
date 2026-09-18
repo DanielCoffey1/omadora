@@ -16,6 +16,8 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parent
+VERSION = '0.1.0-alpha'
+RELEASE_REF = 'v' + VERSION
 PREFIX = Path('/usr/local/share/omadora')
 COPR = 'nett00n/hyprland'
 SCREENSAVER_COPR = 'whelanh/omarchy'
@@ -236,7 +238,7 @@ def assemble(source, output):
     for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'omadora_optional.py',
                  'omadora_workflows.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
         shutil.copy2(ROOT / name, output / name)
-    write(output / 'release.json', json.dumps({'revision': lifecycle().revision(ROOT)}))
+    write(output / 'release.json', json.dumps({'version': VERSION, 'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
     shutil.copytree(ROOT / 'assets', output / 'assets')
 
@@ -663,7 +665,7 @@ def main():
     parser = argparse.ArgumentParser(description='Omadora: minimal Omarchy 4 for Fedora')
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('install'); p.add_argument('--dry-run', action='store_true')
-    p = sub.add_parser('upgrade'); p.add_argument('--local', action='store_true', help='Use this source checkout'); p.add_argument('--ref', default='main')
+    p = sub.add_parser('upgrade'); p.add_argument('--local', action='store_true', help='Use this source checkout'); p.add_argument('--ref', default=RELEASE_REF)
     sub.add_parser('recover'); sub.add_parser('rollback')
     p = sub.add_parser('build'); p.add_argument('--source', type=Path, required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('app'); p.add_argument('action', choices=('list', 'install', 'remove', 'installed')); p.add_argument('id', nargs='?'); p.add_argument('--dry-run', action='store_true')
@@ -691,7 +693,7 @@ def main():
         else:
             run(*command)
     elif args.command == 'about':
-        print('Omadora 0.1.0-dev | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; see docs/VALIDATION.md for tested behavior and known failures.\nhttps://github.com/DanielCoffey1/omadora')
+        print(f'Omadora {VERSION} | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; see docs/VALIDATION.md for tested behavior and known failures.\nhttps://github.com/DanielCoffey1/omadora')
     elif args.command == 'app':
         apps = read_json(ROOT / 'apps.json')
         if args.action == 'list':

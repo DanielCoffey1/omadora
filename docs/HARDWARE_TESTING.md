@@ -72,5 +72,6 @@ passwords, Wi-Fi names or account credentials in shared notes.
 
 For remote diagnosis, provide the Fedora machine's SSH hostname and username.
 Local help is still needed for physical display connections, sound checks,
-password interaction and suspend/resume. No physical machine has passed this
-checklist yet.
+password interaction and suspend/resume. The project owner reports successful use on a laptop. Its model and individual
+checklist results were not supplied; no completed hardware checklist has been
+recorded yet.

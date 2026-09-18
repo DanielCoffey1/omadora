@@ -202,9 +202,11 @@ def upgrade_local(a):
     print('Desktop upgraded. Personal configuration and selected theme/font were preserved. Log into Omadora to use it.')
 
 
-def upgrade(a, local=False, ref='main'):
+def upgrade(a, local=False, ref=None):
     if local:
         return perform(a, 'upgrade')
+    if ref is None:
+        ref = a.RELEASE_REF
     a.preflight()
     offline(a)
     if ref.startswith('-') or not ref.strip():
