@@ -91,5 +91,5 @@
   "db-redis": {"name": "Redis", "category": "development.database", "source": "optional", "recipe": "db-redis"},
   "db-mongodb": {"name": "MongoDB", "category": "development.database", "source": "optional", "recipe": "db-mongodb"},
   "db-mssql": {"name": "SQL Server (Developer)", "category": "development.database", "source": "optional", "recipe": "db-mssql"},
-  "preinstalls": {"name": "Choose optional apps", "category": "", "source": "optional", "recipe": "preinstalls", "repeatable": true}
+  "preinstalls": {"name": "Optional apps", "category": "", "source": "optional", "recipe": "preinstalls", "repeatable": true}
 }

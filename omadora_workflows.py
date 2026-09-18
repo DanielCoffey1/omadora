@@ -167,7 +167,10 @@ def install(key, path):
     if key == 'preinstalls':
         catalog = json.loads((opt.ROOT / 'apps.json').read_text())
         choices = [app_id + ' | ' + app['name'] for app_id, app in catalog.items() if app_id != key]
-        result = subprocess.run(['gum', 'choose', '--no-limit', '--header', 'Select optional apps', *choices], capture_output=True, text=True)
+        # Gum renders on stderr; only capture its selected rows on stdout.
+        result = subprocess.run(['gum', 'choose', '--no-limit', '--header', 'Select optional apps', *choices], stdout=subprocess.PIPE, text=True)
+        if result.returncode in (1, 130):
+            return
         if result.returncode:
             raise ValueError('App selection cancelled')
         for line in result.stdout.splitlines():

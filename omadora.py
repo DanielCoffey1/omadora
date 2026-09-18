@@ -198,7 +198,7 @@ def menu_for_fedora(menu, apps, blocked):
                 result[parent].setdefault('label', {'ai': 'AI', 'php': 'PHP', 'javascript': 'JavaScript', 'service': 'Services'}.get(part, part.title()))
             result[f'{category}.{app_id}'] = {
                 'label': app['name'],
-                'action': f'foot --hold omadora app {action} {app_id}',
+                'action': f'foot omadora-terminal-action omadora app {action} {app_id}',
                 'when': f'{"! " if action == "install" else ""}omadora app installed {app_id}',
             }
             if action == 'install' and app.get('repeatable'):
@@ -228,7 +228,7 @@ def menu_for_fedora(menu, apps, blocked):
     result['trigger.capture.screenrecord.stop'] = {'label': 'Stop recording', 'icon': '',
         'action': 'omarchy-capture-screenrecording --stop-recording', 'when': 'omarchy-capture-screenrecording --status'}
     result['update'] = {'label': 'Update', 'icon': ''}
-    result['update.fedora'] = {'label': 'Fedora packages', 'action': 'foot --hold omadora update'}
+    result['update.fedora'] = {'label': 'Fedora packages', 'action': 'foot omadora-terminal-action omarchy-update'}
     result['update.flatpak'] = {'label': 'Flatpak apps', 'action': 'foot --hold flatpak update --user'}
     # Remove empty parent menus after pruning unsupported actions.
     for key in sorted(list(result), key=lambda s: s.count('.'), reverse=True):
@@ -334,9 +334,9 @@ fi
         'omarchy-launch-webapp': 'exec uwsm-app -- firefox "$@"',
         'omarchy-voxtype-config': 'if ! command -v voxtype >/dev/null; then exec foot omadora-terminal-action omadora app install dictation; fi\nomarchy-launch-floating-terminal-with-presentation "voxtype configure"',
         'omarchy-launch-about': 'exec foot --hold omadora about',
-        'omarchy-update': 'exec foot --hold omadora update',
+        'omarchy-update': 'exec omadora update',
         'omarchy-update-available': 'exec omadora updates-available',
-        'omarchy-update-status': 'if omadora updates-available >/dev/null; then omarchy-shell -q omarchy.system-update refresh; else omarchy-shell -q omarchy.system-update clear; fi',
+        'omarchy-update-status': 'exec omarchy-shell -q omarchy.system-update refresh',
         'omarchy-pkg-present': 'exec omadora pkg-present "$@"',
         'omarchy-pkg-missing': 'omadora pkg-present "$@" && exit 1; exit 0',
         'omarchy-provision-first-run': ': # Omadora seeds only minimal desktop configuration.',
@@ -427,7 +427,9 @@ fi
                                                    '["omarchy-capture-screenrecording", "--status"]'))
     updates = tree / 'shell/plugins/bar/widgets/SystemUpdate.qml'
     write(updates, updates.read_text().replace('omarchy-launch-floating-terminal-with-presentation omarchy-update',
-                                              'foot omadora-terminal-action omadora update'))
+                                              'foot omadora-terminal-action omarchy-update').replace(
+        'root.updateAvailable = exitCode === 0',
+        'if (exitCode === 0 || exitCode === 1) root.updateAvailable = exitCode === 0'))
     # Explicit monospace fallback supplies Nerd glyphs to the unchanged shell.
     write(output / 'system/99-omadora-fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><alias><family>monospace</family><prefer><family>JetBrainsMonoNL Nerd Font</family></prefer></alias></fontconfig>\n')
     apply_branding(tree)
@@ -787,14 +789,23 @@ def main():
         powerprofile(args.action, args.profile)
     elif args.command == 'update':
         preflight()
-        run('sudo', 'dnf', 'upgrade', '--refresh')
+        try:
+            run('sudo', 'dnf', 'upgrade', '--refresh')
+        finally:
+            # Recheck even after a cancelled/partial transaction. Never clear an
+            # outstanding update merely because the updater window was closed.
+            if shutil.which('omarchy-shell'):
+                try:
+                    run('omarchy-shell', '-q', 'omarchy.system-update', 'refresh', check=False, capture=True)
+                except OSError:
+                    pass  # A missing/stopped desktop must not mask DNF's result.
         print('Fedora packages updated. Omadora desktop stays at its pinned release.')
     elif args.command == 'updates-available':
         result = run('dnf', '--cacheonly', 'check-upgrade', capture=True, check=False)
         if result.returncode == 100:
             print('Fedora updates available')
             return 0
-        return 1
+        return 1 if result.returncode == 0 else 2
     elif args.command == 'restore-config':
         preflight()
         if os.environ.get('HYPRLAND_INSTANCE_SIGNATURE'):

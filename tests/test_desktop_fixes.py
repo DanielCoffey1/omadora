@@ -2,6 +2,7 @@ import importlib.util
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -13,6 +14,31 @@ spec.loader.exec_module(adapter)
 
 
 class DesktopFixTests(unittest.TestCase):
+    def test_update_refreshes_bar_after_success_and_failure(self):
+        for failure in (False, True):
+            calls = []
+            def run(*args, **kwargs):
+                calls.append(args)
+                if args[0] == 'sudo' and failure:
+                    raise subprocess.CalledProcessError(1, args)
+                return subprocess.CompletedProcess(args, 0)
+            with patch.object(sys, 'argv', ['omadora', 'update']), \
+                 patch.object(adapter, 'preflight'), patch.object(adapter, 'run', side_effect=run), \
+                 patch.object(adapter.shutil, 'which', return_value='/usr/bin/omarchy-shell'):
+                if failure:
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        adapter.main()
+                else:
+                    adapter.main()
+            self.assertEqual(calls, [('sudo', 'dnf', 'upgrade', '--refresh'),
+                                    ('omarchy-shell', '-q', 'omarchy.system-update', 'refresh')])
+
+    def test_update_check_distinguishes_errors_from_no_updates(self):
+        for dnf_status, status in ((100, 0), (0, 1), (1, 2)):
+            with patch.object(sys, 'argv', ['omadora', 'updates-available']), \
+                 patch.object(adapter, 'run', return_value=subprocess.CompletedProcess([], dnf_status)):
+                self.assertEqual(adapter.main(), status)
+
     def test_all_install_remove_entries_have_icons(self):
         menu = adapter.menu_for_fedora({}, adapter.read_json(ROOT / 'apps.json'), [])
         for key, entry in menu.items():

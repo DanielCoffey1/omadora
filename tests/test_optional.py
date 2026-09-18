@@ -3,6 +3,7 @@ import importlib.util
 import io
 import json
 import os
+import subprocess
 from pathlib import Path
 import sys
 import tarfile
@@ -18,6 +19,22 @@ import omadora as adapter
 
 
 class OptionalTests(unittest.TestCase):
+    def test_optional_chooser_keeps_screen_visible_and_installs_selected_ids(self):
+        result = subprocess.CompletedProcess([], 0, 'dictation | Dictation\n')
+        with patch.object(workflows.subprocess, 'run', return_value=result) as picker, \
+             patch.object(optional, 'run') as install:
+            workflows.install('preinstalls', Path('unused'))
+        self.assertEqual(picker.call_args.kwargs.get('stdout'), subprocess.PIPE)
+        self.assertIsNone(picker.call_args.kwargs.get('stderr'))
+        self.assertFalse(picker.call_args.kwargs.get('capture_output'))
+        install.assert_called_once_with('python3', ROOT / 'omadora.py', 'app', 'install', 'dictation')
+
+    def test_cancel_optional_chooser_installs_nothing(self):
+        with patch.object(workflows.subprocess, 'run', return_value=subprocess.CompletedProcess([], 130, '')), \
+             patch.object(optional, 'run') as install:
+            workflows.install('preinstalls', Path('unused'))
+            install.assert_not_called()
+
     def test_all_upstream_install_actions_have_a_fedora_mapping(self):
         upstream = os.environ.get('OMADORA_TEST_UPSTREAM')
         if not upstream:

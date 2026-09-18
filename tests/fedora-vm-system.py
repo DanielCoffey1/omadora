@@ -379,7 +379,37 @@ def screen_recording_and_reminder():
     return 'Three saved and decoded WebM recordings: silent, desktop audio and microphone; reminder panel and timer creation/clear.'
 
 
+def optional_chooser():
+    v.guest('omarchy-menu close; setsid foot --app-id=omadora-optional-test omadora-terminal-action omadora app install preinstalls >/tmp/omadora-vm-results/optional-chooser.log 2>&1 </dev/null &')
+    v.wait_for(lambda: any(c['class'] == 'omadora-optional-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+    v.wait_for(lambda: v.guest('pgrep -x gum'))
+    time.sleep(2)
+    v.guest('grim /tmp/omadora-vm-results/optional-chooser.png')
+    v.keys('esc')
+    time.sleep(1)
+    v.keys('ret')
+    v.wait_for(lambda: not any(c['class'] == 'omadora-optional-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+    return 'Optional app chooser rendered in Foot; Escape cancelled and Enter closed the window.'
+
+
+def dictation_keyboard():
+    try:
+        v.guest('yes | omadora app install dictation >/tmp/omadora-vm-results/dictation-install.log 2>&1', timeout=600)
+        v.wait_for(lambda: v.guest('systemctl --user is-active voxtype.service') == 'active')
+        assert v.guest('hyprctl configerrors') in ('', 'ok')
+        v.keyboard_windows()
+        v.guest('systemctl --user restart voxtype.service')
+        time.sleep(3)
+        v.keyboard_windows()
+        v.guest('grim /tmp/omadora-vm-results/dictation-keyboard.png')
+        return 'Real Dictation install/model download and service restart; Super+Return, workspace, floating and close shortcuts worked after both.'
+    finally:
+        v.guest('hyprctl configerrors >/tmp/omadora-vm-results/dictation-configerrors.txt; journalctl --user -u voxtype --no-pager > /tmp/omadora-vm-results/dictation-service.log')
+
+
 v.check('desktop upgrade and rollback login', desktop_lifecycle)
+v.check('optional app chooser', optional_chooser)
+v.check('Dictation installation and Super shortcuts', dictation_keyboard)
 v.check('package pickers and terminal completion', package_picker_and_completion)
 v.check('screen recording and reminders', screen_recording_and_reminder)
 v.check('menu dependencies and providers', menu_audit)
