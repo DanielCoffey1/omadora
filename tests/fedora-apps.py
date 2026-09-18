@@ -39,6 +39,10 @@ for app in apps.values():
             subprocess.run(prepared, check=True)
             repositories.add(tuple(command))
 
+# Metadata signing keys use DNF's separate repository keyring. Import through
+# the normal signed metadata refresh before the intentionally declined install.
+subprocess.run(['sudo', 'dnf', '-y', 'makecache', '--refresh'], check=True)
+
 packages = sorted({package for app in apps.values() for package in app.get('packages', [])})
 optional = adapter.read_json('/src/optional.json')
 dependencies = {p for recipe in optional.values() for p in recipe.get('dependencies', [])}

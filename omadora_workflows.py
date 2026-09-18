@@ -233,7 +233,7 @@ def install(key, path):
         opt.command_link(key, 'laravel')
         own_launcher(key, True)
     elif key == 'phoenix':
-        deps('elixir', 'erlang-devel', 'gcc', 'make', 'nodejs22', 'nodejs22-npm')
+        deps('elixir', 'erlang-erts', 'gcc', 'make', 'nodejs22', 'nodejs22-npm')
         env = dict(os.environ, MIX_HOME=str(path / 'mix'), HEX_HOME=str(path / 'hex'))
         opt.run('mix', 'local.hex', '--force', env=env)
         opt.run('mix', 'local.rebar', '--force', env=env)
