@@ -52,7 +52,11 @@ def drain_serial():
 
 threading.Thread(target=drain_serial, daemon=True).start()
 while time.monotonic() < deadline:
-    serial.sendall(('\n' + command + '\n').encode())
+    # Pace input to the emulated UART, including while boot services are busy.
+    payload = ('\n' + command + '\n').encode()
+    for offset in range(0, len(payload), 32):
+        serial.sendall(payload[offset:offset + 32])
+        time.sleep(.02)
     probe = subprocess.run(SSH + ['true'], capture_output=True, text=True)
     (OUT / 'iso-ssh-probe.log').write_text(probe.stderr)
     if probe.returncode == 0:
@@ -117,7 +121,7 @@ with sync_playwright() as pw:
     finally:
         page.screenshot(path=str(OUT / 'iso-last.png'))
         (OUT / 'iso-last.html').write_text(page.content())
-        (OUT / 'iso-installer.log').write_text(guest('cat /tmp/omadora-liveinst.log; cat /tmp/anaconda.log 2>/dev/null'))
+        (OUT / 'iso-installer.log').write_text(guest('cat /tmp/omadora-liveinst.log; cat /tmp/anaconda.log 2>/dev/null || true'))
         browser.close()
 
 # Anaconda installed the disk. Add only the CI access settings needed by the

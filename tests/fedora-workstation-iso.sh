@@ -50,7 +50,7 @@ qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/workstation.iso,format=raw,media=cdrom,readonly=on,if=none,id=cd0" \
   -device scsi-cd,drive=cd0,bus=scsi0.0 \
   -kernel "$vm_dir/vmlinuz" -initrd "$vm_dir/initrd.img" \
-  -append "root=live:CDLABEL=$label rd.live.image edd=off console=tty0 console=ttyS0,115200 systemd.debug_shell=ttyS0 inst.graphical inst.webui inst.webui.remote inst.webui.remote.noauth" \
+  -append "root=live:CDLABEL=$label rd.live.image edd=off console=ttyS0,115200 console=tty0 systemd.debug_shell=ttyS0 systemd.mask=systemd-firstboot.service inst.graphical inst.webui inst.webui.remote inst.webui.remote.noauth" \
   -device virtio-vga-gl -display gtk,gl=on \
   -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22,hostfwd=tcp:127.0.0.1:9443-:443,hostfwd=tcp:127.0.0.1:9090-:9090 \
   -device virtio-net-pci,netdev=net0 \
@@ -69,7 +69,9 @@ for command in ({'execute': 'qmp_capabilities'}, {'execute': 'screendump', 'argu
     f.write((json.dumps(command)+'\n').encode()); f.flush()
     while True:
         response = json.loads(f.readline())
-        if 'return' in response or 'error' in response: break
+        if 'return' in response or 'error' in response:
+            print('QMP:', response, flush=True)
+            break
 PY
   ssh -i "$vm_dir/key" -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 root@127.0.0.1 'journalctl -b --no-pager' >vm-results/iso-journal.log 2>&1 || true
   kill "$qemu_pid" "$xvfb_pid" 2>/dev/null || true
