@@ -1,5 +1,10 @@
 # Fresh Workstation ISO acceptance test
 
+Verified at `b76f862` on September 18, 2026:
+[the complete workflow](https://github.com/DanielCoffey1/omadora/actions/runs/35363116387)
+passed Fedora installation, installed-disk boot, Omadora bootstrap/reboot and
+all 15 acceptance checks. See [the validation record](VALIDATION.md#fresh-workstation-iso-september-18-2026).
+
 The `Fresh Workstation ISO` workflow starts from Fedora's official
 `Fedora-Workstation-Live-44-1.7.x86_64.iso`, verifies its published SHA-256,
 and attaches a blank 60 GB virtual disk. It uses UEFI firmware and the stock
@@ -14,6 +19,9 @@ test account/password and a sudo rule. No physical host disk is
 attached. The test uses unencrypted guest storage and does not establish Secure
 Boot compatibility. After installation, `python3-pexpect` supplies acceptance
 test instrumentation; Fedora supplies the desktop and kernel.
+
+The test account is created in the installed filesystem after Anaconda finishes;
+GNOME's initial account-creation wizard is outside this test's coverage.
 
 The installed guest must identify as Workstation, boot in UEFI mode and have
 SELinux enforcing. Omadora's public `boot.sh` is then fetched at the workflow

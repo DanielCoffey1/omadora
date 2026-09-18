@@ -2,6 +2,12 @@
 
 ## Latest verified results
 
+The [fresh Workstation ISO run](https://github.com/DanielCoffey1/omadora/actions/runs/35363116387)
+passes at `b76f862`: stock Fedora 44 Anaconda installation, UEFI disk boot with
+SELinux enforcing, the public Omadora bootstrap, reboot, and all 15 desktop,
+maintenance and recovery checks. See [the ISO record](#fresh-workstation-iso-september-18-2026)
+for test instrumentation and boundaries.
+
 The catalog has 93 optional choices, including Codex CLI and Claude Code.
 [Both CLI runtime jobs](https://github.com/DanielCoffey1/omadora/actions/runs/35301839112)
 pass installation, wrapper version/help, desktop-file validation, removal and
@@ -28,6 +34,51 @@ workflows have separate limits.
 - A single Bochs virtual display passed three consecutive S3/resume/password-unlock cycles. This is a [verified VM workaround](VIRTUAL_MACHINES.md), not a virtio driver fix. Default QEMU/virtio S3 still fails; software virtio and pre-sleep display blanking did not provide reliable fixes.
 
 The detailed records below distinguish historical failures, fixes, and remaining limitations. Passing individual checks does not imply every workflow passed.
+
+## Fresh Workstation ISO September 18, 2026
+
+[Run 35363116387](https://github.com/DanielCoffey1/omadora/actions/runs/35363116387),
+at `b76f862`, installed the unmodified official
+`Fedora-Workstation-Live-44-1.7.x86_64.iso` through its Anaconda Web UI onto a
+blank 60 GB virtual disk. The published SHA-256 matched. The installed disk
+booted without the ISO, using UEFI, an EFI system partition, ext4 `/boot` and
+Btrfs root/home subvolumes. SELinux was enforcing, and the installed kernel
+command line omitted the temporary debug-shell and first-boot-service mask.
+No Cloud image or DNF Workstation environment installation was used.
+
+The public bootstrap fetched the tested commit and installed Omadora. After
+reboot, Hyprland, Quickshell, the menu and animated screensaver started. All
+15 acceptance checks passed: desktop upgrade/rollback with password login;
+menu dependencies/providers; theme/bar controls; desktop toggles; window and
+workspace shortcuts; GTK/Foot clipboard; display scaling; Activity; screenshot
+save/copy/cancel; font preference preservation; portal file selection; network
+reconnection; virtual audio controls; notifications; and GNOME/config recovery.
+The menu audit inventoried 292 entries and 73 command dependencies; these are
+not counts of fully exercised workflows. Recovery retained later personal edits.
+
+Anaconda's success screen, desktops after upgrade and rollback, the gaming
+menu, dark portal, notification and Omadora wordmark captures were visually
+reviewed. Artifacts include installation logs, the package inventory before
+Omadora, filesystem baseline, screenshots and `interactions.json`.
+
+The fixture adds an SSH key, a test user/password and sudo access; it creates
+the user after Anaconda installation, so GNOME's first-run account wizard is
+not covered. Initial Omadora startup uses GDM autologin; maintenance checks
+use password login. Storage is unencrypted. Secure Boot, physical GPUs,
+multiple monitors, real wireless/audio hardware, suspend/resume and optional
+application workloads are not established by this run. Existing virtio S3
+limitations remain. See [the fixture documentation](WORKSTATION_ISO.md).
+
+Earlier attempts failed in the fixture before Omadora ran: Fedora 44's KIWI
+ISO uses different kernel/initrd paths; serial backpressure stalled boot;
+the legacy optical controller did not expose the live media; console setup
+competed with test access; and the browser used a newer remote endpoint or
+opened before Anaconda's backend was ready. The corrected fixture uses the
+ISO's actual paths, continuous serial draining, virtio-SCSI optical media,
+separate console access, an SSH tunnel to Fedora 44's local web service and
+an explicit backend-readiness check. These were test-harness corrections,
+not demonstrated Omadora product defects. Later harness-only diagnostics
+publish ISO evidence early and detect critical-error dialogs explicitly.
 
 ## Optional Install menu expansion
 

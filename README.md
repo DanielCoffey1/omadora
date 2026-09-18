@@ -8,6 +8,10 @@ Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/
 
 ## Install
 
+The [fresh Fedora Workstation ISO acceptance test](docs/WORKSTATION_ISO.md)
+passes installation, reboot and all 15 desktop/update/rollback/recovery checks
+in a UEFI VM with SELinux enforcing. Physical hardware validation remains open.
+
 Development installer (try in a disposable Fedora VM first):
 
 ```bash
