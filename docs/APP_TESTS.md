@@ -92,3 +92,17 @@ Signal's Flatpak launcher displays a warning about its default plaintext passwor
 The former session-wide `FONTCONFIG_FILE` override has been removed. Signal, Discord and Bottles passed the sandbox font check after this correction; the other Flatpaks have not all been rerun with the new configuration. The native GTK file chooser's dark styling is now verified in the [theme/recovery retest](https://github.com/DanielCoffey1/omadora/actions/runs/35248151319); full application font/theme parity is still incomplete. GameMode's earlier CPU-governor self-test failed in the VM; its version-command pass does not supersede that result.
 
 Raw per-app logs, window identities, screenshots, `apps/results.json`, and the later interaction results are available in each run's `fedora-vm-results` artifact. The raw launch labels should be interpreted using the reviewed results above.
+
+## Codex CLI and Claude Code
+
+Added under **Install → AI** as optional choices, bringing the catalog to 93.
+The earlier upstream Install-action coverage missed these requested CLI apps;
+matching that menu alone was not sufficient to establish complete app coverage.
+
+At `c1a4021`, [both Fedora runtime jobs](https://github.com/DanielCoffey1/omadora/actions/runs/35301839112)
+pass verified downloads, real installation, `codex`/`claude` wrapper version/help
+commands, desktop-file validation, removal and preservation of their actual
+`.codex`/`.claude` profile directories. Versions: Codex CLI 0.155.0 and Claude
+Code 2.1.267. No account was connected and no model request was sent.
+[All 38 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35301838914)
+also pass. Both use Foot launchers and leave the minimal base unchanged.
