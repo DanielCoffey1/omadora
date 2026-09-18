@@ -129,7 +129,7 @@ def launcher(key, name, command, terminal=False):
                    '\nIcon=application-x-executable\nTerminal=false\nX-Omadora-Managed=true\n')
 
 
-def command_link(key, command):
+def command_link(key, command, launch_args=()):
     """Expose a CLI without replacing an existing user's command."""
     path = Path.home() / '.local/bin' / command
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,7 +137,7 @@ def command_link(key, command):
     if path.is_symlink() or (path.exists() and marker not in path.read_text(errors='replace')):
         raise ValueError('An existing command is not owned by Omadora: ' + str(path))
     path.write_text('#!/bin/sh\n' + marker + '\nexec python3 ' + shlex.quote(str(ROOT / 'omadora_optional.py')) +
-                    ' launch ' + shlex.quote(key) + ' "$@"\n')
+                    ' launch ' + shlex.join([key, *launch_args]) + ' "$@"\n')
     path.chmod(0o755)
 
 

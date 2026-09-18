@@ -53,11 +53,13 @@ def runtime(key, path):
     # Exact versions are stored in the committed workflow recipe.
     if key == 'symfony':
         deps('php-cli', 'php-mbstring', 'php-xml', 'php-pdo', 'composer')
+    elif key == 'scala':
+        deps('java-devel')
     versions = opt.recipes()[key]['tools']
     env = mise_environment(path)
     opt.run(opt.location('mise') / 'mise', 'install', *versions, env=env)
     for command in opt.recipes()[key].get('commands', [key]):
-        opt.command_link(key, command)
+        opt.command_link(key, command, [command])
     own_launcher(key, True)
 
 
@@ -278,6 +280,8 @@ def launch(key, path, args):
     if key in ('bun', 'deno', 'scala', 'symfony'):
         recipe = opt.recipes()[key]
         command = recipe.get('commands', [key])[0]
+        if args and args[0] in recipe.get('commands', []):
+            command, args = args[0], args[1:]
         opt.run(opt.location('mise') / 'mise', 'exec', *recipe['tools'], '--', command, *args,
                 env=mise_environment(path))
     elif key.startswith('db-'):
