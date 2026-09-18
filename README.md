@@ -83,7 +83,7 @@ omadora app remove heroic
 
 Desktop dependencies come from Fedora and the community `nett00n/hyprland` COPR. `ttfx`, required for the upstream animated screensaver, comes from the community `whelanh/omarchy` COPR. These are external maintainers, not Fedora or Omadora's own package repositories. Enabling them can affect later DNF transactions. Missing or incompatible packages stop installation; the installer never uses `--skip-broken` or disables signature checks.
 
-Omadora source defaults to `v0.1.0-alpha`; Omarchy source is pinned separately. Plain `omadora upgrade` stays on this alpha; choose a future published tag with `--ref`. RPM versions remain controlled by the configured repositories. The [Fedora integration run](https://github.com/DanielCoffey1/omadora/actions/runs/35190472661) resolved and installed the core manifest successfully. This is not yet a reproducible package release. A maintained, versioned Omadora RPM repository is a release requirement.
+Omadora source defaults to `v0.1.0-alpha`; Omarchy source is pinned separately. Plain `omadora upgrade` stays on this alpha; choose a future published tag with `--ref`. RPM versions remain controlled by the configured repositories. The [alpha Fedora integration run](https://github.com/DanielCoffey1/omadora/actions/runs/35370788539) resolved and installed the core manifest successfully. This is not yet a reproducible package release. A maintained, versioned Omadora RPM repository is a stable-release requirement.
 
 ```bash
 omadora update                  # Fedora package upgrades

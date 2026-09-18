@@ -2,6 +2,14 @@
 
 ## Latest verified results
 
+Alpha release preparation at `0950e2b` passes [45 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35370788650)
+and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35370788539).
+The bootstrap and updater default to `v0.1.0-alpha`; explicit ref overrides
+remain available. Fedora integration initially failed on COPR HTTP 503 package
+downloads, then passed on the same revision. See [alpha release notes](releases/v0.1.0-alpha.md).
+The owner also reports successful use on a laptop, without hardware details or
+individual checklist results; broader hardware coverage remains unverified.
+
 The [fresh Workstation ISO run](https://github.com/DanielCoffey1/omadora/actions/runs/35363116387)
 passes at `b76f862`: stock Fedora 44 Anaconda installation, UEFI disk boot with
 SELinux enforcing, the public Omadora bootstrap, reboot, and all 15 desktop,
