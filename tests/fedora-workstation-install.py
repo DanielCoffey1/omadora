@@ -23,7 +23,7 @@ def guest(command):
 
 # A debug shell is enabled only for this live boot. It is not written to the
 # installed kernel command line. The public SSH key is disposable test access.
-deadline = time.monotonic() + 360
+deadline = time.monotonic() + 180
 while not (VM / 'iso-serial.sock').exists():
     assert time.monotonic() < deadline, 'QEMU serial socket unavailable'
     time.sleep(1)
@@ -31,9 +31,9 @@ serial = socket.socket(socket.AF_UNIX)
 serial.settimeout(2)
 serial.connect(str(VM / 'iso-serial.sock'))
 key = base64.b64encode((VM / 'key.pub').read_bytes()).decode()
-command = (f"mkdir -p /root/.ssh; echo {key} | base64 -d >/root/.ssh/authorized_keys; "
+command = (f"if [ ! -e /etc/initrd-release ]; then mkdir -p /root/.ssh; echo {key} | base64 -d >/root/.ssh/authorized_keys; "
            "chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys; "
-           "echo root:omadora-live-test-only | chpasswd; systemctl start sshd; echo ISO_SSH_READY")
+           "restorecon -RF /root/.ssh; echo root:omadora-live-test-only | chpasswd; systemctl start sshd; echo ISO_SSH_READY; fi")
 def drain_serial():
     # Drain continuously: pausing reads around slow SSH probes backpressures
     # QEMU's emulated UART and can stall each kernel/systemd console write.
@@ -53,7 +53,9 @@ def drain_serial():
 threading.Thread(target=drain_serial, daemon=True).start()
 while time.monotonic() < deadline:
     serial.sendall(('\n' + command + '\n').encode())
-    if subprocess.run(SSH + ['true'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+    probe = subprocess.run(SSH + ['true'], capture_output=True, text=True)
+    (OUT / 'iso-ssh-probe.log').write_text(probe.stderr)
+    if probe.returncode == 0:
         break
     time.sleep(3)
 else:
@@ -83,7 +85,7 @@ with sync_playwright() as pw:
             (OUT / f'iso-step-{step:02}.txt').write_text(text)
             page.screenshot(path=str(OUT / f'iso-step-{step:02}.png'))
             print('INSTALLER STEP', step, text[:1600], flush=True)
-            if frame.locator('#anaconda-screen-progress').count():
+            if frame.evaluate('window.location.hash') == '#/anaconda-screen-progress':
                 break
             account = frame.locator('#anaconda-screen-accounts-create-account-user-name')
             if account.is_visible():
