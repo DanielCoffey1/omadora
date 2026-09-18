@@ -153,9 +153,28 @@ def menu_for_fedora(menu, apps, blocked):
             result[f'setup.{key}'] = {'label': label, 'action': action}
     for action, label in (('install', 'Install'), ('remove', 'Remove')):
         result[action] = {'label': label, 'icon': '󰉉'}
+        # Retain portable upstream workflows, independently of optional apps.
+        for suffix in ('webapp', 'style', 'style.theme', 'style.background'):
+            key = f'{action}.{suffix}'
+            if key in menu:
+                entry = dict(menu[key])
+                if key == 'remove.webapp':
+                    entry['when'] = 'test -n "$(grep -sl \'^Exec=omarchy-launch-webapp \' "$HOME"/.local/share/applications/*.desktop 2>/dev/null)"'
+                command = entry.get('action', '')
+                if not DISALLOWED.search(command) and not any(name in command for name in blocked):
+                    entry['action'] = command.replace('omarchy-launch-floating-terminal-with-presentation', 'foot --hold') if command else ''
+                    if not command:
+                        entry.pop('action')
+                    result[key] = entry
+        result[f'{action}.package'] = {'label': 'Fedora package', 'action': f'foot --hold omadora package {action}'}
         for app_id, app in apps.items():
             category = f'{action}.{app["category"]}'
-            result[category] = {'label': app['category'].title()}
+            parts = app['category'].split('.')
+            for index, part in enumerate(parts):
+                parent = '.'.join([action, *parts[:index + 1]])
+                original = menu.get(parent, {})
+                result[parent] = {k: v for k, v in original.items() if k in ('label', 'icon', 'iconFont')}
+                result[parent].setdefault('label', {'ai': 'AI', 'php': 'PHP', 'javascript': 'JavaScript', 'service': 'Services'}.get(part, part.title()))
             result[f'{category}.{app_id}'] = {
                 'label': app['name'],
                 'action': f'foot --hold omadora app {action} {app_id}',
@@ -171,6 +190,13 @@ def menu_for_fedora(menu, apps, blocked):
                 child.startswith(key + '.') for child in result):
             del result[key]
     return result
+
+
+def package_commands(action, names):
+    if action not in ('install', 'remove') or not names or any(
+            not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]*', name) for name in names):
+        raise ValueError('Enter package names separated by spaces, without options or URLs')
+    return ['sudo', 'dnf', action, *names]
 
 
 def assemble(source, output):
@@ -612,6 +638,7 @@ def main():
     sub.add_parser('recover'); sub.add_parser('rollback')
     p = sub.add_parser('build'); p.add_argument('--source', type=Path, required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('app'); p.add_argument('action', choices=('list', 'install', 'remove', 'installed')); p.add_argument('id', nargs='?'); p.add_argument('--dry-run', action='store_true')
+    p = sub.add_parser('package'); p.add_argument('action', choices=('install', 'remove')); p.add_argument('names', nargs='*'); p.add_argument('--dry-run', action='store_true')
     sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')
     p = sub.add_parser('pkg-present'); p.add_argument('packages', nargs='+')
     p = sub.add_parser('powerprofile'); p.add_argument('action', choices=('get', 'list', 'set')); p.add_argument('profile', nargs='?')
@@ -625,6 +652,15 @@ def main():
         lifecycle().perform(sys.modules[__name__], args.command)
     elif args.command == 'build':
         print(assemble(args.source, args.output))
+    elif args.command == 'package':
+        names = args.names or input('Fedora package names (blank to cancel): ').split()
+        if not names:
+            return 0
+        command = package_commands(args.action, names)
+        if args.dry_run:
+            print(shlex.join(command))
+        else:
+            run(*command)
     elif args.command == 'about':
         print('Omadora 0.1.0-dev | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; see docs/VALIDATION.md for tested behavior and known failures.\nhttps://github.com/DanielCoffey1/omadora')
     elif args.command == 'app':

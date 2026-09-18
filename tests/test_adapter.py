@@ -12,6 +12,33 @@ spec.loader.exec_module(adapter)
 
 
 class AdapterTests(unittest.TestCase):
+    def test_package_prompt_rejects_options_paths_and_shell_text(self):
+        self.assertEqual(adapter.package_commands('install', ['htop', 'gcc-c++']),
+                         ['sudo', 'dnf', 'install', 'htop', 'gcc-c++'])
+        for names in ([], ['--allowerasing'], ['/tmp/app.rpm'], ['a;id'], ['$(id)']):
+            with self.assertRaises(ValueError):
+                adapter.package_commands('install', names)
+
+    def test_optional_menu_restores_nested_categories_and_portable_tools(self):
+        original = {'install': {'label': 'Install'},
+                    'install.webapp': {'label': 'Web App', 'action': 'omarchy-launch-floating-terminal-with-presentation omarchy-webapp-install'},
+                    'install.style': {'label': 'Style'},
+                    'install.style.theme': {'label': 'Theme', 'action': 'omarchy-launch-floating-terminal-with-presentation omarchy-theme-install'}}
+        apps = adapter.read_json(ROOT / 'apps.json')
+        menu = adapter.menu_for_fedora(original, apps, [])
+        self.assertIn('foot --hold omarchy-webapp-install', menu['install.webapp']['action'])
+        self.assertIn('install.style.theme', menu)
+        for key in menu:
+            if key.startswith(('install.', 'remove.')):
+                self.assertIn(key.rsplit('.', 1)[0], menu)
+        self.assertEqual(menu['install.development.javascript']['label'], 'JavaScript')
+        self.assertEqual(menu['install.ai']['label'], 'AI')
+        self.assertIn('install.editor.helix', menu)
+        self.assertIn('install.service.dropbox', menu)
+        self.assertIn('install.browser.brave', menu)
+        self.assertIn('install.gaming.minecraft', menu)
+        self.assertFalse(set(apps['ollama']['packages']) & set(adapter.packages()))
+
     def test_desktop_recovery_without_bus_verifies_persisted_values(self):
         from types import SimpleNamespace
         from unittest.mock import patch

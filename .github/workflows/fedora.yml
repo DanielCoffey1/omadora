@@ -9,6 +9,7 @@ on:
       - 'tests/fedora-apps.py'
       - 'tests/fedora-maintenance.py'
       - 'omadora.py'
+      - 'apps.json'
       - 'omadora_deploy.py'
       - 'omadora_lifecycle.py'
       - 'tests/fedora-lifecycle.py'
