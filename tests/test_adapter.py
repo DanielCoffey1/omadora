@@ -32,12 +32,19 @@ class AdapterTests(unittest.TestCase):
             if key.startswith(('install.', 'remove.')):
                 self.assertIn(key.rsplit('.', 1)[0], menu)
         self.assertEqual(menu['install.development.javascript']['label'], 'JavaScript')
-        self.assertEqual(menu['install.ai']['label'], 'AI')
         self.assertIn('install.editor.helix', menu)
         self.assertIn('install.service.dropbox', menu)
         self.assertIn('install.browser.brave', menu)
         self.assertIn('install.gaming.minecraft', menu)
-        self.assertFalse(set(apps['ollama']['packages']) & set(adapter.packages()))
+        self.assertFalse(set(apps['ghostty']['packages']) & set(adapter.packages()))
+
+    def test_optional_copr_is_enabled_only_for_install(self):
+        app = adapter.read_json(ROOT / 'apps.json')['ghostty']
+        self.assertEqual(adapter.app_commands(app, 'install')[0],
+                         ['sudo', 'dnf', 'copr', 'enable', 'scottames/ghostty'])
+        self.assertEqual(adapter.app_commands(app, 'remove'), [['sudo', 'dnf', 'remove', 'ghostty']])
+        with self.assertRaises(ValueError):
+            adapter.app_commands(app | {'copr': '--bad'}, 'install')
 
     def test_desktop_recovery_without_bus_verifies_persisted_values(self):
         from types import SimpleNamespace
@@ -109,7 +116,7 @@ class AdapterTests(unittest.TestCase):
         import re
         for app_id, app in adapter.read_json(ROOT / 'apps.json').items():
             self.assertRegex(app_id, r'^[a-z0-9-]+$')
-            self.assertIn(app['source'], ('dnf', 'flatpak', 'rpmfusion'))
+            self.assertIn(app['source'], ('dnf', 'flatpak', 'rpmfusion', 'copr'))
             for p in app.get('packages', [app.get('id')]):
                 self.assertTrue(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]*', p))
 

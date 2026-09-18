@@ -106,6 +106,10 @@ def app_commands(app, action, fedora='44'):
                          '--user', *(['flathub'] if action == 'install' else []), app['id']])
         return commands
     commands = []
+    if app['source'] == 'copr' and action == 'install':
+        if not re.fullmatch(r'[A-Za-z0-9_-]+/[A-Za-z0-9_-]+', app['copr']):
+            raise ValueError('Invalid COPR repository')
+        commands.append(['sudo', 'dnf', 'copr', 'enable', app['copr']])
     if app['source'] == 'rpmfusion' and action == 'install':
         for kind in ('free', 'nonfree'):
             commands.append(['sudo', 'dnf', 'install',

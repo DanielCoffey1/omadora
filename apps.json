@@ -36,21 +36,18 @@
   "helix": {"name": "Helix", "category": "editor", "source": "dnf", "packages": ["helix"]},
   "vim": {"name": "Vim", "category": "editor", "source": "dnf", "packages": ["vim-enhanced"]},
   "emacs": {"name": "Emacs", "category": "editor", "source": "dnf", "packages": ["emacs"]},
-  "ollama": {"name": "Ollama (CPU)", "category": "ai", "source": "dnf", "packages": ["ollama-base"]},
   "ruby": {"name": "Ruby", "category": "development", "source": "dnf", "packages": ["ruby", "ruby-devel", "rubygem-bundler"]},
   "rails": {"name": "Ruby on Rails", "category": "development", "source": "dnf", "packages": ["rubygem-rails"]},
   "python": {"name": "Python development tools", "category": "development", "source": "dnf", "packages": ["python3-devel", "python3-pip"]},
   "php": {"name": "PHP", "category": "development.php", "source": "dnf", "packages": ["php-cli", "php-devel", "composer"]},
   "elixir": {"name": "Elixir", "category": "development.elixir", "source": "dnf", "packages": ["elixir"]},
   "zig": {"name": "Zig", "category": "development", "source": "dnf", "packages": ["zig"]},
-  "java": {"name": "Java development kit", "category": "development", "source": "dnf", "packages": ["java-21-openjdk-devel"]},
+  "java": {"name": "Java development kit", "category": "development", "source": "dnf", "packages": ["java-devel"]},
   "dotnet": {"name": ".NET SDK", "category": "development", "source": "dnf", "packages": ["dotnet-sdk-10.0"]},
   "ocaml": {"name": "OCaml", "category": "development", "source": "dnf", "packages": ["ocaml", "opam"]},
   "clojure": {"name": "Clojure", "category": "development", "source": "dnf", "packages": ["clojure"]},
-  "scala": {"name": "Scala", "category": "development", "source": "dnf", "packages": ["scala"]},
   "fira": {"name": "Fira Code", "category": "style.font", "source": "dnf", "packages": ["fira-code-fonts"]},
   "cascadia": {"name": "Cascadia Mono", "category": "style.font", "source": "dnf", "packages": ["cascadia-mono-fonts"]},
-  "victor": {"name": "Victor Mono", "category": "style.font", "source": "dnf", "packages": ["victor-mono-fonts"]},
   "bitstream": {"name": "Bitstream Vera Mono", "category": "style.font", "source": "dnf", "packages": ["bitstream-vera-sans-mono-fonts"]},
-  "iosevka": {"name": "Iosevka", "category": "style.font", "source": "dnf", "packages": ["iosevka-fonts"]}
+  "ghostty": {"name": "Ghostty (community COPR)", "category": "terminal", "source": "copr", "copr": "scottames/ghostty", "packages": ["ghostty"]}
 }

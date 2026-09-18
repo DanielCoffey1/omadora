@@ -11,8 +11,14 @@ spec.loader.exec_module(adapter)
 apps = adapter.read_json('/src/apps.json')
 
 # Only the disposable test fixture enables these repositories up front.
-for command in adapter.app_commands(apps['steam'], 'install')[:-1]:
-    subprocess.run([*command[:3], '-y', *command[3:]], check=True)
+repositories = set()
+for app in apps.values():
+    if app['source'] not in ('rpmfusion', 'copr'):
+        continue
+    for command in adapter.app_commands(app, 'install')[:-1]:
+        if tuple(command) not in repositories:
+            subprocess.run([*command[:2], '-y', *command[2:]], check=True)
+            repositories.add(tuple(command))
 
 packages = sorted({package for app in apps.values() for package in app.get('packages', [])})
 result = subprocess.run(['sudo', 'dnf', '--assumeno', 'install', *packages], text=True,
@@ -30,4 +36,4 @@ available = set(listing.splitlines())
 missing = [app['id'] for app in apps.values() if app['source'] == 'flatpak' and app['id'] not in available]
 if missing:
     sys.exit('Unavailable Flatpak IDs: ' + ', '.join(missing))
-print(f'PASS: {len(apps)} optional apps resolve in Fedora/RPM Fusion/Flathub; none installed.')
+print(f'PASS: {len(apps)} optional apps resolve in Fedora/RPM Fusion/COPR/Flathub; none installed.')
