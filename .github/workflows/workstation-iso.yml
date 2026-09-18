@@ -20,6 +20,14 @@ jobs:
           set -o pipefail
           mkdir -p vm-results
           bash tests/fedora-workstation-iso.sh 2>&1 | tee vm-results/iso-host.log
+      - name: Save Fedora installation evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workstation-iso-installation
+          path: |
+            vm-results/iso-*
+            vm-results/workstation-CHECKSUM
       - name: Test Omadora on the installed Workstation disk
         env:
           VM_BASE: workstation-iso

@@ -129,10 +129,11 @@ with sync_playwright() as pw:
         deadline = time.monotonic() + 1200
         while time.monotonic() < deadline:
             text = frame.locator('body').inner_text()
-            if frame.locator('.anaconda-screen-progress-status-success').count():
+            if frame.locator('.anaconda-screen-progress-status-success').is_visible():
                 break
-            if 'Installation failed' in text:
+            if frame.locator('#critical-error-bz-report-modal').is_visible() or 'Installation failed' in text:
                 raise RuntimeError(text)
+            (OUT / 'iso-progress.txt').write_text(text)
             time.sleep(10)
         else:
             raise RuntimeError('Timed out copying Workstation onto the virtual disk')
@@ -171,7 +172,8 @@ print(guest('bash -c ' + shlex.quote(script)), flush=True)
 (OUT / 'iso-provenance.json').write_text(json.dumps({
     'image': 'Fedora-Workstation-Live-44-1.7.x86_64.iso',
     'installer': 'unmodified Anaconda Web UI', 'firmware': 'UEFI',
-    'test_instrumentation': ['loopback-only remote installer', 'ephemeral SSH key', 'test user/password', 'test sudo rule'],
+    'test_instrumentation': ['loopback SSH tunnel to local installer', 'live-only serial debug shell/firstboot mask',
+                             'ephemeral SSH key', 'test user/password', 'test sudo rule'],
     'desktop_added_by_dnf': False,
 }, indent=2))
 print('PASS: official Workstation Live ISO installed through Anaconda', flush=True)
