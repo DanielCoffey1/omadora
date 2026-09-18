@@ -353,7 +353,10 @@ def remove(key, path):
     elif key == 'xbox-controllers':
         opt.run('sudo', 'dkms', 'remove', 'hid-xpadneo/' + opt.recipes()['xpadneo-source']['version'], '--all')
     elif key == 'openclaw':
-        if (path / 'node_modules/.bin/openclaw').exists():
+        unit = Path.home() / '.config/systemd/user/openclaw-gateway.service'
+        if unit.exists() and (path / 'node_modules/.bin/openclaw').exists():
+            if str(path) not in unit.read_text():
+                raise ValueError('Existing OpenClaw service belongs to another installation; retained it')
             launch(key, path, ['gateway', 'uninstall'])
     # Framework caches and dependencies in this managed tree are removed by
     # the caller. Project directories, app profiles and database data are not.
