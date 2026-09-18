@@ -97,22 +97,30 @@ def load_menu(path):
 def app_commands(app, action, fedora='44'):
     if action not in ('install', 'remove'):
         raise ValueError('Invalid app action')
+    if app['source'] == 'optional':
+        return [['python3', str(ROOT / 'omadora_optional.py'), action, app['recipe']]]
     if app['source'] == 'flatpak':
         commands = []
         if action == 'install':
             commands.append(['flatpak', 'remote-add', '--user', '--if-not-exists',
-                             'flathub', 'https://flathub.org/repo/flathub.flatpakrepo'])
+                             app.get('remote', 'flathub'), app.get('remote_url', 'https://flathub.org/repo/flathub.flatpakrepo')])
         commands.append(['flatpak', 'install' if action == 'install' else 'uninstall',
-                         '--user', *(['flathub'] if action == 'install' else []), app['id']])
+                         '--user', *([app.get('remote', 'flathub')] if action == 'install' else []), app['id']])
         return commands
     commands = []
     if app['source'] == 'vendor' and action == 'install':
-        for url in (app['repo'], app['key']):
+        for url in (app.get('repo', app['key']), app['key']):
             if not re.fullmatch(r'https://[A-Za-z0-9./_-]+', url):
                 raise ValueError('Invalid vendor repository URL')
         commands.append(['sudo', 'rpm', '--import', app['key']])
-        commands.append(['sudo', 'dnf', 'config-manager', 'addrepo', '--overwrite',
-                         '--from-repofile=' + app['repo']])
+        if app.get('repo_file'):
+            if not re.fullmatch('[a-z0-9-]+\\.repo', app['repo_file']):
+                raise ValueError('Invalid repository filename')
+            commands.append(['sudo', 'install', '-m644', str(ROOT / 'assets/repos' / app['repo_file']),
+                             '/etc/yum.repos.d/omadora-' + app['repo_file']])
+        else:
+            commands.append(['sudo', 'dnf', 'config-manager', 'addrepo', '--overwrite',
+                             '--from-repofile=' + app['repo']])
     if app['source'] == 'copr' and action == 'install':
         if not re.fullmatch(r'[A-Za-z0-9_-]+/[A-Za-z0-9_-]+', app['copr']):
             raise ValueError('Invalid COPR repository')
@@ -179,8 +187,8 @@ def menu_for_fedora(menu, apps, blocked):
                     result[key] = entry
         result[f'{action}.package'] = {'label': 'Fedora package', 'action': f'foot --hold omadora package {action}'}
         for app_id, app in apps.items():
-            category = f'{action}.{app["category"]}'
-            parts = app['category'].split('.')
+            category = '.'.join(filter(None, (action, app['category'])))
+            parts = app['category'].split('.') if app['category'] else []
             for index, part in enumerate(parts):
                 parent = '.'.join([action, *parts[:index + 1]])
                 original = menu.get(parent, {})
@@ -191,6 +199,10 @@ def menu_for_fedora(menu, apps, blocked):
                 'action': f'foot --hold omadora app {action} {app_id}',
                 'when': f'{"! " if action == "install" else ""}omadora app installed {app_id}',
             }
+            if action == 'install' and app.get('repeatable'):
+                result[f'{category}.{app_id}'].pop('when')
+            if action == 'remove' and app_id in ('copr-package', 'preinstalls'):
+                del result[f'{category}.{app_id}']
     result['update'] = {'label': 'Update', 'icon': ''}
     result['update.fedora'] = {'label': 'Fedora packages', 'action': 'foot --hold omadora update'}
     result['update.flatpak'] = {'label': 'Flatpak apps', 'action': 'foot --hold flatpak update --user'}
@@ -221,7 +233,8 @@ def assemble(source, output):
         shutil.copytree(source / name, tree / name)
     for name in ('LICENSE', 'version'):
         shutil.copy2(source / name, tree / name)
-    for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'apps.json', 'upstream.lock.json'):
+    for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'omadora_optional.py',
+                 'omadora_workflows.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
         shutil.copy2(ROOT / name, output / name)
     write(output / 'release.json', json.dumps({'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
@@ -230,7 +243,7 @@ def assemble(source, output):
     # Keep upstream identifiers for compatibility. Only the product entrypoints
     # and menu branding are Omadora; wholesale textual renaming breaks IPC.
     env = ('export OMARCHY_PATH=/usr/local/share/omadora/upstream\n'
-           'export PATH="/usr/local/share/omadora/bin:$OMARCHY_PATH/bin:$PATH"\n'
+           'export PATH="/usr/local/share/omadora/bin:$OMARCHY_PATH/bin:$HOME/.local/bin:$PATH"\n'
            'export XDG_DATA_DIRS="/usr/local/share/omadora/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"\n'
            'export TERMINAL=foot\nexport EDITOR=nvim\n'
            # Set before UWSM activates portal/toolkit services, not only in
@@ -612,6 +625,11 @@ def _install():
 
 
 def installed(app):
+    if app['source'] == 'optional':
+        if str(ROOT) not in sys.path:
+            sys.path.insert(0, str(ROOT))
+        import omadora_optional
+        return omadora_optional.installed(app['recipe'])
     if app['source'] == 'flatpak':
         if not shutil.which('flatpak'):
             return False
@@ -694,6 +712,13 @@ def main():
                 preflight()
                 for command in commands:
                     run(*command)
+                if args.action == 'install' and app.get('unit'):
+                    run('sudo', 'systemctl', 'enable', '--now', app['unit'])
+                    if app.get('group'):
+                        import getpass
+                        run('sudo', 'usermod', '-aG', app['group'], getpass.getuser())
+                        print('Sign out and back in to apply service group access.')
+                    print('Service installed. Run the vendor login command to connect your account.')
                 if args.id == 'steam' and args.action == 'install':
                     steam_certificates()
     elif args.command == 'pkg-present':

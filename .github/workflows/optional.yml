@@ -1,0 +1,58 @@
+name: Optional installers
+on:
+  workflow_dispatch:
+    inputs:
+      recipe:
+        description: 'One recipe ID, or all for downloads and noninteractive developer installers'
+        default: all
+        required: true
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      recipes: ${{ steps.plan.outputs.recipes }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          RECIPE: ${{ inputs.recipe }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          recipes = json.load(open('optional.json'))
+          selected = os.environ['RECIPE']
+          automatic = {'bun', 'deno', 'scala', 'symfony', 'laravel', 'phoenix', 'openclaw', 'hermes'}
+          keys = [k for k, r in recipes.items() if r['kind'] != 'workflow' or k in automatic]
+          if selected != 'all':
+              assert selected in keys, 'This recipe requires a graphical session, hardware or user input'
+              keys = [selected]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('recipes=' + json.dumps(keys), file=output)
+          PY
+  install:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        recipe: ${{ fromJSON(needs.plan.outputs.recipes) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Real Fedora optional installation and removal
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          docker run --rm -v "$PWD:/src:ro" quay.io/fedora/fedora:44 \
+            bash -c 'dnf -y install python3 && python3 /src/tests/optional-assets.py "$1"' _ "$RECIPE" \
+            2>&1 | tee "test-results/$RECIPE.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: optional-${{ matrix.recipe }}
+          path: test-results/

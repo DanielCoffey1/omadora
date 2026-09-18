@@ -125,8 +125,8 @@ class AdapterTests(unittest.TestCase):
         import re
         for app_id, app in adapter.read_json(ROOT / 'apps.json').items():
             self.assertRegex(app_id, r'^[a-z0-9-]+$')
-            self.assertIn(app['source'], ('dnf', 'flatpak', 'rpmfusion', 'copr', 'vendor'))
-            for p in app.get('packages', [app.get('id')]):
+            self.assertIn(app['source'], ('dnf', 'flatpak', 'rpmfusion', 'copr', 'vendor', 'optional'))
+            for p in app.get('packages', [app['id']] if app.get('id') else []):
                 self.assertTrue(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]*', p))
 
     def test_menu_replaces_arch_actions_and_keeps_hierarchy(self):
@@ -240,9 +240,13 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
                     input=json.dumps(menu), text=True, encoding='utf-8', capture_output=True, check=True).stdout)
                 for app_id, app in adapter.read_json(ROOT / 'apps.json').items():
                     for action in ('install', 'remove'):
-                        key = f'{action}.{app["category"]}.{app_id}'
-                        self.assertEqual(parsed['normalized'][key]['when'], menu[key]['when'])
-                        self.assertIn(menu[key]['when'], parsed['script'])
+                        key = '.'.join(filter(None, (action, app['category'], app_id)))
+                        if key not in menu:
+                            self.assertIn(app_id, ('copr-package', 'preinstalls'))
+                            continue
+                        if 'when' in menu[key]:
+                            self.assertEqual(parsed['normalized'][key]['when'], menu[key]['when'])
+                            self.assertIn(menu[key]['when'], parsed['script'])
                 self.assertNotRegex(parsed['script'], r'\bpacman\b')
             # Fedora-added entries must not reference removed upstream helpers.
             import re
@@ -250,7 +254,7 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
                 for field in ('action', 'when', 'disabled', 'checked', 'provider'):
                     for command in re.findall(r'\bomarchy-[a-z0-9-]+\b', str(entry.get(field, ''))):
                         self.assertTrue((tree / 'bin' / command).is_file(), command)
-            self.assertNotIn('install.gaming.xbox-controllers', menu)
+            self.assertIn('install.gaming.xbox-controllers', menu)
             self.assertIn('omarchy_preinstalled_bindings = false', (tree / 'config/hypr/hyprland.lua').read_text())
             self.assertFalse((tree / 'install').exists())
             utilities = (tree / 'default/hypr/bindings/utilities.lua').read_text()

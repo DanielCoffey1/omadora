@@ -1,0 +1,388 @@
+{
+  "meslo": {
+    "name": "Meslo LG Mono Nerd Font",
+    "kind": "font",
+    "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/Meslo.tar.xz",
+    "sha256": "6b6624632dc6873dfb7681c3f818e7c01ab601ab707690b6440933bbe57e2b11",
+    "archive": "tar",
+    "version": "3.5.1"
+  },
+  "victor": {
+    "name": "Victor Mono Nerd Font",
+    "kind": "font",
+    "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/VictorMono.tar.xz",
+    "sha256": "c6c52657921835862314b7edbbccf5695146c1e6c5d3507c3deab88e555215ed",
+    "archive": "tar",
+    "version": "3.5.1"
+  },
+  "iosevka": {
+    "name": "Iosevka Nerd Font",
+    "kind": "font",
+    "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/Iosevka.tar.xz",
+    "sha256": "3b94ea1dc3955756762f977b7677bca671947dd56bc755a6f8465a8e83b5f257",
+    "archive": "tar",
+    "version": "3.5.1"
+  },
+  "mise": {
+    "name": "Mise (Omadora runtime manager)",
+    "kind": "binary",
+    "url": "https://github.com/jdx/mise/releases/download/v2026.9.11/mise-v2026.9.11-linux-x64",
+    "sha256": "6e39ee1ffa926a1f64814efbf1d26c3f617255e2a6ba6152e3c8a5135fa5a35f",
+    "command": "omadora-mise",
+    "terminal": true,
+    "version": "2026.9.11"
+  },
+  "ollama": {
+    "name": "Ollama",
+    "kind": "archive",
+    "url": "https://github.com/ollama/ollama/releases/download/v0.34.2/ollama-linux-amd64.tar.zst",
+    "sha256": "e155b83589986d2c581fdbf1381ea3ebdb16549883679cd5a0627f7cdc05b12b",
+    "archive": "tar.zst",
+    "executable": "bin/ollama",
+    "command": "ollama",
+    "terminal": true,
+    "dependencies": [
+      "zstd"
+    ],
+    "version": "0.34.2"
+  },
+  "once-binary": {
+    "name": "ONCE runtime",
+    "kind": "binary",
+    "url": "https://github.com/basecamp/once/releases/download/v0.3.3/once-linux-amd64",
+    "sha256": "aef855da263721c6c1072ff5ebc4c17a52af8c8e80c46c5a9dd458e7ca3a7f35",
+    "version": "0.3.3"
+  },
+  "chatgpt": {
+    "name": "ChatGPT Desktop",
+    "kind": "archive",
+    "url": "https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_26.911.61220_amd64.deb",
+    "sha256": "14e1d4aeed7fed22adbd2b8ec20fe57bfbdd9ee9902370b4e2726677ca68bbba",
+    "archive": "deb",
+    "executable": "usr/lib/chatgpt/ChatGPT",
+    "command": "chatgpt",
+    "dependencies": [
+      "alsa-lib",
+      "at-spi2-core",
+      "gtk3",
+      "libXScrnSaver",
+      "libXtst",
+      "nss",
+      "libsecret",
+      "libnotify",
+      "libXcomposite",
+      "libXdamage",
+      "libXrandr",
+      "libxkbfile",
+      "mesa-libgbm",
+      "libusb1",
+      "cups-libs",
+      "bsdtar",
+      "zstd"
+    ],
+    "version": "26.911.61220"
+  },
+  "perplexity": {
+    "name": "Perplexity",
+    "kind": "archive",
+    "url": "https://packages.perplexity.ai/deb/pool/main/p/perplexity/perplexity_26.9.4%2Bbuild72244_amd64.deb",
+    "sha256": "fe64a09a82f8e6b0e3de5637ee768dc5aee94a326af795dce8bcbaf5c7660409",
+    "archive": "deb",
+    "executable": "opt/Perplexity/perplexity",
+    "command": "perplexity",
+    "dependencies": [
+      "alsa-lib",
+      "at-spi2-core",
+      "gtk3",
+      "libXScrnSaver",
+      "libXtst",
+      "nss",
+      "libsecret",
+      "libnotify",
+      "libXcomposite",
+      "libXdamage",
+      "libXrandr",
+      "libxkbfile",
+      "mesa-libgbm",
+      "libusb1",
+      "cups-libs",
+      "bsdtar",
+      "zstd",
+      "bubblewrap"
+    ],
+    "version": "26.9.4+build72244"
+  },
+  "grok-bot": {
+    "name": "Grok Bot",
+    "kind": "archive",
+    "url": "https://downloads.cursor.com/grokbot/stable/c1e7d7a46549956d25f53e9c0b9f59666e03aa3a/linux/x64/grok-bot_0.47.0_amd64.deb",
+    "sha256": "11ca0f51a535b97af51a352adf9c0f9ecd2e1b0430a69ae9451b688a7a065808",
+    "archive": "deb",
+    "executable": "opt/Grok Bot/grok-bot",
+    "command": "grok-bot",
+    "dependencies": [
+      "alsa-lib",
+      "at-spi2-core",
+      "gtk3",
+      "libXScrnSaver",
+      "libXtst",
+      "nss",
+      "libsecret",
+      "libnotify",
+      "libXcomposite",
+      "libXdamage",
+      "libXrandr",
+      "libxkbfile",
+      "mesa-libgbm",
+      "libusb1",
+      "cups-libs",
+      "bsdtar",
+      "zstd"
+    ],
+    "version": "0.47.0"
+  },
+  "t3-code": {
+    "name": "T3 Code",
+    "kind": "appimage",
+    "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.42/T3-Code-0.0.42-x86_64.AppImage",
+    "sha256": "8dc1fccdabc2ed3a59a3944cc772ef11931b9351401c0963ed305d5f96e3cdf4",
+    "dependencies": [
+      "alsa-lib",
+      "at-spi2-core",
+      "gtk3",
+      "libXScrnSaver",
+      "libXtst",
+      "nss",
+      "libsecret",
+      "libnotify",
+      "libXcomposite",
+      "libXdamage",
+      "libXrandr",
+      "libxkbfile",
+      "mesa-libgbm",
+      "libusb1",
+      "cups-libs",
+      "bsdtar",
+      "zstd"
+    ],
+    "version": "0.0.42"
+  },
+  "lm-studio": {
+    "name": "LM Studio",
+    "kind": "appimage",
+    "url": "https://installers.lmstudio.ai/linux/x64/0.4.24-1/LM-Studio-0.4.24-1-x64.AppImage",
+    "sha256": "17cb8ac6374f9182fc127efae20680265e3c4c17d96eadf147eb5fe6111a9353",
+    "dependencies": [
+      "alsa-lib",
+      "at-spi2-core",
+      "gtk3",
+      "libXScrnSaver",
+      "libXtst",
+      "nss",
+      "libsecret",
+      "libnotify",
+      "libXcomposite",
+      "libXdamage",
+      "libXrandr",
+      "libxkbfile",
+      "mesa-libgbm",
+      "libusb1",
+      "cups-libs",
+      "bsdtar",
+      "zstd",
+      "libxcrypt-compat"
+    ],
+    "version": "0.4.24-1"
+  },
+  "cursor": {
+    "name": "Cursor",
+    "kind": "archive",
+    "url": "https://downloads.cursor.com/production/f09fca384ceca23f7bf21f9c23655b162641d747/linux/x64/deb/amd64/deb/cursor_3.20.21_amd64.deb",
+    "sha256": null,
+    "sha512": "8329138d207309d16410f1cb58da18eea1a034a35f2bdd022ef9b373bb8f1b3d80e489e65256b7283c40e10da77962d158bfa3a64e742337a942633810d80dbe",
+    "archive": "deb",
+    "executable": "usr/share/cursor/cursor",
+    "command": "cursor",
+    "dependencies": [
+      "alsa-lib",
+      "at-spi2-core",
+      "gtk3",
+      "libXScrnSaver",
+      "libXtst",
+      "nss",
+      "libsecret",
+      "libnotify",
+      "libXcomposite",
+      "libXdamage",
+      "libXrandr",
+      "libxkbfile",
+      "mesa-libgbm",
+      "libusb1",
+      "cups-libs",
+      "bsdtar",
+      "zstd"
+    ],
+    "version": "3.20.21"
+  },
+  "tui": {
+    "name": "TUI launcher",
+    "kind": "workflow"
+  },
+  "copr-package": {
+    "name": "COPR package",
+    "kind": "workflow"
+  },
+  "windows": {
+    "name": "Windows VM",
+    "kind": "workflow"
+  },
+  "once": {
+    "name": "ONCE",
+    "kind": "workflow"
+  },
+  "chromium-account": {
+    "name": "Chromium Account",
+    "kind": "workflow"
+  },
+  "hermes": {
+    "name": "Hermes Desktop",
+    "kind": "workflow"
+  },
+  "openclaw": {
+    "name": "OpenClaw",
+    "kind": "workflow",
+    "version": "2026.9.4",
+    "commands": [
+      "openclaw"
+    ]
+  },
+  "dictation": {
+    "name": "Dictation",
+    "kind": "workflow"
+  },
+  "xbox-cloud": {
+    "name": "Xbox Cloud Gaming",
+    "kind": "workflow"
+  },
+  "xbox-controllers": {
+    "name": "Xbox Controllers",
+    "kind": "workflow"
+  },
+  "battlenet": {
+    "name": "Battle.net (Lutris setup)",
+    "kind": "workflow"
+  },
+  "retro-launcher": {
+    "name": "RetroArch Game Launcher",
+    "kind": "workflow"
+  },
+  "bun": {
+    "name": "Bun",
+    "kind": "workflow",
+    "tools": [
+      "bun@1.4.2"
+    ],
+    "commands": [
+      "bun"
+    ]
+  },
+  "deno": {
+    "name": "Deno",
+    "kind": "workflow",
+    "tools": [
+      "deno@2.9.7"
+    ],
+    "commands": [
+      "deno"
+    ]
+  },
+  "scala": {
+    "name": "Scala",
+    "kind": "workflow",
+    "tools": [
+      "java@21.0.8",
+      "scala@3.9.0"
+    ],
+    "commands": [
+      "scala"
+    ]
+  },
+  "laravel": {
+    "name": "Laravel",
+    "kind": "workflow",
+    "version": "5.32.0",
+    "commands": [
+      "laravel"
+    ]
+  },
+  "symfony": {
+    "name": "Symfony",
+    "kind": "workflow",
+    "tools": [
+      "github:symfony-cli/symfony-cli@5.20.0"
+    ],
+    "commands": [
+      "symfony"
+    ]
+  },
+  "phoenix": {
+    "name": "Phoenix",
+    "kind": "workflow",
+    "version": "1.8.14",
+    "commands": [
+      "omadora-phoenix"
+    ]
+  },
+  "hermes-source": {
+    "name": "Hermes source",
+    "kind": "archive",
+    "url": "https://github.com/NousResearch/hermes-agent/archive/refs/tags/v2026.9.7.tar.gz",
+    "sha256": "907c2a72db1c5dd637ea8eeae97f4cb5b32cef615c17258f6b190924ec5bf688",
+    "archive": "tar",
+    "version": "2026.9.7"
+  },
+  "voxtype-rpm": {
+    "name": "Voxtype",
+    "kind": "rpm",
+    "url": "https://github.com/peteonrails/voxtype/releases/download/v1.0.1/voxtype-1.0.1-1.x86_64.rpm",
+    "sha256": "be103de733f376030180ac734bb845779bf6ee963419a8e72518b5df150525bf",
+    "package": "voxtype",
+    "version": "1.0.1"
+  },
+  "xpadneo-source": {
+    "name": "xpadneo source",
+    "kind": "archive",
+    "url": "https://github.com/atar-axis/xpadneo/archive/refs/tags/v0.10.4.tar.gz",
+    "sha256": "5271c02a788f9470199e9e18596e0d8537687ff68b2fcc64c03ecf92638f5c84",
+    "archive": "tar",
+    "version": "0.10.4"
+  },
+  "db-postgres": {
+    "kind": "workflow",
+    "name": "PostgreSQL"
+  },
+  "db-mysql": {
+    "kind": "workflow",
+    "name": "MySQL"
+  },
+  "db-mariadb": {
+    "kind": "workflow",
+    "name": "MariaDB"
+  },
+  "db-redis": {
+    "kind": "workflow",
+    "name": "Redis"
+  },
+  "db-mongodb": {
+    "kind": "workflow",
+    "name": "MongoDB"
+  },
+  "db-mssql": {
+    "kind": "workflow",
+    "name": "SQL Server (Developer)"
+  },
+  "preinstalls": {
+    "kind": "workflow",
+    "name": "Choose optional apps"
+  }
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Resolve optional apps in the disposable Fedora test system; install none."""
 import importlib.util
+import ast
 import os
 from pathlib import Path
 import subprocess
@@ -39,6 +40,14 @@ for app in apps.values():
             repositories.add(tuple(command))
 
 packages = sorted({package for app in apps.values() for package in app.get('packages', [])})
+optional = adapter.read_json('/src/optional.json')
+dependencies = {p for recipe in optional.values() for p in recipe.get('dependencies', [])}
+# Also resolve literal Fedora dependencies in interactive workflows, without
+# starting services, connecting accounts, building a kernel driver or a VM.
+for node in ast.walk(ast.parse(Path('/src/omadora_workflows.py').read_text())):
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'deps':
+        dependencies.update(arg.value for arg in node.args if isinstance(arg, ast.Constant) and isinstance(arg.value, str))
+packages = sorted(set(packages) | dependencies)
 result = subprocess.run(['sudo', 'dnf', '--assumeno', 'install', *packages], text=True,
                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=dict(__import__('os').environ, LC_ALL='C'))
 print(result.stdout, flush=True)
@@ -46,12 +55,17 @@ Path('/tmp/omadora-app-resolution.txt').write_text(result.stdout)
 if result.returncode not in (0, 1) or (result.returncode == 1 and 'Operation aborted by the user' not in result.stdout):
     sys.exit('Optional RPM transaction did not resolve successfully')
 
-subprocess.run(['flatpak', 'remote-add', '--user', '--if-not-exists', 'flathub',
-                'https://flathub.org/repo/flathub.flatpakrepo'], check=True)
-listing = subprocess.run(['flatpak', 'remote-ls', '--user', '--app', '--columns=application', 'flathub'],
-                         text=True, stdout=subprocess.PIPE, check=True).stdout
-available = set(listing.splitlines())
-missing = [app['id'] for app in apps.values() if app['source'] == 'flatpak' and app['id'] not in available]
+missing = []
+remotes = {app.get('remote', 'flathub'): app.get('remote_url', 'https://flathub.org/repo/flathub.flatpakrepo')
+           for app in apps.values() if app['source'] == 'flatpak'}
+for remote, url in remotes.items():
+    subprocess.run(['flatpak', 'remote-add', '--user', '--if-not-exists', remote, url], check=True)
+    listing = subprocess.run(['flatpak', 'remote-ls', '--user', '--app', '--columns=application', remote],
+                             text=True, stdout=subprocess.PIPE, check=True).stdout
+    available = set(listing.splitlines())
+    missing.extend(app['id'] for app in apps.values() if app['source'] == 'flatpak'
+                   and app.get('remote', 'flathub') == remote and app['id'] not in available)
 if missing:
     sys.exit('Unavailable Flatpak IDs: ' + ', '.join(missing))
-print(f'PASS: {len(apps)} optional apps resolve in Fedora/RPM Fusion/COPR/vendor RPM/Flathub; none installed.')
+packaged = sum(app['source'] != 'optional' for app in apps.values())
+print(f'PASS: {packaged} packaged apps and workflow RPM dependencies resolve; optional archives/workflows are tested separately. No catalog apps installed.')
