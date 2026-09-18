@@ -202,6 +202,10 @@ def menu_audit():
         v.guest('omarchy-menu summon ' + route)
         time.sleep(1)
         v.guest('grim /tmp/omadora-vm-results/menu-' + route.replace('.', '-') + '.png')
+        if route == 'install':
+            for _ in range(18):
+                v.keys('down')
+            v.guest('grim /tmp/omadora-vm-results/menu-install-bottom.png')
         v.guest('omarchy-menu close')
     for panel in ('bluetooth', 'monitor', 'power'):
         v.guest('omarchy-shell shell summon omarchy.' + panel)
@@ -306,9 +310,9 @@ def package_picker_and_completion():
         v.keys('ret')
         v.wait_for(lambda: v.guest('test -s /tmp/omadora-vm-results/picker-' + action + '.json; echo $?') == '0')
         selected = json.loads(v.guest('cat /tmp/omadora-vm-results/picker-' + action + '.json'))
-        assert set(selected) == {'ripgrep', 'fzf'}, selected
         v.keys('ret')
         v.wait_for(lambda: not any(c['class'] == 'omadora-picker-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+        assert set(selected) == {'ripgrep', 'fzf'}, repr(selected)[:500]
     v.guest('setsid foot --app-id=omadora-completion-test omadora-terminal-action omarchy-webapp-install OmadoraCompletion https://example.com firefox >/tmp/omadora-vm-results/completion.log 2>&1 </dev/null &')
     v.wait_for(lambda: any(c['class'] == 'omadora-completion-test' for c in json.loads(v.guest('hyprctl clients -j'))))
     v.wait_for(lambda: v.guest('test -s ~/.local/share/applications/OmadoraCompletion.desktop; echo $?') == '0')
@@ -353,8 +357,10 @@ def screen_recording_and_reminder():
                 time.sleep(.5)
             v.guest('grim /tmp/omadora-vm-results/recording-active.png')
         finally:
-            v.guest('omarchy-capture-screenrecording --stop-recording', timeout=30)
-            v.guest('cp "$XDG_RUNTIME_DIR/omadora-screenrecord/"*.log /tmp/omadora-vm-results/ || true')
+            try:
+                v.guest('omarchy-capture-screenrecording --stop-recording', timeout=30)
+            finally:
+                v.guest('cp "$XDG_RUNTIME_DIR/omadora-screenrecord/"*.log /tmp/omadora-vm-results/ || true')
         v.wait_for(lambda: v.guest('omarchy-capture-screenrecording --status; echo $?') == '1')
         latest = v.guest('find /tmp/omadora-vm-results/recordings -name "*.webm" | sort | tail -1')
         streams = json.loads(v.guest('ffprobe -v error -show_streams -of json ' + shlex.quote(latest)))['streams']

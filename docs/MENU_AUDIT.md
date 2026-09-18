@@ -8,6 +8,16 @@ workflow works.
 
 ## Issues corrected
 
+- Install and Remove entries now retain upstream icons or receive Nerd Font
+  icons from the bundled font. Fedora package actions use a searchable,
+  multi-select inventory and one reviewed DNF transaction. Web-app completion
+  and package actions close with Enter.
+- The recording indicator previously opened a filtered-out menu and checked
+  for an uninstalled Arch recorder. It now opens Fedora recording choices and
+  reads the owned `wf-recorder` process state; clicking while recording stops
+  and finalizes the file. Reminder menu entries are restored. The Dictation
+  indicator offers the optional installer when missing. Updates no longer
+  opens a second terminal inside the first.
 - The optional Install menu was reduced too far when creating the minimal base.
   It now includes 93 catalog entries and restores portable web-app/style
   installers. [Install coverage](INSTALL_MENU.md) records exact mappings,

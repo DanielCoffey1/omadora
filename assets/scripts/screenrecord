@@ -50,7 +50,9 @@ def worker(args, directory, state):
                           command('xdg-user-dir', 'VIDEOS') or str(Path.home() / 'Videos'))
         output_dir.mkdir(parents=True, exist_ok=True)
         filename = output_dir / ('screenrecording-' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f') + '.webm')
-        cmd = ['wf-recorder', '-r', '30', '-c', 'libvpx', '-p', 'deadline=realtime',
+        # Keep frame delivery alive on static desktops so the recorder's
+        # blocking Wayland dispatch can finish promptly after SIGINT.
+        cmd = ['wf-recorder', '--no-damage', '-r', '30', '-c', 'libvpx', '-p', 'deadline=realtime',
                '-p', 'cpu-used=8', '-x', 'yuv420p', '-f', str(filename)]
         cmd += ['-o', args.output] if args.output else ['-g', args.geometry]
         if args.with_desktop_audio or args.with_microphone_audio:

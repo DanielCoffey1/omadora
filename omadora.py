@@ -248,7 +248,7 @@ def package_commands(action, names):
 
 def choose_packages(action):
     print('Loading available packages from enabled repositories...' if action == 'install' else 'Loading installed packages...', flush=True)
-    command = ('dnf', '-q', 'repoquery', '--available', '--queryformat', '%{name}') if action == 'install' else ('rpm', '-qa', '--queryformat', '%{NAME}\n')
+    command = ('dnf', '-q', 'repoquery', '--available', '--queryformat', '%{name}\n') if action == 'install' else ('rpm', '-qa', '--queryformat', '%{NAME}\n')
     raw = run(*command, capture=True).stdout
     names = sorted({line.strip() for line in raw.splitlines()
                     if re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]*', line.strip())})
