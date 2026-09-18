@@ -53,7 +53,7 @@ def runtime(key, path):
     # Exact versions are stored in the committed workflow recipe.
     versions = opt.recipes()[key]['tools']
     env = mise_environment(path)
-    opt.run(opt.location('mise') / 'app', 'install', *versions, env=env)
+    opt.run(opt.location('mise') / 'mise', 'install', *versions, env=env)
     for command in opt.recipes()[key].get('commands', [key]):
         opt.command_link(key, command)
     own_launcher(key, True)
@@ -241,8 +241,12 @@ def install(key, path):
         opt.command_link(key, 'omadora-phoenix')
         own_launcher(key, True)
     elif key == 'openclaw':
-        deps('nodejs22', 'nodejs22-npm', 'git', 'gcc-c++', 'make')
-        opt.run('npm', 'install', '--prefix', path, '--no-fund', '--no-audit', 'openclaw@' + opt.recipes()[key]['version'])
+        deps('git', 'gcc-c++', 'make')
+        env = mise_environment(path)
+        tools = opt.recipes()[key]['tools']
+        opt.run(opt.location('mise') / 'mise', 'install', *tools, env=env)
+        opt.run(opt.location('mise') / 'mise', 'exec', *tools, '--', 'npm', 'install', '--prefix', path,
+                '--no-fund', '--no-audit', 'openclaw@' + opt.recipes()[key]['version'], env=env)
         opt.command_link(key, 'openclaw')
         own_launcher(key, True)
         print('Open OpenClaw from the launcher to run its account/onboarding wizard.')
@@ -264,7 +268,7 @@ def launch(key, path, args):
     if key in ('bun', 'deno', 'scala', 'symfony'):
         recipe = opt.recipes()[key]
         command = recipe.get('commands', [key])[0]
-        opt.run(opt.location('mise') / 'app', 'exec', *recipe['tools'], '--', command, *args,
+        opt.run(opt.location('mise') / 'mise', 'exec', *recipe['tools'], '--', command, *args,
                 env=mise_environment(path))
     elif key.startswith('db-'):
         opt.run('podman', 'start', 'omadora-' + key)
@@ -292,12 +296,10 @@ def launch(key, path, args):
         opt.run('mix', 'phx.new', *args, env=dict(os.environ, MIX_HOME=str(path / 'mix'), HEX_HOME=str(path / 'hex')))
     elif key == 'openclaw':
         command = path / 'node_modules/.bin/openclaw'
-        if args:
-            opt.run(command, *args)
-        elif not (Path.home() / '.openclaw/openclaw.json').is_file():
-            opt.run(command, 'onboard', '--install-daemon')
-        else:
-            opt.run(command, 'dashboard')
+        if not args:
+            args = ['dashboard'] if (Path.home() / '.openclaw/openclaw.json').is_file() else ['onboard', '--install-daemon']
+        opt.run(opt.location('mise') / 'mise', 'exec', *opt.recipes()[key]['tools'], '--', command, *args,
+                env=mise_environment(path))
     elif key == 'hermes':
         tree = next((path / 'source').glob('hermes-agent-*'))
         opt.run(tree / 'apps/desktop/release/linux-unpacked/Hermes', *args)
@@ -329,6 +331,6 @@ def remove(key, path):
     elif key == 'xbox-controllers':
         opt.run('sudo', 'dkms', 'remove', 'hid-xpadneo/' + opt.recipes()['xpadneo-source']['version'], '--all')
     elif key == 'openclaw':
-        opt.run(path / 'node_modules/.bin/openclaw', 'gateway', 'uninstall')
+        launch(key, path, ['gateway', 'uninstall'])
     # Framework caches and dependencies in this managed tree are removed by
     # the caller. Project directories, app profiles and database data are not.

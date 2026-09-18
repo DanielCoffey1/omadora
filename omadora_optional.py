@@ -174,8 +174,9 @@ def asset_install(key, recipe):
             run('sudo', 'dnf', 'install', rpm)
             return
         if kind in ('binary', 'appimage'):
-            shutil.move(artifact, payload / 'app')
-            (payload / 'app').chmod(0o755)
+            binary = payload / recipe.get('executable', 'app')
+            shutil.move(artifact, binary)
+            binary.chmod(0o755)
         else:
             unpack(artifact, payload, recipe.get('archive', 'tar'))
         executable = recipe.get('executable')

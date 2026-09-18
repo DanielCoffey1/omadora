@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       recipe:
-        description: 'One recipe ID, or all for downloads and noninteractive developer installers'
+        description: 'Comma-separated recipe IDs, or all for downloads and noninteractive developer installers'
         default: all
         required: true
 permissions:
@@ -26,8 +26,9 @@ jobs:
           automatic = {'bun', 'deno', 'scala', 'symfony', 'laravel', 'phoenix', 'openclaw', 'hermes'}
           keys = [k for k, r in recipes.items() if r['kind'] != 'workflow' or k in automatic]
           if selected != 'all':
-              assert selected in keys, 'This recipe requires a graphical session, hardware or user input'
-              keys = [selected]
+              requested = [key.strip() for key in selected.split(',')]
+              assert requested and all(key in keys for key in requested), 'A recipe requires a graphical session, hardware or user input'
+              keys = list(dict.fromkeys(requested))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               print('recipes=' + json.dumps(keys), file=output)
           PY

@@ -42,6 +42,14 @@ elif key.endswith('-source'):
 else:
     opt.asset_install(key, recipe)
 assert opt.installed(key), key
+if key in ('bun', 'deno', 'scala', 'symfony', 'laravel', 'openclaw'):
+    workflows.launch(key, root, ['--version'])
+    print('PASS: real command launch', key, flush=True)
+elif key == 'phoenix':
+    workflows.launch(key, root, ['--version'])
+    print('PASS: Phoenix generator launch', flush=True)
+elif key == 'mise':
+    subprocess.run([root / recipe['executable'], '--version'], check=True)
 desktop = Path.home() / '.local/share/applications' / ('omadora-' + key + '.desktop')
 if desktop.exists():
     subprocess.run(['desktop-file-validate', desktop], check=True)

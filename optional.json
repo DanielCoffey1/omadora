@@ -30,7 +30,8 @@
     "sha256": "6e39ee1ffa926a1f64814efbf1d26c3f617255e2a6ba6152e3c8a5135fa5a35f",
     "command": "omadora-mise",
     "terminal": true,
-    "version": "2026.9.11"
+    "version": "2026.9.11",
+    "executable": "mise"
   },
   "ollama": {
     "name": "Ollama",
@@ -254,6 +255,9 @@
     "version": "2026.9.4",
     "commands": [
       "openclaw"
+    ],
+    "tools": [
+      "node@24.19.0"
     ]
   },
   "dictation": {
