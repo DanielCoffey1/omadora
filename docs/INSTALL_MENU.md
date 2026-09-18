@@ -7,7 +7,7 @@ generated menu to prevent omissions. Menu coverage does not establish complete
 application or hardware compatibility.
 
 Nothing from this catalog is installed by the base profile. The upstream
-Preinstalls action becomes **Choose optional apps**, an explicit multi-select
+Preinstalls action becomes **Optional apps**, an explicit multi-select
 picker. Selecting a category never installs a bundle.
 
 ## Mappings

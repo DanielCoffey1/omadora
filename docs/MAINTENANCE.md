@@ -22,6 +22,17 @@ curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.1.0-alpha/
 
 Developers can run `python3 omadora.py upgrade --local` from a trusted source checkout without fetching the repository again.
 
+## Diagnose unavailable Super/Windows shortcuts
+
+If shortcuts stop working, open Foot using the menu/mouse and capture
+`hyprctl configerrors` before restarting the session. Check Super+Return and
+Super+Space separately from pressing Super alone. If Dictation is installed,
+temporarily run `systemctl --user stop voxtype.service` and check those same
+shortcuts again. Restore Dictation with `systemctl --user start voxtype.service`.
+Record whether stopping the service, logging out, or rebooting changes the
+result. This isolates the service without deleting your configuration; a
+reboot restoring the keys does not by itself establish the cause.
+
 ## Return to the previous desktop
 
 ```bash

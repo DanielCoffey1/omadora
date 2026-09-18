@@ -8,6 +8,12 @@ workflow works.
 
 ## Issues corrected
 
+- Package updates now request a fresh bar check when DNF exits, including
+  cancellation/failure; query errors retain the previous indicator state.
+  The update helper runs in its caller's terminal rather than opening another.
+  Optional apps has a shorter menu label and its chooser inherits stderr so
+  the interactive screen is visible. Optional application terminals close
+  with Enter when their command finishes.
 - Install and Remove entries now retain upstream icons or receive Nerd Font
   icons from the bundled font. Fedora package actions use a searchable,
   multi-select inventory and one reviewed DNF transaction. Web-app completion

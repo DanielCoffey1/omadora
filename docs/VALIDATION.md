@@ -2,6 +2,40 @@
 
 ## Latest verified results
 
+Update/chooser fixes at `4cb2df3` pass [54 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35406094188),
+[Fedora integration of the functional changes](https://github.com/DanielCoffey1/omadora/actions/runs/35406058291),
+and [all 20 desktop checks on a fresh Workstation ISO](https://github.com/DanielCoffey1/omadora/actions/runs/35406094638).
+The real sudo password prompt appeared in exactly one terminal. The optional
+app chooser was visible, cancelled with Escape and closed with Enter; both
+screenshots were reviewed. Unit tests verify a bar refresh after successful
+and failed DNF transactions, and distinguish failed update queries from an
+empty update list. The desktop test cancels at the password prompt; it does
+not establish an end-to-end completed DNF upgrade/icon transition.
+
+Dictation's real RPM/model installation and service restart left Super+Return,
+workspace switching, floating and close shortcuts working, with no Hyprland
+configuration errors. This does not reproduce the reported intermittent
+hardware keyboard failure or validate speech transcription. Its service log
+did reveal the visualizer failing to load `libgtk4-layer-shell.so.0`;
+the follow-up at `b01c5c4` adds Fedora's `gtk4-layer-shell` to the optional RPM
+dependencies and adds executable/library checks. Existing Dictation users can
+install that package with `sudo dnf install gtk4-layer-shell` and then run
+`systemctl --user restart voxtype.service` in their desktop session.
+The follow-up passes [source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35407409933)
+and [real Fedora RPM installation, visualizer library resolution/help startup,
+and removal](https://github.com/DanielCoffey1/omadora/actions/runs/35407409802).
+The 20-check desktop result above predates this dependency-only change; the
+new visualizer itself has not been visually retested in the desktop VM.
+
+To apply these fixes, log out of Hyprland and run from GNOME or a TTY:
+
+```bash
+omadora upgrade --ref b01c5c44ef89e666d1adca12d3d701538988b867
+```
+
+The published `v0.1.0-alpha` tag remains unchanged, so plain `omadora upgrade`
+does not select these newer fixes yet.
+
 Menu and bar fixes at `5d2f570` pass [50 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35396591945),
 [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35396592009),
 and [all 17 desktop checks on a fresh Workstation ISO installation](https://github.com/DanielCoffey1/omadora/actions/runs/35396591357).
