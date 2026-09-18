@@ -290,7 +290,73 @@ def desktop_toggles():
     return 'Idle, nightlight, screensaver, bar, gaps and workspace layout changed and were restored.'
 
 
+def package_picker_and_completion():
+    for action in ('install', 'remove'):
+        v.guest('setsid foot --app-id=omadora-picker-test python3 ~/source/tests/package-picker-probe.py ' + action + ' >/tmp/omadora-vm-results/picker.log 2>&1 </dev/null &')
+        v.wait_for(lambda: any(c['class'] == 'omadora-picker-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+        v.wait_for(lambda: v.guest('pgrep -x fzf >/dev/null; echo $?') == '0', seconds=180)
+        for char in 'ripgrep':
+            v.keys(char)
+        v.keys('tab')
+        v.keys('ctrl', 'u')
+        for char in 'fzf':
+            v.keys(char)
+        v.keys('tab')
+        v.guest('grim /tmp/omadora-vm-results/picker-' + action + '.png')
+        v.keys('ret')
+        v.wait_for(lambda: v.guest('test -s /tmp/omadora-vm-results/picker-' + action + '.json; echo $?') == '0')
+        selected = json.loads(v.guest('cat /tmp/omadora-vm-results/picker-' + action + '.json'))
+        assert set(selected) == {'ripgrep', 'fzf'}, selected
+        v.keys('ret')
+        v.wait_for(lambda: not any(c['class'] == 'omadora-picker-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+    v.guest('setsid foot --app-id=omadora-completion-test omadora-terminal-action omarchy-webapp-install OmadoraCompletion https://example.com firefox >/tmp/omadora-vm-results/completion.log 2>&1 </dev/null &')
+    v.wait_for(lambda: any(c['class'] == 'omadora-completion-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+    v.wait_for(lambda: v.guest('test -s ~/.local/share/applications/OmadoraCompletion.desktop; echo $?') == '0')
+    v.guest('grim /tmp/omadora-vm-results/webapp-completion.png')
+    v.keys('ret')
+    v.wait_for(lambda: not any(c['class'] == 'omadora-completion-test' for c in json.loads(v.guest('hyprctl clients -j'))))
+    v.guest('rm ~/.local/share/applications/OmadoraCompletion.desktop')
+    return 'Real available/installed inventories filtered and multi-selected with keyboard; web-app completion closed with Enter.'
+
+
+def screen_recording_and_reminder():
+    v.guest('omarchy-menu summon trigger.capture.screenrecord')
+    time.sleep(2)
+    v.guest('grim /tmp/omadora-vm-results/recording-menu.png')
+    v.keys('esc')
+    for mode in ('', '--with-desktop-audio', '--with-microphone-audio'):
+        v.guest('OMARCHY_SCREENRECORD_DIR=/tmp/omadora-vm-results/recordings omarchy-capture-screenrecording --fullscreen ' + mode)
+        try:
+            v.wait_for(lambda: v.guest('omarchy-capture-screenrecording --status; echo $?') == '0')
+            # Move the pointer to ensure frames arrive even on a static desktop.
+            for n in range(6):
+                v.qmp('input-send-event', {'events': [{'type': 'rel', 'data': {'axis': 'x', 'value': 20}}]})
+                time.sleep(.5)
+            v.guest('grim /tmp/omadora-vm-results/recording-active.png')
+        finally:
+            v.guest('omarchy-capture-screenrecording --stop-recording', timeout=30)
+            v.guest('cp "$XDG_RUNTIME_DIR/omadora-screenrecord/"*.log /tmp/omadora-vm-results/ || true')
+        v.wait_for(lambda: v.guest('omarchy-capture-screenrecording --status; echo $?') == '1')
+        latest = v.guest('find /tmp/omadora-vm-results/recordings -name "*.webm" | sort | tail -1')
+        streams = json.loads(v.guest('ffprobe -v error -show_streams -of json ' + shlex.quote(latest)))['streams']
+        assert any(s['codec_type'] == 'video' and s['width'] > 0 for s in streams), streams
+        if mode:
+            assert any(s['codec_type'] == 'audio' for s in streams), streams
+        v.guest('ffmpeg -v error -i ' + shlex.quote(latest) + ' -frames:v 1 -f null -')
+    v.guest('omarchy-reminder -i')
+    time.sleep(2)
+    v.guest('grim /tmp/omadora-vm-results/reminder-panel.png')
+    v.keys('esc')
+    v.guest('omarchy-reminder 1 Omadora-test')
+    data = json.loads(v.guest('omarchy-reminder show --json'))
+    assert data['count'] >= 1, data
+    v.guest('omarchy-reminder clear')
+    return 'Three saved and decoded WebM recordings: silent, desktop audio and microphone; reminder panel and timer creation/clear.'
+
+
 v.check('desktop upgrade and rollback login', desktop_lifecycle)
+v.check('package pickers and terminal completion', package_picker_and_completion)
+v.check('screen recording and reminders', screen_recording_and_reminder)
 v.check('menu dependencies and providers', menu_audit)
 v.check('theme and bar controls', style_controls)
 v.check('desktop toggles', desktop_toggles)

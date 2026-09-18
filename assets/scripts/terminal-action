@@ -1,0 +1,9 @@
+#!/bin/bash
+# Keep completion/error output readable, then close the terminal with Enter.
+"$@"
+status=$?
+if [[ -t 0 && $status != 130 ]]; then
+  printf '\nPress Enter to close this window.'
+  IFS= read -r _ || true
+fi
+exit "$status"

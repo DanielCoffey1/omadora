@@ -69,3 +69,6 @@ lua
 eject
 flatpak
 unzip
+wf-recorder
+ffmpeg-free
+pulseaudio-utils

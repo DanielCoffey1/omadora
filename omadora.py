@@ -147,7 +147,7 @@ def menu_for_fedora(menu, apps, blocked):
         commands = ' '.join(str(value.get(k, '')) for k in ('action', 'when', 'disabled', 'checked'))
         if DISALLOWED.search(commands) or any(name in commands for name in blocked):
             continue
-        if key.startswith(('trigger.reminder', 'trigger.transcode', 'trigger.share',
+        if key.startswith(('trigger.transcode', 'trigger.share',
                            'trigger.capture.screenrecord', 'trigger.capture.text',
                            'trigger.capture.qr', 'style.about')):
             continue
@@ -162,7 +162,7 @@ def menu_for_fedora(menu, apps, blocked):
     if 'learn.neovim' in result:
         result['learn.neovim']['action'] = 'xdg-open https://neovim.io/doc/user/'
     if 'trigger.capture' in result:
-        result['trigger.capture']['aliases'] = ['capture', 'screenshot']
+        result['trigger.capture']['aliases'] = ['capture', 'screenshot', 'recording']
     result['learn.fedora'] = {'label': 'Fedora', 'icon': '', 'action': 'xdg-open https://docs.fedoraproject.org/'}
     result['setup'] = {'label': 'Setup', 'icon': ''}
     for key, label, action in (
@@ -187,7 +187,7 @@ def menu_for_fedora(menu, apps, blocked):
                     if not command:
                         entry.pop('action')
                     result[key] = entry
-        result[f'{action}.package'] = {'label': 'Fedora package', 'action': f'foot --hold omadora package {action}'}
+        result[f'{action}.package'] = {'label': 'Fedora package', 'icon': '', 'action': f'foot omadora-terminal-action omadora package {action}'}
         for app_id, app in apps.items():
             category = '.'.join(filter(None, (action, app['category'])))
             parts = app['category'].split('.') if app['category'] else []
@@ -205,6 +205,28 @@ def menu_for_fedora(menu, apps, blocked):
                 result[f'{category}.{app_id}'].pop('when')
             if action == 'remove' and app_id in ('copr-package', 'preinstalls'):
                 del result[f'{category}.{app_id}']
+    icons = {'package': '', 'tui': '', 'copr-package': '', 'windows': '',
+             'preinstalls': '󰄬', 'webapp': '', 'style': '󰏘', 'theme': '󰏘',
+             'background': '', 'gaming': '', 'ai': '󰧑', 'editor': '',
+             'terminal': '', 'development': '', 'service': '', 'font': ''}
+    for key, entry in result.items():
+        if key.startswith(('install.', 'remove.')):
+            original = menu.get(key, {})
+            if not entry.get('icon'):
+                entry['icon'] = original.get('icon') or icons.get(key.rsplit('.', 1)[-1], '')
+            if original.get('iconFont'):
+                entry.setdefault('iconFont', original['iconFont'])
+    if 'install.webapp' in result:
+        result['install.webapp']['action'] = 'foot omadora-terminal-action omarchy-webapp-install'
+    result['trigger.capture.screenrecord'] = {'label': 'Screen recording', 'icon': ''}
+    for suffix, label, flags in (('region', 'Select region', ''), ('fullscreen', 'Full screen', '--fullscreen'),
+                                 ('desktop-audio', 'Region with desktop audio', '--with-desktop-audio'),
+                                 ('microphone', 'Region with microphone', '--with-microphone-audio')):
+        result['trigger.capture.screenrecord.' + suffix] = {'label': label, 'icon': '',
+            'action': ('omarchy-capture-screenrecording ' + flags).strip(),
+            'when': '! omarchy-capture-screenrecording --status'}
+    result['trigger.capture.screenrecord.stop'] = {'label': 'Stop recording', 'icon': '',
+        'action': 'omarchy-capture-screenrecording --stop-recording', 'when': 'omarchy-capture-screenrecording --status'}
     result['update'] = {'label': 'Update', 'icon': ''}
     result['update.fedora'] = {'label': 'Fedora packages', 'action': 'foot --hold omadora update'}
     result['update.flatpak'] = {'label': 'Flatpak apps', 'action': 'foot --hold flatpak update --user'}
@@ -222,6 +244,29 @@ def package_commands(action, names):
             not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]*', name) for name in names):
         raise ValueError('Enter package names separated by spaces, without options or URLs')
     return ['sudo', 'dnf', action, *names]
+
+
+def choose_packages(action):
+    print('Loading available packages from enabled repositories...' if action == 'install' else 'Loading installed packages...', flush=True)
+    command = ('dnf', '-q', 'repoquery', '--available', '--queryformat', '%{name}') if action == 'install' else ('rpm', '-qa', '--queryformat', '%{NAME}\n')
+    raw = run(*command, capture=True).stdout
+    names = sorted({line.strip() for line in raw.splitlines()
+                    if re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.+-]*', line.strip())})
+    if not names:
+        print('No packages found.')
+        return []
+    env = {k: v for k, v in os.environ.items() if not k.startswith('FZF_DEFAULT_')}
+    picked = subprocess.run(['fzf', '--multi', '--layout=reverse', '--border',
+                             '--prompt', action.title() + ' package > ',
+                             '--header', 'Type to filter | Tab: select multiple | Enter: review DNF transaction | Esc: cancel'],
+                            input='\n'.join(names), text=True, stdout=subprocess.PIPE, env=env)
+    if picked.returncode in (1, 130):
+        return []
+    picked.check_returncode()
+    selected = list(dict.fromkeys(picked.stdout.splitlines()))
+    if not set(selected) <= set(names):
+        raise ValueError('Package picker returned an unknown package')
+    return selected
 
 
 def assemble(source, output):
@@ -287,6 +332,7 @@ fi
         'omarchy-launch-terminal': 'exec setsid uwsm-app -- foot "$@"',
         'omarchy-launch-browser': 'args=("$@"); for i in "${!args[@]}"; do [[ ${args[$i]} == --private ]] && args[$i]=--private-window; done; exec uwsm-app -- firefox "${args[@]}"',
         'omarchy-launch-webapp': 'exec uwsm-app -- firefox "$@"',
+        'omarchy-voxtype-config': 'if ! command -v voxtype >/dev/null; then exec foot omadora-terminal-action omadora app install dictation; fi\nomarchy-launch-floating-terminal-with-presentation "voxtype configure"',
         'omarchy-launch-about': 'exec foot --hold omadora about',
         'omarchy-update': 'exec foot --hold omadora update',
         'omarchy-update-available': 'exec omadora updates-available',
@@ -374,6 +420,14 @@ fi
     # A plain screenshot remains useful without preinstalling the annotation app.
     screenshot = tree / 'bin/omarchy-capture-screenshot'
     write(screenshot, (ROOT / 'assets/scripts/capture-screenshot').read_text(), 0o755)
+    write(output / 'bin/omadora-terminal-action', (ROOT / 'assets/scripts/terminal-action').read_text(), 0o755)
+    write(tree / 'bin/omarchy-capture-screenrecording', (ROOT / 'assets/scripts/screenrecord').read_text(), 0o755)
+    recording = tree / 'shell/plugins/bar/indicators/ScreenRecording.qml'
+    write(recording, recording.read_text().replace('["pgrep", "--quiet", "-f", "^gpu-screen-recorder"]',
+                                                   '["omarchy-capture-screenrecording", "--status"]'))
+    updates = tree / 'shell/plugins/bar/widgets/SystemUpdate.qml'
+    write(updates, updates.read_text().replace('omarchy-launch-floating-terminal-with-presentation omarchy-update',
+                                              'foot omadora-terminal-action omadora update'))
     # Explicit monospace fallback supplies Nerd glyphs to the unchanged shell.
     write(output / 'system/99-omadora-fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><alias><family>monospace</family><prefer><family>JetBrainsMonoNL Nerd Font</family></prefer></alias></fontconfig>\n')
     apply_branding(tree)
@@ -684,7 +738,7 @@ def main():
     elif args.command == 'build':
         print(assemble(args.source, args.output))
     elif args.command == 'package':
-        names = args.names or input('Fedora package names (blank to cancel): ').split()
+        names = args.names or choose_packages(args.action)
         if not names:
             return 0
         command = package_commands(args.action, names)

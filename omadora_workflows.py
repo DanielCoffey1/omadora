@@ -228,6 +228,7 @@ def install(key, path):
         opt.run('voxtype', 'setup', 'systemd')
         if os.environ.get('HYPRLAND_INSTANCE_SIGNATURE'):
             opt.run('hyprctl', 'reload')
+            opt.run('omarchy-restart-shell')
     elif key == 'xbox-controllers':
         deps('dkms', 'make', 'gcc', 'bluez', 'bluez-tools', 'kernel-headers',
              'kernel-devel-' + os.uname().release, 'openssl', 'mokutil')

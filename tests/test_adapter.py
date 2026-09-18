@@ -26,7 +26,7 @@ class AdapterTests(unittest.TestCase):
                     'install.style.theme': {'label': 'Theme', 'action': 'omarchy-launch-floating-terminal-with-presentation omarchy-theme-install'}}
         apps = adapter.read_json(ROOT / 'apps.json')
         menu = adapter.menu_for_fedora(original, apps, [])
-        self.assertIn('foot --hold omarchy-webapp-install', menu['install.webapp']['action'])
+        self.assertEqual('foot omadora-terminal-action omarchy-webapp-install', menu['install.webapp']['action'])
         self.assertIn('install.style.theme', menu)
         for key in menu:
             if key.startswith(('install.', 'remove.')):

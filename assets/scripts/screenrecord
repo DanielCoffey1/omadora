@@ -1,0 +1,138 @@
+#!/usr/bin/python3
+"""Fedora-native region/display recorder with per-user, owned process state."""
+import argparse
+import fcntl
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+from datetime import datetime
+
+
+def command(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+
+def refresh():
+    subprocess.run(['omarchy-shell', '-q', 'omarchy.indicators', 'refresh'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+
+def notify(title, message, *args):
+    subprocess.run(['omarchy-notification-send', title, message, *args], check=False)
+
+
+def identity(pid):
+    # Fields after the closing ')' begin with stat field 3; starttime is 22.
+    return Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()[19]
+
+
+def active(state):
+    try:
+        data = json.loads(state.read_text())
+        pid = int(data['pid'])
+        argv = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
+        return data if identity(pid) == data['start'] and Path(os.fsdecode(argv[0])).name == 'wf-recorder' and os.fsencode(data['file']) in argv else None
+    except (OSError, ValueError, KeyError, IndexError, TypeError):
+        return None
+
+
+def worker(args, directory, state):
+    with (directory / 'lock').open('w') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return 1
+        output_dir = Path(os.environ.get('OMARCHY_SCREENRECORD_DIR') or
+                          command('xdg-user-dir', 'VIDEOS') or str(Path.home() / 'Videos'))
+        output_dir.mkdir(parents=True, exist_ok=True)
+        filename = output_dir / ('screenrecording-' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f') + '.webm')
+        cmd = ['wf-recorder', '-r', '30', '-c', 'libvpx', '-p', 'deadline=realtime',
+               '-p', 'cpu-used=8', '-x', 'yuv420p', '-f', str(filename)]
+        cmd += ['-o', args.output] if args.output else ['-g', args.geometry]
+        if args.with_desktop_audio or args.with_microphone_audio:
+            source = command('pactl', 'get-default-sink') + '.monitor' if args.with_desktop_audio else command('pactl', 'get-default-source')
+            cmd += ['--audio=' + source, '--audio-codec=libopus']
+        with (directory / 'recorder.log').open('w') as log:
+            process = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
+            try:
+                data = {'pid': process.pid, 'start': identity(process.pid), 'file': str(filename)}
+                temporary = directory / 'state.tmp'
+                temporary.write_text(json.dumps(data))
+                temporary.replace(state)
+                refresh()
+                code = process.wait()
+            finally:
+                if process.poll() is None:
+                    process.send_signal(signal.SIGINT)
+                    process.wait(timeout=15)
+                state.unlink(missing_ok=True)
+                refresh()
+        if code in (0, -signal.SIGINT) and filename.exists() and filename.stat().st_size:
+            notify('Screen recording saved', str(filename), '--exec', 'xdg-open', '--', str(filename))
+            return 0
+        notify('Screen recording failed', f'See {directory / "recorder.log"}')
+        return 1
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--status', action='store_true')
+    parser.add_argument('--stop-recording', action='store_true')
+    parser.add_argument('--fullscreen', action='store_true')
+    audio = parser.add_mutually_exclusive_group()
+    audio.add_argument('--with-desktop-audio', action='store_true')
+    audio.add_argument('--with-microphone-audio', action='store_true')
+    parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--geometry', default='', help=argparse.SUPPRESS)
+    parser.add_argument('--output', default='', help=argparse.SUPPRESS)
+    args = parser.parse_args()
+    runtime = os.environ.get('XDG_RUNTIME_DIR')
+    if not runtime:
+        return 1
+    directory = Path(runtime) / 'omadora-screenrecord'
+    directory.mkdir(mode=0o700, exist_ok=True)
+    state = directory / 'state.json'
+    recording = active(state)
+    if args.status:
+        return 0 if recording else 1
+    if args.worker:
+        return worker(args, directory, state)
+    if recording:
+        os.kill(recording['pid'], signal.SIGINT)
+        for _ in range(150):
+            if not active(state):
+                return 0
+            time.sleep(.1)
+        notify('Recording is still finishing', 'Wait for the saved notification before starting another recording.')
+        return 1
+    if args.stop_recording:
+        return 0
+    if args.fullscreen:
+        monitors = json.loads(command('hyprctl', 'monitors', '-j'))
+        args.output = next(m['name'] for m in monitors if m.get('focused'))
+    else:
+        picked = subprocess.run(['omarchy-capture-region', 'smart'], text=True, stdout=subprocess.PIPE)
+        if picked.returncode or not picked.stdout.strip():
+            return 0  # Escape is a cancellation, not an error.
+        args.geometry = picked.stdout.strip()
+    cmd = [sys.executable, str(Path(__file__).resolve()), '--worker']
+    cmd += ['--output=' + args.output] if args.output else ['--geometry=' + args.geometry]
+    if args.with_desktop_audio:
+        cmd += ['--with-desktop-audio']
+    if args.with_microphone_audio:
+        cmd += ['--with-microphone-audio']
+    with (directory / 'worker.log').open('w') as log:
+        subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True)
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except Exception as error:
+        notify('Screen recording error', str(error))
+        raise
