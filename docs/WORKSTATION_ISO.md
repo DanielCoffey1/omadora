@@ -6,9 +6,11 @@ and attaches a blank 60 GB virtual disk. It uses UEFI firmware and the stock
 Anaconda Web UI. It does not convert a Fedora Cloud image or install the
 Workstation environment through DNF.
 
-The ISO is unchanged. Boot-only automation enables a serial debug shell and a
-remote installer reachable through host loopback. The fixture uses a disposable
-SSH key, a test account/password and a sudo rule. No physical host disk is
+The ISO is unchanged. Boot-only automation enables a serial debug shell and
+masks the live environment's console first-boot service to avoid competing
+terminal readers. An SSH tunnel exposes Fedora 44's existing local installer
+web service only on host loopback. The fixture uses a disposable SSH key, a
+test account/password and a sudo rule. No physical host disk is
 attached. The test uses unencrypted guest storage and does not establish Secure
 Boot compatibility. After installation, `python3-pexpect` supplies acceptance
 test instrumentation; Fedora supplies the desktop and kernel.

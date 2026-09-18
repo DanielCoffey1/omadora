@@ -73,9 +73,22 @@ tunnel = subprocess.Popen(SSH[:-1] + ['-N', '-o', 'ExitOnForwardFailure=yes',
                                     '-L', '127.0.0.1:9080:127.0.0.1:80', SSH[-1]],
                           stdout=subprocess.DEVNULL, stderr=(OUT / 'iso-tunnel.log').open('w'))
 
+# The HTTP service starts before Anaconda's DBus modules. Follow the same
+# readiness point as liveinst's own browser launch, avoiding a half-built UI.
+deadline = time.monotonic() + 180
+while True:
+    ready = guest("grep -c 'web-ui: starting cockpit web view' /tmp/anaconda.log 2>/dev/null || true").strip()
+    if ready.isdigit() and int(ready) > 0:
+        break
+    assert time.monotonic() < deadline, 'Anaconda backend initialization timed out'
+    time.sleep(3)
+
 with sync_playwright() as pw:
     browser = pw.chromium.launch(headless=True, args=['--no-sandbox'])
     page = browser.new_page(ignore_https_errors=True, viewport={'width': 1440, 'height': 1000})
+    browser_log = (OUT / 'iso-browser.log').open('w')
+    page.on('console', lambda message: (browser_log.write(f'{message.type}: {message.text}\n'), browser_log.flush()))
+    page.on('pageerror', lambda error: (browser_log.write(f'PAGE ERROR: {error}\n'), browser_log.flush()))
     page.set_default_timeout(30000)
     try:
         deadline = time.monotonic() + 240
@@ -88,6 +101,7 @@ with sync_playwright() as pw:
                 if time.monotonic() > deadline:
                     raise
                 time.sleep(5)
+        page.locator('#installation-next-btn').wait_for(state='visible', timeout=180000)
         for step in range(20):
             time.sleep(3)
             frame = next((f for f in page.frames if f.locator('#installation-next-btn').count()), page.main_frame)
@@ -129,6 +143,7 @@ with sync_playwright() as pw:
         (OUT / 'iso-last.html').write_text(page.content())
         (OUT / 'iso-installer.log').write_text(guest('cat /tmp/omadora-liveinst.log; cat /tmp/anaconda.log 2>/dev/null || true'))
         browser.close()
+        browser_log.close()
         tunnel.terminate()
 
 # Anaconda installed the disk. Add only the CI access settings needed by the

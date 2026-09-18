@@ -1,5 +1,5 @@
 #!/bin/bash
-# Disposable CI VM: official Fedora Cloud image + Workstation environment.
+# Disposable CI VM: Cloud + Workstation packages, or an Anaconda-installed disk.
 # Test credentials and autologin exist only inside this ephemeral VM.
 set -euo pipefail
 mkdir -p vm-results /tmp/omadora-vm
@@ -94,7 +94,7 @@ wait_ssh
 if [[ ${VM_BASE:-cloud} != workstation-iso ]]; then
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo cloud-init status --wait --format json >/tmp/cloud-status.json; cat /tmp/cloud-status.json; python3 -c '\''import json; s=json.load(open("/tmp/cloud-status.json")); assert s["status"] == "done" and not s.get("errors"), s'\'''
 else
-  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'set -e; cat /etc/os-release; cat /proc/cmdline; ! grep -Eq "systemd.debug_shell|inst.webui.remote" /proc/cmdline; test -d /sys/firmware/efi; test "$(getenforce)" = Enforcing; rpm -q fedora-release-workstation; findmnt /; lsblk -f' | tee vm-results/workstation-baseline.log
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'set -e; cat /etc/os-release; cat /proc/cmdline; ! grep -Eq "systemd.debug_shell|systemd.mask=systemd-firstboot|inst.webui.remote" /proc/cmdline; test -d /sys/firmware/efi; test "$(getenforce)" = Enforcing; rpm -q fedora-release-workstation; findmnt /; lsblk -f' | tee vm-results/workstation-baseline.log
 fi
 if [[ -n ${OMADORA_TEST_APPS:-} ]]; then
   python3 - <<'PY'

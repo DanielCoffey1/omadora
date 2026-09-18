@@ -2,7 +2,15 @@
 
 ## Latest verified results
 
-The newest results are in [Complete optional Install mapping](#complete-optional-install-mapping-september-17-2026): 91 choices, 38 source tests, 23 automated recipe jobs with passing results across fixes, and 15 graphical regression checks. Hardware, accounts and interactive workflows have separate limits.
+The catalog has 93 optional choices, including Codex CLI and Claude Code.
+[Both CLI runtime jobs](https://github.com/DanielCoffey1/omadora/actions/runs/35301839112)
+pass installation, wrapper version/help, desktop-file validation, removal and
+profile preservation; no account or model request was tested. See
+[application results](APP_TESTS.md#codex-cli-and-claude-code). The earlier
+[complete optional Install mapping](#complete-optional-install-mapping-september-17-2026)
+records 38 source tests, 23 automated recipe jobs with passing results across
+fixes, and 15 graphical regression checks. Hardware, accounts and interactive
+workflows have separate limits.
 
 - At `e7008cd`, [all 29 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35295603414) and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35295603480) pass. The expanded 51-entry optional catalog resolves against Fedora, RPM Fusion, Ghostty's community COPR, Sublime's official RPM repository and Flathub. Installed web-app helpers create a valid desktop launcher and remove it successfully. The integration run also repeats installation, configuration, maintenance and recovery checks. New catalog entries were resolved, not installed or launched in this run; the earlier 26-app runtime results do not cover them. See [Install coverage](INSTALL_MENU.md) for mappings and remaining ports.
 - At `56d72f7`, [all 25 source tests](https://github.com/DanielCoffey1/omadora/actions/runs/35292980665) and [all 15 graphical checks](https://github.com/DanielCoffey1/omadora/actions/runs/35292980209) pass. The expanded suite uses real keyboard input to exercise window creation, fullscreen/floating toggles, workspace movement and closing; GTK copy/cut/paste and exact-text paste into Foot; and display scaling from 1x to 1.25x and back. Existing desktop, service and recovery checks also pass. This verifies a single virtual display using the default monitor rule, not custom monitor rules, multiple displays or physical hardware.
