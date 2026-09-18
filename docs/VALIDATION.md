@@ -2,6 +2,30 @@
 
 ## Latest verified results
 
+Menu and bar fixes at `5d2f570` pass [50 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35396591945),
+[Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35396592009),
+and [all 17 desktop checks on a fresh Workstation ISO installation](https://github.com/DanielCoffey1/omadora/actions/runs/35396591357).
+The available-package and installed-package pickers each selected `ripgrep`
+and `fzf` through real keyboard input; the probe verified the selected names
+without removing those desktop dependencies. The web-app completion terminal
+closed with Enter. Recording cancellation, start/stop, three saved WebM files
+(silent, desktop audio and microphone), stream inspection and decoding passed.
+The reminder panel and timer creation/clear also passed. Menu, picker,
+completion and recording screenshots were reviewed; the runtime menu audit
+checked 302 entries and 75 executable dependencies. This is VM evidence, not
+physical microphone quality, Bluetooth pairing or complete hardware coverage.
+
+The earlier runs exposed missing DNF query separators, retained picker cursor
+position and a recorder waiting for screen damage during shutdown. Those were
+fixed and retested. The ISO fixture also now waits for GNOME's display
+environment before launching Anaconda. These fixes are newer than the
+published `v0.1.0-alpha` tag. To install this tested revision, log out of all
+Hyprland sessions and run from GNOME or a TTY:
+
+```bash
+omadora upgrade --ref 5d2f57031135c5e9bfb30c6412d31a71f9ba5d08
+```
+
 Alpha release preparation at `0950e2b` passes [45 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35370788650)
 and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35370788539).
 The bootstrap and updater default to `v0.1.0-alpha`; explicit ref overrides
