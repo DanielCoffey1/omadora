@@ -8,6 +8,12 @@ workflow works.
 
 ## Issues corrected
 
+- Install/Remove application entries use recognizable monochrome brand logos
+  for 73 catalog items, including Brave's lion, Chromium/Chrome, Edge, Zen,
+  editors, AI tools and game launchers. The 30 KB bundled logo font follows
+  the existing foreground and selection colors. It loads from the deployed
+  runtime so existing installations do not need a font/theme reset. Unmapped
+  entries retain upstream or functional icons. [Artwork and mappings](../assets/icons/README.md).
 - Package updates now request a fresh bar check when DNF exits, including
   cancellation/failure; query errors retain the previous indicator state.
   The update helper runs in its caller's terminal rather than opening another.

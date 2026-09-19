@@ -2,6 +2,24 @@
 
 ## Latest verified results
 
+Theme-colored application logos at `159ecb6` pass [55 source checks and the
+reproducible font build](https://github.com/DanielCoffey1/omadora/actions/runs/35415234412),
+[Fedora integration of the menu changes](https://github.com/DanielCoffey1/omadora/actions/runs/35414868022),
+and [all 21 Fedora desktop checks](https://github.com/DanielCoffey1/omadora/actions/runs/35415235518).
+The menu now uses 67 bundled monochrome logos for 73 catalog entries, with
+matching Install/Remove mappings. Browser, AI, editor and terminal menu
+screenshots were reviewed in Tokyo Night and White. The test removed the user
+copy of the logo font and restarted Quickshell before opening the menus,
+verifying that the runtime FontLoader also works for existing installations.
+The original theme was restored. This run uses Fedora Cloud plus the
+Workstation package environment, not a new Anaconda ISO installation.
+
+To get this tested revision, log out of Hyprland and run from GNOME or a TTY:
+
+```bash
+omadora upgrade --ref 159ecb6e2a668c4f2bd391863642b23a6105ed4a
+```
+
 Update/chooser fixes at `4cb2df3` pass [54 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35406094188),
 [Fedora integration of the functional changes](https://github.com/DanielCoffey1/omadora/actions/runs/35406058291),
 and [all 20 desktop checks on a fresh Workstation ISO](https://github.com/DanielCoffey1/omadora/actions/runs/35406094638).
