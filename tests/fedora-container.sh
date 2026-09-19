@@ -23,6 +23,8 @@ sudo -iu omadora-test bash -c 'test -s ~/.local/state/omarchy/current/theme/colo
 XDG_RUNTIME_DIR=$(mktemp -d) Hyprland --version
 quickshell --version
 sudo -iu omadora-test bash /src/tests/fedora-config.sh
+sudo -iu omadora-test python3 /src/tests/fedora-app-refresh.py
+cp /tmp/omadora-app-refresh.log /results/
 XDG_RUNTIME_DIR=$(mktemp -d) Hyprland --help >/results/hyprland-help.txt
 sudo -iu omadora-test python3 /src/tests/fedora-apps.py
 sudo -iu omadora-test python3 /src/tests/fedora-maintenance.py

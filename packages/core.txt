@@ -8,6 +8,7 @@ hyprpicker
 hyprsunset
 uwsm
 python3-pyxdg
+python3-gobject
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
 qt6-qtwayland

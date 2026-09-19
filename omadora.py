@@ -16,7 +16,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '0.2.0-alpha'
+VERSION = '0.2.1-alpha'
 RELEASE_REF = 'v' + VERSION
 PREFIX = Path('/usr/local/share/omadora')
 COPR = 'nett00n/hyprland'
@@ -289,7 +289,7 @@ def assemble(source, output):
     for name in ('LICENSE', 'version'):
         shutil.copy2(source / name, tree / name)
     for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'omadora_optional.py',
-                 'omadora_workflows.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
+                 'omadora_workflows.py', 'omadora_applications.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
         shutil.copy2(ROOT / name, output / name)
     write(output / 'release.json', json.dumps({'version': VERSION, 'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
@@ -300,11 +300,28 @@ def assemble(source, output):
     write(menu_qml, menu_qml.read_text(encoding='utf-8').replace('  id: root\n',
         '  id: root\n\n  FontLoader { source: "../../../../assets/fonts/OmadoraAppIcons.ttf" }\n', 1))
 
+    library = tree / 'shell/services/AppLibrary.qml'
+    text = library.read_text(encoding='utf-8')
+    text = text.replace('  id: root\n', '  id: root\n' +
+                        (ROOT / 'assets/scripts/applications-qml.inc').read_text(), 1)
+    text = text.replace('var values = DesktopEntries.applications.values || []',
+                        'var values = root.freshApplications !== null ? root.freshApplications : (DesktopEntries.applications.values || [])')
+    text = text.replace('root.desktopHiddenEntryIds[id] === true',
+                        '(root.freshApplications === null && root.desktopHiddenEntryIds[id] === true)')
+    text = text.replace('      iconIndexDebounce.restart()',
+                        '      iconIndexDebounce.restart()\n      applicationRefreshDelay.restart()')
+    text = text.replace('  Component.onCompleted: {',
+                        '  Component.onCompleted: {\n    root.refreshApplications()')
+    write(library, text)
+    write(menu_qml, menu_qml.read_text(encoding='utf-8').replace(
+        'if (root.appLibrary) root.appLibrary.refreshIcons()',
+        'if (root.appLibrary) { root.appLibrary.refreshIcons(); root.appLibrary.refreshApplications() }'))
+
     # Keep upstream identifiers for compatibility. Only the product entrypoints
     # and menu branding are Omadora; wholesale textual renaming breaks IPC.
     env = ('export OMARCHY_PATH=/usr/local/share/omadora/upstream\n'
            'export PATH="/usr/local/share/omadora/bin:$OMARCHY_PATH/bin:$HOME/.local/bin:$PATH"\n'
-           'export XDG_DATA_DIRS="/usr/local/share/omadora/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"\n'
+           'export XDG_DATA_DIRS="/usr/local/share/omadora/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}:$HOME/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share"\n'
            'export TERMINAL=foot\nexport EDITOR=nvim\n'
            # Set before UWSM activates portal/toolkit services, not only in
            # compositor child processes after asynchronous environment import.
@@ -443,6 +460,10 @@ fi
                                               'foot omadora-terminal-action omarchy-update').replace(
         'root.updateAvailable = exitCode === 0',
         'if (exitCode === 0 || exitCode === 1) root.updateAvailable = exitCode === 0'))
+    for name in ('omarchy-webapp-install', 'omarchy-webapp-remove', 'omarchy-tui-install', 'omarchy-tui-remove'):
+        helper = tree / 'bin' / name
+        write(helper, helper.read_text(encoding='utf-8').replace('#!/bin/bash\n',
+              "#!/bin/bash\ntrap 'omadora refresh-apps' EXIT\n", 1), 0o755)
     # Explicit monospace fallback supplies Nerd glyphs to the unchanged shell.
     write(output / 'system/99-omadora-fonts.conf', '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig><alias><family>monospace</family><prefer><family>JetBrainsMonoNL Nerd Font</family></prefer></alias></fontconfig>\n')
     apply_branding(tree)
@@ -739,6 +760,7 @@ def main():
     p = sub.add_parser('build'); p.add_argument('--source', type=Path, required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('app'); p.add_argument('action', choices=('list', 'install', 'remove', 'installed')); p.add_argument('id', nargs='?'); p.add_argument('--dry-run', action='store_true')
     p = sub.add_parser('package'); p.add_argument('action', choices=('install', 'remove')); p.add_argument('names', nargs='*'); p.add_argument('--dry-run', action='store_true')
+    sub.add_parser('refresh-apps')
     sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')
     p = sub.add_parser('pkg-present'); p.add_argument('packages', nargs='+')
     p = sub.add_parser('powerprofile'); p.add_argument('action', choices=('get', 'list', 'set')); p.add_argument('profile', nargs='?')
@@ -760,7 +782,14 @@ def main():
         if args.dry_run:
             print(shlex.join(command))
         else:
-            run(*command)
+            try:
+                run(*command)
+            finally:
+                import omadora_applications
+                omadora_applications.refresh()
+    elif args.command == 'refresh-apps':
+        import omadora_applications
+        omadora_applications.refresh()
     elif args.command == 'about':
         print(f'Omadora {VERSION} | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; see docs/VALIDATION.md for tested behavior and known failures.\nhttps://github.com/DanielCoffey1/omadora')
     elif args.command == 'app':
@@ -781,8 +810,12 @@ def main():
                     print('If absent, add /etc/pki/tls/cert.pem link to Fedora’s maintained CA bundle for Steam.')
             else:
                 preflight()
-                for command in commands:
-                    run(*command)
+                try:
+                    for command in commands:
+                        run(*command)
+                finally:
+                    import omadora_applications
+                    omadora_applications.refresh()
                 if args.action == 'install' and app.get('unit'):
                     run('sudo', 'systemctl', 'enable', '--now', app['unit'])
                     if app.get('group'):
