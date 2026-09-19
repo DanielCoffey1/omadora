@@ -42,7 +42,9 @@ def build():
     font.setupGlyphOrder(list(glyphs))
     font.setupCharacterMap(cmap)
     font.setupGlyf(glyphs)
-    font.setupHorizontalMetrics({name: (1024, 64) for name in glyphs})
+    # Preserve each SVG's centered 24-unit canvas, including narrow marks.
+    font.setupHorizontalMetrics({name: (1024, getattr(glyph, 'xMin', 0))
+                                 for name, glyph in glyphs.items()})
     font.setupHorizontalHeader(ascent=1024, descent=0)
     font.setupNameTable({'familyName': manifest['family'], 'styleName': 'Regular',
                         'uniqueFontIdentifier': 'OmadoraAppIcons-Regular-1',
