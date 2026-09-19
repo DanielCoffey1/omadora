@@ -43,6 +43,14 @@ If the old installation lacks `upgrade`, use:
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.1.0-alpha/boot.sh | bash -s -- upgrade
 ```
 
+## Keybindings guide
+
+Press **Super+K** (Windows+K) to open Omarchy's imported, searchable keybindings
+guide. It is also available under **Omadora menu → Learn → Keybindings**.
+Type to filter shortcuts; press Escape to close. The guide reads your Hyprland
+bindings, including personal bindings. Omadora omits shortcuts for the stock
+browser extensions that are not installed in its minimal profile.
+
 ## Recover
 
 Run from GNOME or a TTY as the original installing user:

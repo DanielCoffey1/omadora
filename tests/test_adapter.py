@@ -261,7 +261,12 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             for unsupported in ('omarchy-agent', 'omarchy-transcode', 'omarchy-reminder', 'toggle share', 'tui = "btop"'):
                 self.assertNotIn(unsupported, utilities)
             self.assertIn('tui = "top"', utilities)
+            # Preserve both entry points to the imported, searchable guide.
+            self.assertIn('o.bind("SUPER + K", "Keybindings", "omarchy-menu-keybindings")', utilities)
+            self.assertEqual(menu['learn.keybindings']['action'], 'omarchy-menu-keybindings')
             help_script = (tree / 'bin/omarchy-menu-keybindings').read_text(encoding='utf-8')
+            self.assertIn("omarchy-menu-select 'Keybindings'", help_script)
+            self.assertTrue((tree / 'bin/omarchy-menu-select').is_file())
             self.assertNotIn('Download Video from Web App', help_script)
             model = (tree / 'shell/plugins/menu/MenuModel.js').read_text(encoding='utf-8')
             active_model = '\n'.join(line for line in model.splitlines() if not line.strip().startswith('//'))
