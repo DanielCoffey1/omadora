@@ -2,14 +2,30 @@
 
 ## Release defaults
 
-The current bootstrap and adapter default to `v0.2.1-alpha`, which includes
+The current bootstrap and adapter default to `v0.2.2-alpha`, which includes
 all fixes and themed application logos described below. See the
-[release notes](releases/v0.2.1-alpha.md). The original `v0.1.0-alpha` tag and
+[release notes](releases/v0.2.2-alpha.md). The original `v0.1.0-alpha` tag and
 its bootstrap remain unchanged. Existing installations must explicitly run
-`omadora upgrade --ref v0.2.1-alpha` from GNOME or a TTY to move to this release.
+`omadora upgrade --ref v0.2.2-alpha` from GNOME or a TTY to move to this release.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
+
+The interactive keybindings fix passes [59 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35467969723),
+[Fedora install/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35467895020),
+and a [dedicated graphical Fedora guide test](https://github.com/DanielCoffey1/omadora/actions/runs/35467839198).
+The graphical run at `f738706` confirmed JSON::PP was absent (`Can't locate
+JSON/PP.pm`, status 2), but the fixed guide opened using both Super+K and
+Learn → Keybindings. Filtering for Terminal and pressing Enter launched Foot
+from each entry point; Escape cancelled a subsequent guide. All four screenshots
+were reviewed. This uses Fedora Cloud with the Workstation package environment,
+not a new Anaconda ISO or a physical laptop. The release preparation at `1babf3b`
+only changes version defaults/documentation, and `a15c054` adds the same test to
+the regular desktop suite. Earlier --print-only coverage could not detect the
+missing interactive-helper dependency. Python stdlib encoding now handles both
+selector and text-input dialogs; Linux tests exercise both with Perl disabled,
+including Unicode, dimensions, selection/cancellation and temporary cleanup.
+
 
 Application refresh at `b3a76d7` passes [58 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35464968617)
 and [Fedora installation/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35464968616).
