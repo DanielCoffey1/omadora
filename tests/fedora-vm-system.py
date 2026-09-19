@@ -221,6 +221,10 @@ def app_logo_themes():
     # upgrade case: the menu must load its own versioned font through Qt.
     v.guest('rm -f ~/.local/share/fonts/omadora/OmadoraAppIcons.ttf; fc-cache -f')
     try:
+        # Theme changes hot-reload colors; restart explicitly to discard Qt's
+        # already-loaded fonts before checking the upgrade case.
+        v.guest('omarchy-restart-shell')
+        v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok')
         for theme in ('tokyo-night', 'white'):
             v.guest('omarchy-theme-set ' + theme, timeout=90)
             v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok')
