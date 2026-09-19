@@ -1,18 +1,18 @@
-# Omadora v0.2.1-alpha quick start
+# Omadora v0.2.2-alpha quick start
 
 Target: fresh Fedora Workstation **44, x86_64**, non-Atomic. This is an alpha
 release of the minimal Omarchy 4.0.4 desktop port. GNOME and Fedora's existing
-apps remain available. See [known limits](releases/v0.2.1-alpha.md).
+apps remain available. See [known limits](releases/v0.2.2-alpha.md).
 
 ## Install
 
 From a terminal as your regular Fedora user:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.2.1-alpha/boot.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.2.2-alpha/boot.sh | bash
 ```
 
-The bootstrap defaults to fetching `v0.2.1-alpha`, not `main`. Leave
+The bootstrap defaults to fetching `v0.2.2-alpha`, not `main`. Leave
 `OMADORA_REF` unset for this release; it is an explicit source override for
 developers. The installer requests sudo for packages/system files, enables the
 documented desktop COPRs and backs up managed user configuration. Save the
@@ -29,7 +29,7 @@ Fedora packages: `omadora update`. Optional user Flatpaks: `flatpak update --use
 For Omadora itself, log out of all Hyprland sessions and enter GNOME or a TTY:
 
 ```bash
-omadora upgrade --ref v0.2.1-alpha
+omadora upgrade --ref v0.2.2-alpha
 ```
 
 This also upgrades an earlier development installation to the alpha. On this
@@ -40,7 +40,7 @@ is preserved; new default configuration is not automatically merged.
 If the old installation lacks `upgrade`, use:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.2.1-alpha/boot.sh | bash -s -- upgrade
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.2.2-alpha/boot.sh | bash -s -- upgrade
 ```
 
 ## Keybindings guide
