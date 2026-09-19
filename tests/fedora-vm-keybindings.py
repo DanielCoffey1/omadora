@@ -4,12 +4,7 @@ import json
 from pathlib import Path
 import time
 
-spec = importlib.util.spec_from_file_location('interactions', Path(__file__).with_name('fedora-vm-interactions.py'))
-v = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(v)
-
-
-def guide():
+def guide(v):
     # Record the dependency that the original --print-only test never exercised.
     (v.OUT / 'perl-json-status.txt').write_text(v.guest("perl -MJSON::PP -e 1 2>&1; echo status=$?"))
     v.guest('omarchy-menu close')
@@ -43,5 +38,9 @@ def guide():
     return 'Super+K and Learn → Keybindings opened; search and Terminal selection worked from each; Escape closed the guide.'
 
 
-v.check('interactive keybindings guide', guide)
-assert all(r['status'] == 'PASS' for r in v.results), v.results
+if __name__ == '__main__':
+    spec = importlib.util.spec_from_file_location('interactions', Path(__file__).with_name('fedora-vm-interactions.py'))
+    v = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(v)
+    v.check('interactive keybindings guide', lambda: guide(v))
+    assert all(r['status'] == 'PASS' for r in v.results), v.results
