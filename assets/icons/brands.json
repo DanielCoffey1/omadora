@@ -1,0 +1,415 @@
+{
+  "family": "Omadora App Icons",
+  "apps": {
+    "steam": "steam",
+    "lutris": "lutris",
+    "retroarch": "retroarch",
+    "obs": "obsstudio",
+    "gimp": "gimp",
+    "kdenlive": "kdenlive",
+    "vlc": "vlcmediaplayer",
+    "spotify": "spotify",
+    "libreoffice": "libreoffice",
+    "obsidian": "obsidian",
+    "bitwarden": "bitwarden",
+    "signal": "signal",
+    "discord": "discord",
+    "vscode": "visualstudiocode",
+    "podman": "podman",
+    "node": "nodedotjs",
+    "rust": "rust",
+    "go": "go",
+    "alacritty": "alacritty",
+    "chromium": "googlechrome",
+    "chrome": "googlechrome",
+    "edge": "microsoftedge",
+    "brave": "brave",
+    "zen": "zenbrowser",
+    "dropbox": "dropbox",
+    "zed": "zedindustries",
+    "sublime": "sublimetext",
+    "minecraft": "minecraft",
+    "helix": "helix",
+    "vim": "vim",
+    "emacs": "gnuemacs",
+    "ruby": "ruby",
+    "rails": "rubyonrails",
+    "python": "python",
+    "php": "php",
+    "elixir": "elixir",
+    "zig": "zig",
+    "java": "openjdk",
+    "dotnet": "dotnet",
+    "ocaml": "ocaml",
+    "clojure": "clojure",
+    "codex": "openai",
+    "claude": "claude",
+    "ollama": "ollama",
+    "chatgpt": "openai",
+    "perplexity": "perplexity",
+    "windows": "windows11",
+    "chromium-account": "googlechrome",
+    "xbox-cloud": "xbox",
+    "xbox-controllers": "xbox",
+    "battlenet": "battledotnet",
+    "retro-launcher": "retroarch",
+    "bun": "bun",
+    "deno": "deno",
+    "scala": "scala",
+    "laravel": "laravel",
+    "symfony": "symfony",
+    "phoenix": "phoenixframework",
+    "geforce-now": "nvidia",
+    "brave-origin": "brave",
+    "tailscale": "tailscale",
+    "1password": "1password",
+    "nordvpn": "nordvpn",
+    "db-postgres": "postgresql",
+    "db-mysql": "mysql",
+    "db-mariadb": "mariadb",
+    "db-redis": "redis",
+    "db-mongodb": "mongodb",
+    "db-mssql": "microsoftsqlserver",
+    "heroic": "heroicgameslauncher",
+    "ghostty": "ghostty",
+    "cursor": "cursor",
+    "lm-studio": "lmstudio"
+  },
+  "icons": {
+    "1password": {
+      "codepoint": 57344,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/1password.svg",
+      "sha256": "ed2dca8910cd1297b5c7442443b26b64775e65cd3ae71995ecbc60225cf40638"
+    },
+    "alacritty": {
+      "codepoint": 57345,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/alacritty.svg",
+      "sha256": "00f7efc185ea0d193ec40686f3398586c932e6ef6ae3c5bd2c7331b0451c7919"
+    },
+    "battledotnet": {
+      "codepoint": 57346,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/battledotnet.svg",
+      "sha256": "78206c9c5e7fd24803cd50cd5c71c3bb1b02def42ca4f5d186e318eb9e247b7e"
+    },
+    "bitwarden": {
+      "codepoint": 57347,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/bitwarden.svg",
+      "sha256": "024626ec72d252bded6042e9e38052440bada37a36064edd415fac18be1e6824"
+    },
+    "brave": {
+      "codepoint": 57348,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/brave.svg",
+      "sha256": "e32e023dbc07334bb967b1eafc8bca1ce184512b259f31edc71fa7d4a918e462"
+    },
+    "bun": {
+      "codepoint": 57349,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/bun.svg",
+      "sha256": "f356fc1ec5659e73e9b1e881ef2785a4fc4e0e3d82b446e6484f55303546dc6d"
+    },
+    "claude": {
+      "codepoint": 57350,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/claude.svg",
+      "sha256": "2d6fda79eb18ddccca35b799eeb3cece0dfabc22520ce3b10abd25668df9fa93"
+    },
+    "clojure": {
+      "codepoint": 57351,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/clojure.svg",
+      "sha256": "f23b610b539189e4dd680473a1fe73f20a1e5e3ad1d93400b987abde9ba571d7"
+    },
+    "deno": {
+      "codepoint": 57352,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/deno.svg",
+      "sha256": "cc9065552101a5e8662ff0d380ab81dc9135de13930a6a2c536b5577931adef7"
+    },
+    "discord": {
+      "codepoint": 57353,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/discord.svg",
+      "sha256": "1d364b72c9eaf1fe37d17ca88cd8fb541308dc0f3b09e2ab3b824f380b3493d5"
+    },
+    "dotnet": {
+      "codepoint": 57354,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/dotnet.svg",
+      "sha256": "3b7e1243fb2389116b0a5237c9f07e82f6d2eb18ee40bd232f28abccd7956993"
+    },
+    "dropbox": {
+      "codepoint": 57355,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/dropbox.svg",
+      "sha256": "1c9ea4ac8e318f3f6a598568df1a38ece03b7bc52a3a72d48c9e760340d7aeec"
+    },
+    "elixir": {
+      "codepoint": 57356,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/elixir.svg",
+      "sha256": "d660279eaad792683d6e8cee70b225935e856f6b7aae4327d30f4a7f69e71c34"
+    },
+    "gimp": {
+      "codepoint": 57357,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/gimp.svg",
+      "sha256": "8401f27de7fb789ff458cd92a0c1c2e884cdd281af8b42508dfc9a19cdc31b9e"
+    },
+    "gnuemacs": {
+      "codepoint": 57358,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/gnuemacs.svg",
+      "sha256": "2136713d4eb0d749347f1a720524d93b2b094b8cc523b0c8fac10dfd36f9a07c"
+    },
+    "go": {
+      "codepoint": 57359,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/go.svg",
+      "sha256": "36a745fe15584bf138d02ae6abcbdd155bc1cd4f4976634ad34861b2059db559"
+    },
+    "googlechrome": {
+      "codepoint": 57360,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/googlechrome.svg",
+      "sha256": "ce2ff9d2a010ed24f821ef34e40dc125d2bdf1dd28f42ded7b6017585b73c1dd"
+    },
+    "helix": {
+      "codepoint": 57361,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/helix.svg",
+      "sha256": "a8f958e1bcea9989c2475b8c06084e063e165d14ba8cb0fc6c0fc30fb9517dd2"
+    },
+    "kdenlive": {
+      "codepoint": 57362,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/kdenlive.svg",
+      "sha256": "7cf1b20f8b2c3ba84ba012d016435fe1e10ff4669090d646d8cf0eb0111905a3"
+    },
+    "laravel": {
+      "codepoint": 57363,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/laravel.svg",
+      "sha256": "9d0bb8aa3a9fc069dcc3d92c398a90be3a75fd1b0167b91f56939a18109e9796"
+    },
+    "libreoffice": {
+      "codepoint": 57364,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/libreoffice.svg",
+      "sha256": "865890340e369cafc9369a8e6ec70fbfac10a9d5862af04dc10dc764509eb855"
+    },
+    "lutris": {
+      "codepoint": 57365,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/lutris.svg",
+      "sha256": "e14559cf0b351c12fe16dac606ee8fa9571b09198dffd77139b1386254b1f880"
+    },
+    "mariadb": {
+      "codepoint": 57366,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/mariadb.svg",
+      "sha256": "477435746bb2024048c7b71529f615fb70d7e679618f37bac49f78fd07e67dfe"
+    },
+    "microsoftedge": {
+      "codepoint": 57367,
+      "source": "https://github.com/simple-icons/simple-icons/blob/0af835e2949a9222965522780e5e0810d3c53382/icons/microsoftedge.svg",
+      "sha256": "5f6a04ca78a1c88dd253c7e66394c1f97e5dba717ee90b0468e8959b10ae4388"
+    },
+    "microsoftsqlserver": {
+      "codepoint": 57368,
+      "source": "https://github.com/simple-icons/simple-icons/blob/0af835e2949a9222965522780e5e0810d3c53382/icons/microsoftsqlserver.svg",
+      "sha256": "a6c3517a8bce0273d95f51d530d3b28231a60fe27a6423b8cd5eb74484aad9be"
+    },
+    "minecraft": {
+      "codepoint": 57369,
+      "source": "https://github.com/simple-icons/simple-icons/blob/0af835e2949a9222965522780e5e0810d3c53382/icons/minecraft.svg",
+      "sha256": "119bb97c62a09814e900a6463b4635c9d9e4f4c5db4886db961a1a815ae32dd0"
+    },
+    "mongodb": {
+      "codepoint": 57370,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/mongodb.svg",
+      "sha256": "6698757ee85997e8167b2eacaff8395d6987954185488f2e90b88ef387fec6c7"
+    },
+    "mysql": {
+      "codepoint": 57371,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/mysql.svg",
+      "sha256": "67c144cc3e44ad14062a3f20ebe29c5e7eeb2c2c9c0f43cf48d87fe6291a8b2d"
+    },
+    "nodedotjs": {
+      "codepoint": 57372,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/nodedotjs.svg",
+      "sha256": "021851b758cde7d3e04819c3ac02047d0ff281c712e8387afa0c76a6dac6db6c"
+    },
+    "nordvpn": {
+      "codepoint": 57373,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/nordvpn.svg",
+      "sha256": "67b6ef11503f19d465d2e4534baddb79fabaa083e01945675b5a9faba7fce3a1"
+    },
+    "nvidia": {
+      "codepoint": 57374,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/nvidia.svg",
+      "sha256": "b0e4cfc12712c840d4d630c9a717200fbd09aeeadbd3faeac13bda2e2ed050b0"
+    },
+    "obsidian": {
+      "codepoint": 57375,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/obsidian.svg",
+      "sha256": "ceee016a3e7afcfa931e19b3dfa9eb26685fc8a9b4f177ff921e358d628abb33"
+    },
+    "obsstudio": {
+      "codepoint": 57376,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/obsstudio.svg",
+      "sha256": "1b1c6d637b53ce50d6c0bb7a9b402ea687a478b2079b790fd9672e3931359dcc"
+    },
+    "ocaml": {
+      "codepoint": 57377,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/ocaml.svg",
+      "sha256": "e973034bce8a78e914959696254bc9f55ab28fd3eba72f856bce87a1bd21e0d4"
+    },
+    "ollama": {
+      "codepoint": 57378,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/ollama.svg",
+      "sha256": "9c62bf0159ee96c8b58c86a732f33b002b4b3bb165ec86e8ecca51ad6a82dab6"
+    },
+    "openai": {
+      "codepoint": 57379,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/openai.svg",
+      "sha256": "2b4a04ddc2395b20d168694d3850ce2050a702c4a0cdeb4d8b31b9a970481a8c"
+    },
+    "openjdk": {
+      "codepoint": 57380,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/openjdk.svg",
+      "sha256": "31c94bd8f864b018d9733c251df186f36e9a0036e43f78d0656895108d438bb3"
+    },
+    "perplexity": {
+      "codepoint": 57381,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/perplexity.svg",
+      "sha256": "57220c29378ce5e615e7244d2fdfcf5a44fad40dad81a99f2e0e4260c726ca74"
+    },
+    "phoenixframework": {
+      "codepoint": 57382,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/phoenixframework.svg",
+      "sha256": "6a027f83a74db38cbad5788f2c7086df61439f48dd6c831ec006c9f4e85c7f9a"
+    },
+    "php": {
+      "codepoint": 57383,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/php.svg",
+      "sha256": "cd1beaa0dde7e765b5d2cbae786c1f6db967f72073eb7b9f9bbc63da55b9d0f6"
+    },
+    "podman": {
+      "codepoint": 57384,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/podman.svg",
+      "sha256": "676f0e895fed6e004e2fbf55f364ba900ff1a6a6de26b78fb5066dde421e4e00"
+    },
+    "postgresql": {
+      "codepoint": 57385,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/postgresql.svg",
+      "sha256": "c8ccadbd88c9312c2ad3734c4861b31d3485ce179ee91d64793143f83cfa745c"
+    },
+    "python": {
+      "codepoint": 57386,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/python.svg",
+      "sha256": "ad9468e1c4903f73ae7eebfbe980f0f727a10db695be3d914e7d8bd25356a862"
+    },
+    "redis": {
+      "codepoint": 57387,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/redis.svg",
+      "sha256": "428b86deb14c8bdacdcdf75987fe454f367bcd078a7e4ae3f84de29aa5bdf136"
+    },
+    "retroarch": {
+      "codepoint": 57388,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/retroarch.svg",
+      "sha256": "bdc0d6bd4b00701b5160bc40b01b1d187f48ac5d96aa4f326175e2322cfc009d"
+    },
+    "ruby": {
+      "codepoint": 57389,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/ruby.svg",
+      "sha256": "956992a81b988b916efdd6f7a78b9f19fe352b5c04f2019af2ce1a89e390ac9d"
+    },
+    "rubyonrails": {
+      "codepoint": 57390,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/rubyonrails.svg",
+      "sha256": "8070695727273ed648663d6b008a5547631890aa89824e588d637edf3d1afe42"
+    },
+    "rust": {
+      "codepoint": 57391,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/rust.svg",
+      "sha256": "95a291d8887610d103704adcc5c5f2cbfa4c80a96f8e72b00531d5691beb67a8"
+    },
+    "scala": {
+      "codepoint": 57392,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/scala.svg",
+      "sha256": "5202637eaff2e7362af3743313c21f6c074d4ff80ab6335ca5e87608b7a12a21"
+    },
+    "signal": {
+      "codepoint": 57393,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/signal.svg",
+      "sha256": "391f46b8feaef281a44dfdf40035d9a4546ded17d2c3eb88d6614762779f1930"
+    },
+    "spotify": {
+      "codepoint": 57394,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/spotify.svg",
+      "sha256": "b9ec9bec7769c35643981586d6ea0d675aaf3871b32f8a291bcac7a87fff0bc1"
+    },
+    "steam": {
+      "codepoint": 57395,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/steam.svg",
+      "sha256": "5eef8f31106b81956ed908490bcf8c73abe476aa58bb9041acdf70b0d42ebcae"
+    },
+    "sublimetext": {
+      "codepoint": 57396,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/sublimetext.svg",
+      "sha256": "f0aceff6d59cf0bae168ddd28b7e00682361d928767a8ef9a331054f92af4197"
+    },
+    "symfony": {
+      "codepoint": 57397,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/symfony.svg",
+      "sha256": "6016d087671c1d421d86e95904e826045a660340698239373b3a55bce8781e79"
+    },
+    "tailscale": {
+      "codepoint": 57398,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/tailscale.svg",
+      "sha256": "80ecdde08c2a4cddaa64447fcbfafab81326864671cd33b7fc3d40c4c8661dfc"
+    },
+    "vim": {
+      "codepoint": 57399,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/vim.svg",
+      "sha256": "d3a39e8a2820764d98e9f481f6dd8bc90fe49788fb5f682e742eb3c98f2fc39e"
+    },
+    "visualstudiocode": {
+      "codepoint": 57400,
+      "source": "https://github.com/simple-icons/simple-icons/blob/0af835e2949a9222965522780e5e0810d3c53382/icons/visualstudiocode.svg",
+      "sha256": "09553cc3887603f3f8b61d411f7ec5f21afd2aa11d391200094fa7eabe68899b"
+    },
+    "vlcmediaplayer": {
+      "codepoint": 57401,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/vlcmediaplayer.svg",
+      "sha256": "dcefad2f6a4e3a35aa667ca25803904311d8f5229c837d11612e012af358b2af"
+    },
+    "windows11": {
+      "codepoint": 57402,
+      "source": "https://github.com/simple-icons/simple-icons/blob/0af835e2949a9222965522780e5e0810d3c53382/icons/windows11.svg",
+      "sha256": "474ee3ca7e8a4cf7cd4d5073f0a88829e414c280551dfa612a74db5f37af5c5e"
+    },
+    "xbox": {
+      "codepoint": 57403,
+      "source": "https://github.com/simple-icons/simple-icons/blob/0af835e2949a9222965522780e5e0810d3c53382/icons/xbox.svg",
+      "sha256": "c5ec61839e921542b3581d9aab7d72b822200975c4b508ea4f9bc02ce4c6f025"
+    },
+    "zedindustries": {
+      "codepoint": 57404,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/zedindustries.svg",
+      "sha256": "90848d3e8d74d4fb3efc7137b8a5181139082e212566b025843379a7cb0550a0"
+    },
+    "zenbrowser": {
+      "codepoint": 57405,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/zenbrowser.svg",
+      "sha256": "48b67b2c43e4daba0571a8914d5de9541ee52b594de85583751f964358bf837e"
+    },
+    "zig": {
+      "codepoint": 57406,
+      "source": "https://github.com/simple-icons/simple-icons/blob/5664507081ffb65b5a2a0ed2bf2ee2b3b327cb4e/icons/zig.svg",
+      "sha256": "1cd8fe569c641c0229c3717f2f883b88cf9beaa3b2adc255799ea3e014ee1955"
+    },
+    "heroicgameslauncher": {
+      "codepoint": 57407,
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/f2365d33171bd1897a41aaae6c0b6e795bcc0483/icons/heroicgameslauncher.svg",
+      "sha256": "396c63e62d1dc232f842507e891381a604ee002d3d18450f195de33cd62c9a44"
+    },
+    "ghostty": {
+      "codepoint": 57408,
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/f2365d33171bd1897a41aaae6c0b6e795bcc0483/icons/ghostty.svg",
+      "sha256": "a1f7de256a7b070cf112c3d5d254938b48186d2486054fb0832da4a83719387f"
+    },
+    "cursor": {
+      "codepoint": 57409,
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/f2365d33171bd1897a41aaae6c0b6e795bcc0483/icons/cursor.svg",
+      "sha256": "71572a9be192cc069ec22b48d785e61d754eeed7edb7d082d615f6d5620f70ec"
+    },
+    "lmstudio": {
+      "codepoint": 57410,
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/f2365d33171bd1897a41aaae6c0b6e795bcc0483/icons/lmstudio.svg",
+      "sha256": "16e14708a6ecd687e33700b6e9d47e2e60800407d7f995610871603ddbe3816c"
+    }
+  }
+}

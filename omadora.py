@@ -209,9 +209,17 @@ def menu_for_fedora(menu, apps, blocked):
              'preinstalls': '󰄬', 'webapp': '', 'style': '󰏘', 'theme': '󰏘',
              'background': '', 'gaming': '', 'ai': '󰧑', 'editor': '',
              'terminal': '', 'development': '', 'service': '', 'font': ''}
+    brands = read_json(ROOT / 'assets/icons/brands.json')
     for key, entry in result.items():
         if key.startswith(('install.', 'remove.')):
-            original = menu.get(key, {})
+            app_id = key.rsplit('.', 1)[-1]
+            slug = brands['apps'].get(app_id)
+            if slug:
+                entry['icon'] = chr(brands['icons'][slug]['codepoint'])
+                entry['iconFont'] = brands['family']
+                continue
+            # Remove entries need the same brand glyph as their Install entry.
+            original = menu.get(key) or menu.get('install.' + key.split('.', 1)[1], {})
             if not entry.get('icon'):
                 entry['icon'] = original.get('icon') or icons.get(key.rsplit('.', 1)[-1], '')
             if original.get('iconFont'):
@@ -286,6 +294,11 @@ def assemble(source, output):
     write(output / 'release.json', json.dumps({'version': VERSION, 'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
     shutil.copytree(ROOT / 'assets', output / 'assets')
+    # Load from the versioned runtime so upgrades/rollbacks do not depend on
+    # refreshing an old per-user copy of the font or changing the user's theme.
+    menu_qml = tree / 'shell/plugins/menu/Menu.qml'
+    write(menu_qml, menu_qml.read_text(encoding='utf-8').replace('  id: root\n',
+        '  id: root\n\n  FontLoader { source: "../../../../assets/fonts/OmadoraAppIcons.ttf" }\n', 1))
 
     # Keep upstream identifiers for compatibility. Only the product entrypoints
     # and menu branding are Omadora; wholesale textual renaming breaks IPC.

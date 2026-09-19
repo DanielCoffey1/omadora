@@ -261,6 +261,10 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             for unsupported in ('omarchy-agent', 'omarchy-transcode', 'omarchy-reminder', 'toggle share', 'tui = "btop"'):
                 self.assertNotIn(unsupported, utilities)
             self.assertIn('tui = "top"', utilities)
+            menu_qml = (tree / 'shell/plugins/menu/Menu.qml').read_text(encoding='utf-8')
+            self.assertIn('FontLoader { source: "../../../../assets/fonts/OmadoraAppIcons.ttf" }', menu_qml)
+            self.assertIn('color: row.hasCursor ? root.selectedText : root.foreground', menu_qml)
+            self.assertTrue((output / 'assets/fonts/OmadoraAppIcons.ttf').is_file())
             # Preserve both entry points to the imported, searchable guide.
             self.assertIn('o.bind("SUPER + K", "Keybindings", "omarchy-menu-keybindings")', utilities)
             self.assertEqual(menu['learn.keybindings']['action'], 'omarchy-menu-keybindings')

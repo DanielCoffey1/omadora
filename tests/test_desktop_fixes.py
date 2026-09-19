@@ -14,6 +14,24 @@ spec.loader.exec_module(adapter)
 
 
 class DesktopFixTests(unittest.TestCase):
+    def test_app_logos_match_across_install_remove_and_keep_theme_rendering(self):
+        brands = adapter.read_json(ROOT / 'assets/icons/brands.json')
+        apps = adapter.read_json(ROOT / 'apps.json')
+        menu = adapter.menu_for_fedora({}, apps, [])
+        for app_id, slug in brands['apps'].items():
+            self.assertIn(app_id, apps)
+            for action in ('install', 'remove'):
+                key = '.'.join(filter(None, (action, apps[app_id]['category'], app_id)))
+                entry = menu[key]
+                self.assertEqual(entry['icon'], chr(brands['icons'][slug]['codepoint']))
+                self.assertEqual(entry['iconFont'], brands['family'])
+                self.assertNotIn('color', entry)
+        self.assertNotEqual(menu['install.browser.brave']['icon'], menu['install.browser.chrome']['icon'])
+        self.assertEqual(menu['install.browser.chromium']['icon'], menu['install.browser.chrome']['icon'])
+        # These names have unrelated travel/fashion marks in logo collections.
+        self.assertNotIn('tui', brands['apps'])
+        self.assertNotIn('hermes', brands['apps'])
+
     def test_update_refreshes_bar_after_success_and_failure(self):
         for failure in (False, True):
             calls = []

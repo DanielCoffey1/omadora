@@ -215,6 +215,27 @@ def menu_audit():
     return detail + ' Keybinding help populated; menu/provider and hardware panel screenshots captured.'
 
 
+def app_logo_themes():
+    original = v.guest('omarchy-theme-current')
+    # Existing installations lack the newly bundled user font. Exercise that
+    # upgrade case: the menu must load its own versioned font through Qt.
+    v.guest('rm -f ~/.local/share/fonts/omadora/OmadoraAppIcons.ttf; fc-cache -f')
+    try:
+        for theme in ('tokyo-night', 'white'):
+            v.guest('omarchy-theme-set ' + theme, timeout=90)
+            v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok')
+            for route in ('install.browser', 'install.ai', 'install.editor', 'install.terminal'):
+                v.guest('omarchy-menu summon ' + route)
+                time.sleep(2)
+                v.guest('grim /tmp/omadora-vm-results/logos-' + theme + '-' + route.replace('.', '-') + '.png')
+                v.guest('omarchy-menu close')
+            assert v.guest('hyprctl configerrors') in ('', 'ok')
+        return 'Brand menus captured in dark/light themes without a per-user copy of the logo font; configuration valid.'
+    finally:
+        v.guest('cp /usr/local/share/omadora/assets/fonts/OmadoraAppIcons.ttf ~/.local/share/fonts/omadora/; fc-cache -f')
+        v.guest('omarchy-theme-set ' + shlex.quote(original), timeout=90)
+
+
 def style_controls():
     original = v.guest('omarchy-theme-current')
     config = json.loads(v.guest('cat ~/.config/omarchy/shell.json'))['bar']
@@ -435,6 +456,7 @@ v.check('Dictation installation and Super shortcuts', dictation_keyboard)
 v.check('package pickers and terminal completion', package_picker_and_completion)
 v.check('screen recording and reminders', screen_recording_and_reminder)
 v.check('menu dependencies and providers', menu_audit)
+v.check('application logos follow dark and light themes', app_logo_themes)
 v.check('theme and bar controls', style_controls)
 v.check('desktop toggles', desktop_toggles)
 actions_spec = importlib.util.spec_from_file_location('desktop_actions', Path(__file__).with_name('desktop-actions.py'))
