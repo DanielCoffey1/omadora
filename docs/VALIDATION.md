@@ -2,14 +2,29 @@
 
 ## Release defaults
 
-The current bootstrap and adapter default to `v0.2.0-alpha`, which includes
+The current bootstrap and adapter default to `v0.2.1-alpha`, which includes
 all fixes and themed application logos described below. See the
-[release notes](releases/v0.2.0-alpha.md). The original `v0.1.0-alpha` tag and
+[release notes](releases/v0.2.1-alpha.md). The original `v0.1.0-alpha` tag and
 its bootstrap remain unchanged. Existing installations must explicitly run
-`omadora upgrade --ref v0.2.0-alpha` from GNOME or a TTY to move to this release.
+`omadora upgrade --ref v0.2.1-alpha` from GNOME or a TTY to move to this release.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
+
+Application refresh at `b3a76d7` passes [58 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35464968617)
+and [Fedora installation/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35464968616).
+The latter runs the actual patched AppLibrary in Quickshell with an offscreen
+platform and a fresh Gio scanner. Local and Flatpak application directories are
+created after the shell starts. New entries, in-place renames, hidden entries
+and removals each become visible in the library within five seconds of refresh,
+without restarting the process. The shell log has no QML errors; the missing
+Wayland-display warning is expected in this headless fixture. This is not a
+physical laptop latency measurement or a new full graphical desktop run.
+The launcher requests the same refresh on open, and installs/removals notify
+it after finishing, including after a partial package failure. The previous
+snapshot survives scanner errors. CLI-only packages still need a desktop
+entry to appear in Apps.
+
 
 Theme-colored application logos at `159ecb6` pass [55 source checks and the
 reproducible font build](https://github.com/DanielCoffey1/omadora/actions/runs/35415234412),
