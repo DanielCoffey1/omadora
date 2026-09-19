@@ -1,5 +1,14 @@
 # Validation record
 
+## Release defaults
+
+The current bootstrap and adapter default to `v0.2.0-alpha`, which includes
+all fixes and themed application logos described below. See the
+[release notes](releases/v0.2.0-alpha.md). The original `v0.1.0-alpha` tag and
+its bootstrap remain unchanged. Existing installations must explicitly run
+`omadora upgrade --ref v0.2.0-alpha` from GNOME or a TTY to move to this release.
+The historical commit commands below remain useful for reproducing tests.
+
 ## Latest verified results
 
 Theme-colored application logos at `159ecb6` pass [55 source checks and the
@@ -51,8 +60,8 @@ To apply these fixes, log out of Hyprland and run from GNOME or a TTY:
 omadora upgrade --ref b01c5c44ef89e666d1adca12d3d701538988b867
 ```
 
-The published `v0.1.0-alpha` tag remains unchanged, so plain `omadora upgrade`
-does not select these newer fixes yet.
+On installations still running `v0.1.0-alpha`, plain `omadora upgrade`
+stays on that older release; use the current release tag above for these fixes.
 
 Menu and bar fixes at `5d2f570` pass [50 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35396591945),
 [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35396592009),
@@ -80,7 +89,7 @@ omadora upgrade --ref 5d2f57031135c5e9bfb30c6412d31a71f9ba5d08
 
 Alpha release preparation at `0950e2b` passes [45 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35370788650)
 and [Fedora integration](https://github.com/DanielCoffey1/omadora/actions/runs/35370788539).
-The bootstrap and updater default to `v0.1.0-alpha`; explicit ref overrides
+At that revision, the bootstrap and updater default to `v0.1.0-alpha`; explicit ref overrides
 remain available. Fedora integration initially failed on COPR HTTP 503 package
 downloads, then passed on the same revision. See [alpha release notes](releases/v0.1.0-alpha.md).
 The owner also reports successful use on a laptop, without hardware details or

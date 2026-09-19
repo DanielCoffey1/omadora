@@ -18,6 +18,13 @@ class ReleaseTests(unittest.TestCase):
         default = re.search(r'ref=\$\{OMADORA_REF:-([^}]+)\}', (ROOT / 'boot.sh').read_text()).group(1)
         self.assertEqual(default, adapter.RELEASE_REF)
         self.assertRegex(default, r'^v\d+\.\d+\.\d+-alpha$')
+        for name in ('README.md', 'docs/QUICKSTART.md', 'docs/MAINTENANCE.md',
+                     f'docs/releases/{default}.md'):
+            with self.subTest(document=name):
+                contents = (ROOT / name).read_text(encoding='utf-8')
+                refs = re.findall(r'raw.githubusercontent.com/DanielCoffey1/omadora/([^/]+)/boot.sh', contents)
+                self.assertTrue(refs, 'Document must include an installation or recovery command')
+                self.assertEqual(set(refs), {default})
 
     def test_cli_upgrade_defaults_to_release_and_allows_explicit_override(self):
         lifecycle = Mock()

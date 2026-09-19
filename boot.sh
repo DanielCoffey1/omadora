@@ -17,7 +17,7 @@ command -v git >/dev/null || sudo dnf install -y git
 command -v python3 >/dev/null || sudo dnf install -y python3
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
-ref=${OMADORA_REF:-v0.1.0-alpha}
+ref=${OMADORA_REF:-v0.2.0-alpha}
 [[ $ref != -* ]] || { echo 'Invalid Omadora Git reference.' >&2; exit 1; }
 git init "$stage/repo"
 git -C "$stage/repo" remote add origin https://github.com/DanielCoffey1/omadora.git
