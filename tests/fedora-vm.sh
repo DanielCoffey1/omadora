@@ -160,6 +160,8 @@ wait_ssh
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
 if [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
+elif [[ ${VM_SUITE:-apps} == keybindings ]]; then
+  python3 tests/fedora-vm-keybindings.py
 elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
   if [[ ${VM_SLEEP_DIAGNOSTIC:-} =~ ^(reliability|startup-race|software-gpu|bochs-gpu|quiesce-gpu)$ ]]; then
     python3 tests/fedora-vm-reliability.py

@@ -420,6 +420,21 @@ fi
     if count != 1:
         raise ValueError('Upstream keybinding help changed; review the adapter')
     write(keybindings, text, 0o755)
+    # Fedora splits JSON::PP into an optional Perl package. Use the required
+    # Python stdlib for both interactive helpers instead of relying on it.
+    for kind in ('select', 'input'):
+        helper = tree / 'bin' / ('omarchy-menu-' + kind)
+        content = helper.read_text(encoding='utf-8')
+        start = 'options_json=' if kind == 'select' else 'payload='
+        args = ('"$menu_maxheight" "${options[@]}"' if kind == 'select' else '\'\'')
+        replacement = ('payload=$(python3 "$OMARCHY_PATH/../assets/scripts/menu-payload.py" '
+                       + kind + ' "$prompt" "$selection_file" "$done_file" "$menu_width" '
+                       + args + ')\n\n')
+        content, count = re.subn(start + r'\$\(perl .*?(?=omarchy-shell shell summon)',
+                                 lambda _: replacement, content, flags=re.S)
+        if count != 1:
+            raise ValueError('Upstream interactive menu helper changed; review ' + kind)
+        write(helper, content, 0o755)
     # Menu guards otherwise shadow our RPM helpers with an embedded Arch cache.
     model = tree / 'shell/plugins/menu/MenuModel.js'
     text = model.read_text(encoding='utf-8')

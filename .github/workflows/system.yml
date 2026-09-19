@@ -1,6 +1,14 @@
 name: Fedora recovery and services
 on:
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Desktop acceptance suite
+        type: choice
+        default: system
+        options:
+          - system
+          - keybindings
 permissions:
   contents: read
 jobs:
@@ -13,7 +21,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb x11-utils libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
       - name: Test services and recovery
         env:
-          VM_SUITE: system
+          VM_SUITE: ${{ inputs.suite || 'system' }}
         run: bash tests/fedora-vm.sh
       - name: Save evidence
         if: always()
