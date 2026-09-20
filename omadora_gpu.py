@@ -73,11 +73,23 @@ def secure_boot():
 
 
 def status():
-    return {'gpus': detect(), 'secure_boot': secure_boot(),
-            'vulkan': probe('vulkaninfo', '--summary'),
+    gpus = detect()
+    for g in gpus:
+        g['description'] = probe('lspci', '-D', '-s', g['pci'])['output']
+    vulkan = probe('vulkaninfo', '--summary')
+    return {'gpus': gpus, 'secure_boot': secure_boot(),
+            'vulkan': vulkan, 'acceleration': acceleration(vulkan),
             'nvidia': probe('nvidia-smi', '--query-gpu=name,driver_version', '--format=csv,noheader'),
             'nvidia_drm_modeset': read('/sys/module/nvidia_drm/parameters/modeset', 'not loaded'),
             'note': 'A successful Vulkan probe may be software rendering. Check deviceName/deviceType; CPU/llvmpipe is not GPU acceleration.'}
+
+
+def acceleration(result):
+    if result['status'] != 0:
+        return 'unverified: Vulkan probe unavailable or failed'
+    if re.search(r'deviceType\s*=\s*PHYSICAL_DEVICE_TYPE_(?:DISCRETE|INTEGRATED)_GPU', result['output']):
+        return 'hardware Vulkan device detected; game performance not tested'
+    return 'no physical Vulkan GPU confirmed (software/virtual rendering or unrecognized output)'
 
 
 def print_status():
@@ -85,7 +97,9 @@ def print_status():
     print('Graphics hardware')
     for g in report['gpus']:
         print(f"  {g['pci']}  {g['vendor']} [{g['device']}]  driver={g['driver'] or 'not loaded'}")
+        print('   ', g['description'])
     print('Secure Boot:', report['secure_boot'])
+    print('Acceleration:', report['acceleration'])
     for key in ('vulkan', 'nvidia'):
         print(f"\n{key} (exit={report[key]['status']}):\n{report[key]['output']}")
     print('\nNVIDIA DRM modeset:', report['nvidia_drm_modeset'])
@@ -109,8 +123,8 @@ def supports(gpu, ids):
 
 def candidate(a, suffix, gpus):
     package = 'akmod-nvidia' + suffix
-    version = a.run('dnf', 'repoquery', '--available', '--latest-limit=1', '--arch=x86_64',
-                    '--repo=rpmfusion-nonfree,rpmfusion-nonfree-updates', '--qf=%{version}',
+    version = a.run('dnf', '-q', 'repoquery', '--available', '--latest-limit=1', '--arch=x86_64',
+                    '--repo=rpmfusion-nonfree,rpmfusion-nonfree-updates', '--qf=%{version}\n',
                     package, capture=True).stdout.strip()
     if not re.fullmatch(r'\d+(?:\.\d+){1,3}', version):
         return None
@@ -126,6 +140,7 @@ def nvidia_packages(suffix, version, gaming):
     # Keep userspace and the akmod on the version whose support list was checked.
     packages = [f'akmod-nvidia{suffix}-{version}',
                 f'xorg-x11-drv-nvidia{suffix}-{version}',
+                f'xorg-x11-drv-nvidia{suffix}-cuda-{version}',
                 f'xorg-x11-drv-nvidia{suffix}-libs-{version}.x86_64']
     if gaming:
         packages += [f'xorg-x11-drv-nvidia{suffix}-libs-{version}.i686', 'vulkan-loader.i686']
@@ -206,6 +221,8 @@ def launch(command, pci=None):
         raise ValueError('Choose one GPU with --pci ADDRESS; see omadora gpu status.')
     gpu = choices[0]
     env = os.environ.copy()
+    for key in ('DRI_PRIME', '__NV_PRIME_RENDER_OFFLOAD', '__GLX_VENDOR_LIBRARY_NAME', '__VK_LAYER_NV_optimus'):
+        env.pop(key, None)
     if gpu['vendor'] == 'NVIDIA':
         if gpu['driver'] != 'nvidia':
             raise ValueError('The NVIDIA driver is not active. Complete setup/reboot and check GPU status.')
@@ -214,5 +231,7 @@ def launch(command, pci=None):
         env.update({'__NV_PRIME_RENDER_OFFLOAD': '1', '__GLX_VENDOR_LIBRARY_NAME': 'nvidia',
                     '__VK_LAYER_NV_optimus': 'NVIDIA_only'})
     else:
+        if gpu['driver'] not in ('amdgpu', 'radeon', 'i915', 'xe'):
+            raise ValueError('The selected GPU has no supported active kernel driver; check GPU status first.')
         env['DRI_PRIME'] = 'pci-' + gpu['pci'].replace(':', '_').replace('.', '_')
     os.execvpe(command[0], command, env)

@@ -647,8 +647,11 @@ def lifecycle():
 
 def install(dry_run=False):
     if dry_run:
+        import omadora_gpu
+        graphics = omadora_gpu.detect()
         print(json.dumps({'target': 'Fedora Workstation 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
-                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages(), 'prefix': str(PREFIX),
+                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics), 'prefix': str(PREFIX),
+                          'graphics': graphics, 'nvidia_driver_automatic': False,
                           'optional_apps_preinstalled': [], 'gnome_removed': False}, indent=2))
         return
     return lifecycle().perform(sys.modules[__name__], 'install')

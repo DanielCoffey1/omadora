@@ -58,6 +58,11 @@ class GPU(unittest.TestCase):
         a.preflight.assert_not_called()
         query.assert_not_called()
 
+    def test_software_vulkan_is_not_reported_as_hardware(self):
+        self.assertIn('no physical', gpu.acceleration({'status': 0, 'output': 'deviceType = PHYSICAL_DEVICE_TYPE_CPU\ndeviceName = llvmpipe'}))
+        self.assertIn('hardware Vulkan', gpu.acceleration({'status': 0, 'output': 'deviceType = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU'}))
+        self.assertIn('unverified', gpu.acceleration({'status': 1, 'output': ''}))
+
     def test_secure_boot_pending_stops_before_driver_install(self):
         a = Mock()
         a.run.return_value = subprocess.CompletedProcess([], 1, '')
