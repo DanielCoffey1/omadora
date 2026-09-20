@@ -80,15 +80,17 @@ a previously working kernel for driver problems; GNOME remains available.
 
 ## Hybrid laptops and per-game GPU selection
 
-Keep the desktop on its normal GPU. Run a new process on the non-boot GPU:
+Keep the desktop on its normal GPU. Run a new process on the selected GPU:
 
 ```bash
 omadora gpu run -- game-command
 omadora gpu run --pci 0000:01:00.0 -- game-command
 ```
 
-Use an address reported by GPU status. When selection is ambiguous the tool
-asks for an explicit PCI address. Mesa uses `DRI_PRIME`; a single NVIDIA
+Use an address reported by GPU status. A single NVIDIA card is selected by
+default, or the only GPU on a single-GPU system. Multiple Mesa GPUs require an
+explicit PCI address: boot-display flags do not reliably identify discrete
+graphics on MUX laptops. Mesa uses `DRI_PRIME`; a single NVIDIA
 offload device uses NVIDIA's PRIME variables. Multiple NVIDIA offload devices
 require manual provider setup. No commands are passed through a shell by
 Omadora. An already-running app cannot have its GPU changed by this command.

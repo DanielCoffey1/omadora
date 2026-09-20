@@ -118,3 +118,12 @@ class GPU(unittest.TestCase):
         with patch.object(gpu, 'detect', return_value=gpus + [card(pci='0000:02:00.0')]):
             with self.assertRaises(ValueError):
                 gpu.launch(['game'])
+
+    def test_mux_boot_gpu_is_not_misidentified_as_integrated(self):
+        cards = [card('Intel', driver='i915'), card(boot=True, pci='0000:02:00.0')]
+        with patch.object(gpu, 'detect', return_value=cards), patch.object(gpu.os, 'execvpe') as execute:
+            gpu.launch(['game'])
+        self.assertEqual(execute.call_args.args[2]['__NV_PRIME_RENDER_OFFLOAD'], '1')
+        with patch.object(gpu, 'detect', return_value=[card('AMD', driver='amdgpu'), card('Intel', driver='xe', pci='0000:02:00.0')]):
+            with self.assertRaises(ValueError):
+                gpu.launch(['game'])

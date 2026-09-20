@@ -214,9 +214,14 @@ def launch(command, pci=None):
     if not command:
         raise ValueError('Supply an application after --, for example: omadora gpu run -- steam')
     gpus = managed(detect())
-    choices = [g for g in gpus if g['pci'] == pci] if pci else [g for g in gpus if not g['boot_display']]
-    if not choices and len(gpus) == 1 and not pci:
+    # boot_vga is not a reliable integrated/discrete classifier (MUX modes can
+    # make a dedicated card the boot GPU). Do not guess between Mesa devices.
+    if pci:
+        choices = [g for g in gpus if g['pci'] == pci]
+    elif len(gpus) == 1:
         choices = gpus
+    else:
+        choices = [g for g in gpus if g['vendor'] == 'NVIDIA']
     if len(choices) != 1:
         raise ValueError('Choose one GPU with --pci ADDRESS; see omadora gpu status.')
     gpu = choices[0]
