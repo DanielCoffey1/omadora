@@ -141,9 +141,9 @@ def nvidia_packages(suffix, version, gaming):
     packages = [f'akmod-nvidia{suffix}-{version}',
                 f'xorg-x11-drv-nvidia{suffix}-{version}',
                 f'xorg-x11-drv-nvidia{suffix}-cuda-{version}',
-                f'xorg-x11-drv-nvidia{suffix}-libs-{version}.x86_64']
+                f'xorg-x11-drv-nvidia{suffix}-libs-{version}-*.x86_64']
     if gaming:
-        packages += [f'xorg-x11-drv-nvidia{suffix}-libs-{version}.i686', 'vulkan-loader.i686']
+        packages += [f'xorg-x11-drv-nvidia{suffix}-libs-{version}-*.i686', 'vulkan-loader.i686']
     return packages
 
 

@@ -63,6 +63,11 @@ class GPU(unittest.TestCase):
         self.assertIn('hardware Vulkan', gpu.acceleration({'status': 0, 'output': 'deviceType = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU'}))
         self.assertIn('unverified', gpu.acceleration({'status': 1, 'output': ''}))
 
+    def test_nvidia_multilib_specs_keep_version_release_and_arch(self):
+        packages = gpu.nvidia_packages('-580xx', '580.159.04', True)
+        self.assertIn('xorg-x11-drv-nvidia-580xx-libs-580.159.04-*.i686', packages)
+        self.assertIn('xorg-x11-drv-nvidia-580xx-libs-580.159.04-*.x86_64', packages)
+
     def test_secure_boot_pending_stops_before_driver_install(self):
         a = Mock()
         a.run.return_value = subprocess.CompletedProcess([], 1, '')
