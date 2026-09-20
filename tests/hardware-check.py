@@ -70,6 +70,7 @@ CHECKS = {
 
 def collect():
     commands = {
+        'omadora_graphics': ['omadora', 'gpu', 'status', '--json'],
         'virtualization': ['systemd-detect-virt'],
         'selinux': ['getenforce'],
         'secure_boot': ['mokutil', '--sb-state'],

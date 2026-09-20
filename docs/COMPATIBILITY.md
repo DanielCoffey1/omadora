@@ -11,6 +11,8 @@
 - Configuration backup and restore with preservation of post-install edits.
 - Journaled desktop upgrades, interrupted-operation recovery and a previous-desktop rollback command. Maintenance runs from GNOME or a TTY and preserves personal configuration; see [maintenance](MAINTENANCE.md).
 
+- Hardware-aware graphics setup: matched AMD/Intel libraries, optional multilib gaming support, verified NVIDIA current/580xx selection, Secure Boot gating, and per-process GPU offload. See [graphics](GRAPHICS.md) for limitations.
+
 ## Differences from upstream
 
 - Firefox is the default browser; web links open as normal Firefox windows rather than Chromium app-mode windows.
@@ -35,6 +37,6 @@
 3. Expand the [menu and shortcut audit](MENU_AUDIT.md) to every interactive combination and physical hardware path. Embedded Arch guards and missing desktop utility dependencies found during the audit are fixed; dependency checks, source inspection and false hardware predicates do not establish complete functional coverage.
 4. Finish the remaining application launch checks and exercise Flatpak launcher discovery, account/gameplay workflows, real Flatpak version upgrades and offline/error cases. The original 26 catalog install commands and 23 attempted removals passed their run. Additional automated optional-recipe jobs, including Codex CLI and Claude Code, now pass; these are not end-to-end workload checks of all 93 choices. See [application results](APP_TESTS.md) for scopes and limits. The sandbox font fix passed in Signal, Discord and Bottles; expand that retest to the remaining Flatpaks.
 5. Implement signed/versioned Omadora packages, uninstallation and reproducible RPM sources. Journaled desktop upgrades and recovery are implemented, but do not merge incompatible user-config migrations, undo RPM transactions, or recover pre-journal partial installations. Desktop/config restoration is not an OS rollback.
-6. Run the [physical hardware checklist](HARDWARE_TESTING.md) for Intel/AMD; develop a separate NVIDIA driver/Secure Boot path before claiming NVIDIA support. The read-only inventory collector prepares evidence but does not establish a hardware pass.
+6. Run the [physical hardware checklist](HARDWARE_TESTING.md) for Intel/AMD; validate the new [GPU setup and Secure Boot flow](GRAPHICS.md) on physical NVIDIA hardware before claiming hardware support. The read-only inventory collector prepares evidence but does not establish a hardware pass.
 
 Silverblue/Kinoite, Fedora spins, Fedora versions other than 44, ARM/Asahi, and existing customized desktops are outside this initial target. GNOME is preserved as a fallback, but applying shared home-directory configuration can still affect tools launched from GNOME.

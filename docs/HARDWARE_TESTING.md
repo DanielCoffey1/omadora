@@ -59,7 +59,7 @@ checklist; the JSON remains the diagnostic baseline.
 
 Record failures exactly and retain the working GNOME fallback while diagnosing
 them. The collector does not install NVIDIA drivers or enroll Secure Boot keys.
-NVIDIA setup/support remains a separate unvalidated path; a detected NVIDIA
+NVIDIA setup is available through [Graphics setup](GRAPHICS.md), but physical support remains unvalidated; a detected NVIDIA
 GPU or successful `nvidia-smi` query does not establish Hyprland compatibility.
 
 ## Evidence required for a hardware result
