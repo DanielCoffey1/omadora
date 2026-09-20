@@ -73,3 +73,8 @@ unzip
 wf-recorder
 ffmpeg-free
 pulseaudio-utils
+
+# Read-only GPU diagnostics; games and proprietary drivers remain optional.
+pciutils
+mokutil
+vulkan-tools

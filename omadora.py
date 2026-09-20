@@ -244,6 +244,11 @@ def menu_for_fedora(menu, apps, blocked):
         if not any(k in item for k in ('action', 'provider', 'target')) and not any(
                 child.startswith(key + '.') for child in result):
             del result[key]
+    result['setup.gpu'] = {'label': 'Graphics', 'icon': '󰢮'}
+    result['setup.gpu.status'] = {'label': 'GPU status', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu status'}
+    result['setup.gpu.libraries'] = {'label': 'Gaming graphics', 'icon': '', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
+    result['setup.gpu.nvidia'] = {'label': 'NVIDIA drivers', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --nvidia --gaming'}
+    result['install.gaming.graphics'] = {'label': 'GPU setup', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
     return result
 
 
@@ -289,7 +294,7 @@ def assemble(source, output):
     for name in ('LICENSE', 'version'):
         shutil.copy2(source / name, tree / name)
     for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'omadora_optional.py',
-                 'omadora_workflows.py', 'omadora_applications.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
+                 'omadora_workflows.py', 'omadora_applications.py', 'omadora_gpu.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
         shutil.copy2(ROOT / name, output / name)
     write(output / 'release.json', json.dumps({'version': VERSION, 'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
@@ -654,7 +659,11 @@ def prepare_runtime(temp):
     run('sudo', 'dnf', 'copr', 'enable', '-y', COPR)
     run('sudo', 'dnf', 'copr', 'enable', '-y', SCREENSAVER_COPR)
     # DNF's complete transaction must resolve. Never skip broken packages.
-    run('sudo', 'dnf', 'install', '-y', *packages())
+    import omadora_gpu
+    gpus = omadora_gpu.detect()
+    run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus))
+    if any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(gpus)):
+        print('NVIDIA detected: after installation, stay in GNOME and run omadora gpu setup --nvidia --gaming. Driver compatibility and Secure Boot enrollment are checked separately.', flush=True)
     # Hyprland initializes its logger before processing --version and needs
     # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
     probe_env = os.environ.copy()
@@ -775,6 +784,11 @@ def main():
     p = sub.add_parser('build'); p.add_argument('--source', type=Path, required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('app'); p.add_argument('action', choices=('list', 'install', 'remove', 'installed')); p.add_argument('id', nargs='?'); p.add_argument('--dry-run', action='store_true')
     p = sub.add_parser('package'); p.add_argument('action', choices=('install', 'remove')); p.add_argument('names', nargs='*'); p.add_argument('--dry-run', action='store_true')
+    p = sub.add_parser('gpu')
+    gpu_sub = p.add_subparsers(dest='gpu_action', required=True)
+    g = gpu_sub.add_parser('status'); g.add_argument('--json', action='store_true')
+    g = gpu_sub.add_parser('setup'); g.add_argument('--gaming', action='store_true'); g.add_argument('--nvidia', action='store_true'); g.add_argument('--dry-run', action='store_true')
+    g = gpu_sub.add_parser('run'); g.add_argument('--pci'); g.add_argument('application', nargs=argparse.REMAINDER)
     sub.add_parser('refresh-apps')
     sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')
     p = sub.add_parser('pkg-present'); p.add_argument('packages', nargs='+')
@@ -789,6 +803,18 @@ def main():
         lifecycle().perform(sys.modules[__name__], args.command)
     elif args.command == 'build':
         print(assemble(args.source, args.output))
+    elif args.command == 'gpu':
+        import omadora_gpu
+        if args.gpu_action == 'status':
+            if args.json:
+                print(json.dumps(omadora_gpu.status(), indent=2))
+            else:
+                omadora_gpu.print_status()
+        elif args.gpu_action == 'setup':
+            return omadora_gpu.setup(sys.modules[__name__], args.gaming, args.nvidia, args.dry_run)
+        else:
+            command = args.application[1:] if args.application[:1] == ['--'] else args.application
+            omadora_gpu.launch(command, args.pci)
     elif args.command == 'package':
         names = args.names or choose_packages(args.action)
         if not names:

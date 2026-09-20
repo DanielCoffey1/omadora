@@ -1,0 +1,29 @@
+name: Fedora GPU packages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [mesa, current, legacy]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve/install graphics libraries and build NVIDIA modules
+        env:
+          MODE: ${{ matrix.mode }}
+        run: |
+          mkdir -p gpu-results
+          set -o pipefail
+          docker run --rm -v "$PWD:/src:ro" quay.io/fedora/fedora:44 bash -c \
+            'dnf install -y python3 dnf5-plugins kmod dracut && python3 /src/tests/fedora-gpu.py "$1"' _ "$MODE" \
+            2>&1 | tee "gpu-results/$MODE.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gpu-${{ matrix.mode }}
+          path: gpu-results/
