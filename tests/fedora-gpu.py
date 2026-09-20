@@ -17,6 +17,12 @@ class Adapter:
             args.pop(0)
         if args[:3] == ['dnf', 'install', 'akmods'] or args[:2] == ['dnf', 'install']:
             args.insert(2, '-y')
+        if args[:2] == ['mokutil', '--test-key']:
+            print('SIMULATED: firmware already trusts the locally generated certificate', flush=True)
+            return subprocess.CompletedProcess(args, 0, '')
+        if args[0] == 'dracut':
+            # Container overlay filesystems have no bootable host root device.
+            args.insert(1, '--no-hostonly')
         print('RUN', args, flush=True)
         return subprocess.run(args, text=True, capture_output=capture, check=check)
 
@@ -34,7 +40,7 @@ mode = sys.argv[1]
 card = dict(pci='0000:01:00.0', vendor='NVIDIA', device='1b80' if mode == 'legacy' else '2684',
             subvendor='10de', subdevice='0000', driver='', boot_display=True)
 cards = [card] if mode != 'mesa' else [card | dict(vendor='AMD'), card | dict(vendor='Intel', pci='0000:00:02.0')]
-with patch.object(gpu, 'detect', return_value=cards), patch.object(gpu, 'secure_boot', return_value='disabled'):
+with patch.object(gpu, 'detect', return_value=cards), patch.object(gpu, 'secure_boot', return_value='enabled' if mode == 'current' else 'disabled'):
     gpu.setup(Adapter(), gaming=True, nvidia=mode != 'mesa')
 if mode == 'mesa':
     subprocess.run(['rpm', '-q', *gpu.mesa_packages(cards, True)], check=True)
