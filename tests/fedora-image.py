@@ -22,6 +22,12 @@ try:
         subprocess.run(command, check=True)
         complete = home / '.local/state/omadora/image-user.json'
         assert complete.is_file()
+        metadata = home / '.local/state/omadora/installation.json'
+        installation = json.loads(metadata.read_text())
+        assert installation['status'] == 'installed'
+        assert installation['origin'] == 'offline-image'
+        assert Path(installation['backup']).is_dir()
+        assert installation['upstream'] == json.loads(Path('/usr/local/share/omadora/upstream.lock.json').read_text())
         assert (home / '.local/state/omarchy/current/background').resolve().name == 'Nepal_5160x2160.png'
         for parent in (home / '.config', home / '.local'):
             assert all(path.lstat().st_uid == user.pw_uid for path in parent.rglob('*'))
@@ -34,6 +40,7 @@ try:
         subprocess.run(command, check=True)
         assert bindings.read_text() == before
         assert complete.read_text() == first
+        assert json.loads(metadata.read_text()) == installation
     print('PASS: new image user gets Nepal/config/fonts/toolkit palette; second login preserves personal edits.')
 finally:
     marker.unlink()

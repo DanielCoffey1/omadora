@@ -20,6 +20,8 @@ def initialize():
         backup = home / '.local/state/omadora/backups' / ('image-first-login-' + a.timestamp())
         a.backup_user(home, backup)
         a.desktop_settings('save', backup)
+        metadata = complete.parent / 'installation.json'
+        created_metadata = False
         try:
             for name in a.CONFIGS:
                 dest = home / '.config' / name
@@ -40,8 +42,18 @@ def initialize():
                        PATH=f'{a.PREFIX}/bin:{a.PREFIX}/upstream/bin:' + os.environ['PATH'])
             a.run(a.PREFIX / 'bin/omadora', 'wallpaper', 'apply', 'Nepal_5160x2160.png', '--headless', env=env)
             a.run('Hyprland', '--verify-config', '--config', home / '.config/hypr/hyprland.lua', env=env)
-            a.write(complete, json.dumps({'image': json.loads(marker.read_text()), 'backup': str(backup)}))
+            image = json.loads(marker.read_text())
+            if not metadata.exists():
+                a.lifecycle().atomic_json(metadata, {
+                    'backup': str(backup), 'upstream': a.read_json(a.PREFIX / 'upstream.lock.json'),
+                    'revision': image.get('revision') or a.lifecycle().revision(a.PREFIX),
+                    'status': 'installed', 'origin': 'offline-image',
+                })
+                created_metadata = True
+            a.lifecycle().atomic_json(complete, {'image': image, 'backup': str(backup)})
         except BaseException:
+            if created_metadata:
+                metadata.unlink(missing_ok=True)
             a.restore_user(home, backup)
             a.desktop_settings('restore', backup)
             raise
