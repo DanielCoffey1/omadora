@@ -16,7 +16,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '0.3.0-alpha'
+VERSION = '0.3.1-alpha'
 RELEASE_REF = 'v' + VERSION
 PREFIX = Path('/usr/local/share/omadora')
 COPR = 'nett00n/hyprland'
@@ -651,7 +651,7 @@ def install(dry_run=False):
         graphics = omadora_gpu.detect()
         print(json.dumps({'target': 'Fedora Workstation 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
                           'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics), 'prefix': str(PREFIX),
-                          'graphics': graphics, 'nvidia_driver_automatic': False,
+                          'graphics': graphics, 'nvidia_driver_automatic': any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(graphics)),
                           'optional_apps_preinstalled': [], 'gnome_removed': False}, indent=2))
         return
     return lifecycle().perform(sys.modules[__name__], 'install')
@@ -665,8 +665,6 @@ def prepare_runtime(temp):
     import omadora_gpu
     gpus = omadora_gpu.detect()
     run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus))
-    if any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(gpus)):
-        print('NVIDIA detected: after installation, stay in GNOME and run omadora gpu setup --nvidia --gaming. Driver compatibility and Secure Boot enrollment are checked separately.', flush=True)
     # Hyprland initializes its logger before processing --version and needs
     # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
     probe_env = os.environ.copy()
@@ -703,6 +701,8 @@ def _install():
         fetch_upstream(temp / 'source')
         stage = assemble(temp / 'source', temp / 'stage')
         probe_env = prepare_runtime(temp)
+        import omadora_gpu
+        nvidia_installed = omadora_gpu.install_detected(sys.modules[__name__])
         home = Path.home()
         transaction = lifecycle().prepare(sys.modules[__name__], 'install')
         lifecycle().root(sys.modules[__name__], 'deploy', transaction['id'], stage)
@@ -740,7 +740,10 @@ def _install():
         lifecycle().root(sys.modules[__name__], 'activate', transaction['id'])
         run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
         lifecycle().commit(sys.modules[__name__], transaction)
-    print('Installed. Log out and select Omadora at the GDM gear menu. GNOME remains available.')
+    if nvidia_installed:
+        print('Installed. Reboot to activate the NVIDIA driver, then select Omadora at the GDM gear menu. GNOME remains available.')
+    else:
+        print('Installed. Log out and select Omadora at the GDM gear menu. GNOME remains available.')
 
 
 def installed(app):

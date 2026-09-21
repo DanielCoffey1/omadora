@@ -127,3 +127,33 @@ class GPU(unittest.TestCase):
         with patch.object(gpu, 'detect', return_value=[card('AMD', driver='amdgpu'), card('Intel', driver='xe', pci='0000:02:00.0')]):
             with self.assertRaises(ValueError):
                 gpu.launch(['game'])
+
+
+class AutomaticNVIDIA(unittest.TestCase):
+    def test_fresh_install_selects_only_managed_nvidia(self):
+        for cards, expected in (([card()], True), ([card('AMD')], False),
+                                ([card(driver='vfio-pci')], False), ([], False)):
+            with self.subTest(cards=cards), patch.object(gpu, 'detect', return_value=cards), patch.object(gpu, 'setup') as setup:
+                setup.return_value = None
+                adapter = Mock()
+                self.assertEqual(gpu.install_detected(adapter), expected)
+                if expected:
+                    setup.assert_called_once_with(adapter, gaming=True, nvidia=True)
+                else:
+                    setup.assert_not_called()
+
+    def test_pending_enrollment_or_driver_failure_stops_fresh_install(self):
+        with patch.object(gpu, 'detect', return_value=[card()]), patch.object(gpu, 'setup') as setup:
+            setup.return_value = 3
+            with self.assertRaisesRegex(ValueError, 'rerun the same Omadora installer'):
+                gpu.install_detected(Mock())
+            setup.side_effect = subprocess.CalledProcessError(1, ['akmods'])
+            with self.assertRaises(subprocess.CalledProcessError):
+                gpu.install_detected(Mock())
+
+    def test_setup_precedes_deployment_and_is_not_in_upgrade_preparation(self):
+        import inspect
+        import omadora
+        source = inspect.getsource(omadora._install)
+        self.assertLess(source.index('omadora_gpu.install_detected'), source.index('lifecycle().prepare'))
+        self.assertNotIn('install_detected', inspect.getsource(omadora.prepare_runtime))

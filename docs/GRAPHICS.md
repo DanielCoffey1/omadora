@@ -12,9 +12,15 @@ the matching vendor firmware package are present. Fedora supplies the kernel
 drivers; Omadora does not install AMD's proprietary stack. Unknown/virtual
 devices and GPUs bound to vfio-pci are left alone.
 
-NVIDIA detection prints the next command to run from GNOME before starting
-Omadora. NVIDIA replacement is a separate explicit setup operation because
-driver compatibility and firmware enrollment need checking.
+NVIDIA detection automatically runs verified driver setup, including matching
+32-bit gaming libraries, before deploying the desktop. Compatibility checks,
+Secure Boot checks and module builds must succeed. If key enrollment is needed,
+choose an enrollment password, reboot and approve Enroll MOK, then rerun the
+same installer command from GNOME/TTY. No desktop deployment occurs until this
+step is complete. Reboot after successful installation to activate the driver.
+Unsupported GPUs and conflicting driver installations stop with an explanation.
+Upgrades do not automatically replace graphics drivers; existing installations
+can use the explicit setup command below.
 
 ## Existing installations and gaming libraries
 
