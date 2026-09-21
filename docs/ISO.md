@@ -6,12 +6,19 @@ command-line installer remains the published release.
 
 ## Intended installation flow
 
-1. Write `Omadora-44-x86_64.iso` to an 8 GB or larger USB drive.
+1. Open [Fedora Media Writer](https://github.com/FedoraQt/MediaWriter), choose the
+   downloaded `Omadora-44-x86_64.iso`, and write it to an 8 GB or larger USB drive.
+   Writing the image erases that USB drive.
 2. Boot the USB and select **Install Omadora**.
 3. Choose language, the destination disk and storage/encryption settings.
 4. Create your account and password, review the disk changes, and install.
 5. Reboot without the USB and sign in. Omadora initializes its configuration
    and Nepal wallpaper automatically on the first login.
+
+There is no command to paste after installation. The account created in the
+wizard opens Omadora by default. Once on the desktop, press **Super + Space**
+for apps, **Super + K** for keybindings, or use the Omadora menu to browse,
+add and remove wallpapers.
 
 The ISO contains the OS, desktop, pywal16, previews and all 332 full-size
 wallpapers. Installation and wallpaper selection do not require internet.
