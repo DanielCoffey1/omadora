@@ -32,6 +32,7 @@ serial = socket.socket(socket.AF_UNIX)
 serial.settimeout(2)
 serial.connect(str(VM / 'iso-serial.sock'))
 shell_ready = threading.Event()
+boot_menu = threading.Event()
 key = shlex.quote((VM / 'key.pub').read_text().strip())
 ssh_service = 'anaconda-sshd' if os.environ.get('OMADORA_CUSTOM_ISO') else 'sshd'
 command = (f"if [ ! -e /etc/initrd-release ]; then mkdir -p /root/.ssh; printf '%s\\n' {key} >/root/.ssh/authorized_keys; "
@@ -49,7 +50,10 @@ def drain_serial():
                 if not data:
                     return
                 log.write(data); log.flush()
-                recent = (recent + data)[-8192:]
+                recent += data
+                if b'Install Omadora' in recent:
+                    boot_menu.set()
+                recent = recent[-8192:]
                 # USB boots pass through GRUB first. Sending our shell script
                 # there interrupts its countdown and opens its command prompt.
                 if re.search(rb'(?:sh-[0-9.]+|\[root@[^\r\n]+\])#\s', recent):
@@ -62,6 +66,27 @@ def drain_serial():
 
 threading.Thread(target=drain_serial, daemon=True).start()
 if os.environ.get('OMADORA_CUSTOM_ISO'):
+    assert boot_menu.wait(90), 'Omadora USB boot menu did not appear'
+    # Follow the documented first entry instead of waiting a minute for the
+    # alternate media-check entry. These are real keyboard events in GRUB.
+    time.sleep(1)
+    with socket.socket(socket.AF_UNIX) as qmp:
+        qmp.connect(str(VM / 'iso-qmp.sock'))
+        qmp.settimeout(10)
+        stream = qmp.makefile('rwb')
+        stream.readline()
+        commands = [{'execute': 'qmp_capabilities'}] + [
+            {'execute': 'send-key', 'arguments': {'keys': [{'type': 'qcode', 'data': key}], 'hold-time': 100}}
+            for key in ('up', 'ret')]
+        for action in commands:
+            stream.write((json.dumps(action) + '\n').encode()); stream.flush()
+            while True:
+                response = json.loads(stream.readline())
+                assert 'error' not in response, response
+                if 'return' in response:
+                    break
+            time.sleep(.2)
+    print('Selected Install Omadora from the USB boot menu.', flush=True)
     assert shell_ready.wait(300), 'Installer debug shell prompt did not appear after USB boot'
     deadline = time.monotonic() + 180
 while time.monotonic() < deadline:
