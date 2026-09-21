@@ -12,11 +12,9 @@ the matching vendor firmware package are present. Fedora supplies the kernel
 drivers; Omadora does not install AMD's proprietary stack. Unknown/virtual
 devices and GPUs bound to vfio-pci are left alone.
 
-NVIDIA drivers are not installed automatically. Automatic installation from
-v0.3.1-alpha was reverted after a G14 laptop report of severe display lag and
-login failure. The cause is not yet diagnosed. Explicit NVIDIA setup remains
-available below, but successful container builds do not certify physical hardware.
-An Omadora update does not uninstall NVIDIA packages already installed.
+NVIDIA detection prints the next command to run from GNOME before starting
+Omadora. NVIDIA replacement is a separate explicit setup operation because
+driver compatibility and firmware enrollment need checking.
 
 ## Existing installations and gaming libraries
 

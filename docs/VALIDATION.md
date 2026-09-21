@@ -2,45 +2,14 @@
 
 ## Release defaults
 
-The current bootstrap and adapter default to `v0.3.1-alpha`, which includes
+The current bootstrap and adapter default to `v0.2.2-alpha`, which includes
 all fixes and themed application logos described below. See the
-[release notes](releases/v0.3.1-alpha.md). The original `v0.1.0-alpha` tag and
+[release notes](releases/v0.2.2-alpha.md). The original `v0.1.0-alpha` tag and
 its bootstrap remain unchanged. Existing installations must explicitly run
-`omadora upgrade --ref v0.3.1-alpha` from GNOME or a TTY to move to this release.
+`omadora upgrade --ref v0.2.2-alpha` from GNOME or a TTY to move to this release.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
-
-Automatic NVIDIA installation passes [73 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35551055072)
-and [Fedora installation/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35551055057)
-at `b3eff20`. The first integration attempt hit a COPR HTTP 503 downloading
-Hyprsunset; the unchanged rerun passed. [All three GPU package jobs](https://github.com/DanielCoffey1/omadora/actions/runs/35551005407)
-passed at `298ddd9`, exercising the automatic entry point for both current and
-580xx NVIDIA branches, including gaming libraries, module builds and initramfs.
-The later `b3eff20` change routes pending Secure Boot password input to the
-terminal; its source tests check that routing. Firmware enrollment and PCI IDs
-remain simulated in containers, and physical GPU behavior remains unverified.
-
-Graphics setup passes [70 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35545467488)
-at `47019bb`, [Fedora install/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35545292134)
-and [all three GPU package jobs](https://github.com/DanielCoffey1/omadora/actions/runs/35545292043)
-at `415b724`. The later commit only improves per-process GPU selection and its
-unit tests, avoiding ambiguous boot-display assumptions on MUX laptops.
-AMD/Intel 64/32-bit libraries and firmware installed successfully. Current
-NVIDIA 615.71.09 and 580xx 580.178.04 packages, including 32-bit libraries,
-installed; both akmods built for Fedora kernel 7.2.5-200.fc44.x86_64, passed
-modinfo checks and generated initramfs. The current-driver job also generated
-an akmods signing certificate and verified a nonempty module signer.
-PCI IDs and firmware enrollment state are simulated in these disposable
-containers. Initramfs is non-host-only because a container has no bootable
-root disk. These are not physical rendering, firmware approval, suspend,
-external-monitor or game-performance results. The 580xx package build does
-not certify closed-module behavior on a physical Pascal/Maxwell GPU.
-An earlier run caught incomplete version/release/architecture specs for the
-NVIDIA multilib packages; the corrected specs passed both branch jobs.
-See [graphics setup](GRAPHICS.md) for commands, unsupported hardware/provider
-cases, Secure Boot steps and the distinction from desktop rollback.
-
 
 The interactive keybindings fix passes [59 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35467969723),
 [Fedora install/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35467895020),

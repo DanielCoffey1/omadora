@@ -16,7 +16,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '0.3.2-alpha'
+VERSION = '0.3.0-alpha'
 RELEASE_REF = 'v' + VERSION
 PREFIX = Path('/usr/local/share/omadora')
 COPR = 'nett00n/hyprland'
@@ -31,10 +31,10 @@ UNPORTED = ('omarchy-install-', 'omarchy-setup-', 'omarchy-provision-',
             'omarchy-refresh-', 'omarchy-pkg-', 'omarchy-theme-set-browser')
 
 
-def run(*argv, capture=False, check=True, env=None, stdin=None):
+def run(*argv, capture=False, check=True, env=None):
     result = subprocess.run([str(a) for a in argv], check=False, text=True,
                             stdout=subprocess.PIPE if capture else None,
-                            stderr=subprocess.PIPE if capture else None, env=env, stdin=stdin)
+                            stderr=subprocess.PIPE if capture else None, env=env)
     if check and result.returncode:
         if capture:
             print(result.stdout or '', end='', file=sys.stderr)
@@ -665,6 +665,8 @@ def prepare_runtime(temp):
     import omadora_gpu
     gpus = omadora_gpu.detect()
     run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus))
+    if any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(gpus)):
+        print('NVIDIA detected: after installation, stay in GNOME and run omadora gpu setup --nvidia --gaming. Driver compatibility and Secure Boot enrollment are checked separately.', flush=True)
     # Hyprland initializes its logger before processing --version and needs
     # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
     probe_env = os.environ.copy()

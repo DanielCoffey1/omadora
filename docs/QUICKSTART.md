@@ -1,18 +1,18 @@
-# Omadora v0.3.2-alpha quick start
+# Omadora v0.3.0-alpha quick start
 
 Target: fresh Fedora Workstation **44, x86_64**, non-Atomic. This is an alpha
 release of the minimal Omarchy 4.0.4 desktop port. GNOME and Fedora's existing
-apps remain available. See [known limits](releases/v0.3.2-alpha.md).
+apps remain available. See [known limits](releases/v0.3.0-alpha.md).
 
 ## Install
 
 From a terminal as your regular Fedora user:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.3.2-alpha/boot.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.3.0-alpha/boot.sh | bash
 ```
 
-The bootstrap defaults to fetching `v0.3.2-alpha`, not `main`. Leave
+The bootstrap defaults to fetching `v0.3.0-alpha`, not `main`. Leave
 `OMADORA_REF` unset for this release; it is an explicit source override for
 developers. The installer requests sudo for packages/system files, enables the
 documented desktop COPRs and backs up managed user configuration. Save the
@@ -25,9 +25,8 @@ desktop's **Install** menu for optional apps, including Gaming and AI.
 ## Graphics and gaming
 
 Fresh installs ensure AMD/Intel Mesa and firmware packages for detected hardware.
-NVIDIA driver installation is manual. Automatic setup was reverted after a G14
-report of severe display lag and login failure; the cause remains unconfirmed.
-Upgrading Omadora does not remove drivers already installed on the system.
+For NVIDIA, remain in GNOME and run `omadora gpu setup --nvidia --gaming` before
+starting Omadora. Secure Boot enrollment may require a reboot and rerunning setup.
 **Setup → Graphics** provides status and optional gaming-library setup. See
 [GPU setup, supported branches and hybrid laptops](GRAPHICS.md).
 
@@ -38,7 +37,7 @@ Fedora packages: `omadora update`. Optional user Flatpaks: `flatpak update --use
 For Omadora itself, log out of all Hyprland sessions and enter GNOME or a TTY:
 
 ```bash
-omadora upgrade --ref v0.3.2-alpha
+omadora upgrade --ref v0.3.0-alpha
 ```
 
 This also upgrades an earlier development installation to the alpha. On this
@@ -49,7 +48,7 @@ is preserved; new default configuration is not automatically merged.
 If the old installation lacks `upgrade`, use:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.3.2-alpha/boot.sh | bash -s -- upgrade
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.3.0-alpha/boot.sh | bash -s -- upgrade
 ```
 
 ## Keybindings guide

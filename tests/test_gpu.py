@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -73,15 +73,10 @@ class GPU(unittest.TestCase):
         a.run.return_value = subprocess.CompletedProcess([], 1, '')
         with patch.object(gpu, 'detect', return_value=[card()]), \
              patch.object(gpu, 'candidate', return_value=('', '615.71.09')), \
-             patch.object(gpu, 'secure_boot', return_value='enabled'), \
-             patch('builtins.open', mock_open()) as terminal:
+             patch.object(gpu, 'secure_boot', return_value='enabled'):
             self.assertEqual(gpu.setup(a, nvidia=True), 3)
         calls = [c.args for c in a.run.call_args_list]
         self.assertIn(('sudo', 'mokutil', '--import', gpu.CERT), calls)
-        enrollment = next(c for c in a.run.call_args_list if '--import' in c.args)
-        self.assertIs(enrollment.kwargs['stdin'], terminal.return_value)
-        terminal.assert_called_once_with('/dev/tty', 'r')
-        self.assertTrue(all('-y' in c for c in calls if c[:3] == ('sudo', 'dnf', 'install')))
         self.assertFalse(any(any(str(x).startswith('akmod-nvidia-') for x in c) for c in calls))
         self.assertFalse(any('dracut' in c for c in calls))
 
@@ -132,25 +127,3 @@ class GPU(unittest.TestCase):
         with patch.object(gpu, 'detect', return_value=[card('AMD', driver='amdgpu'), card('Intel', driver='xe', pci='0000:02:00.0')]):
             with self.assertRaises(ValueError):
                 gpu.launch(['game'])
-
-
-class ManualNVIDIA(unittest.TestCase):
-    def test_nvidia_install_preview_keeps_drivers_manual(self):
-        import contextlib
-        import io
-        import json
-        import omadora
-        output = io.StringIO()
-        with patch.object(gpu, 'detect', return_value=[card()]), patch.object(gpu, 'setup') as setup, contextlib.redirect_stdout(output):
-            omadora.install(dry_run=True)
-        self.assertFalse(json.loads(output.getvalue())['nvidia_driver_automatic'])
-        setup.assert_not_called()
-
-    def test_runtime_preparation_does_not_install_nvidia_drivers(self):
-        import omadora
-        adapter_run = Mock(return_value=subprocess.CompletedProcess([], 0, 'Hyprland 0.55.0'))
-        with tempfile.TemporaryDirectory() as tmp, patch.object(gpu, 'detect', return_value=[card()]), patch.object(gpu, 'setup') as setup, patch.object(omadora, 'run', adapter_run), patch.object(omadora.shutil, 'which', return_value='/usr/bin/tool'):
-            omadora.prepare_runtime(Path(tmp))
-        setup.assert_not_called()
-        arguments = [str(arg) for call in adapter_run.call_args_list for arg in call.args]
-        self.assertFalse(any('nvidia' in arg.lower() or 'rpmfusion' in arg.lower() for arg in arguments))
