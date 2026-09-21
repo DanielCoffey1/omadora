@@ -37,6 +37,8 @@ configuration runs as the signed-in user without sudo or network access.
 Run the **Omadora offline ISO** GitHub Actions workflow. It builds in a disposable
 Fedora 44 container. Lorax composes a Fedora installer runtime with the modern
 Anaconda Web UI, which is absent from the stock Everything netinstaller ISO.
+The embedded image source and post-install setup use Anaconda's
+`interactive-defaults.ks`; they do not activate automated Kickstart mode.
 The runtime is combined with a complete root filesystem with pinned
 Omadora/Omarchy sources. RPMs come from Fedora and
 the same documented COPRs as the normal installer. The build records the exact

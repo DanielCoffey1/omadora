@@ -14,13 +14,18 @@ ksvalidator -v F44 /build/omadora.ks
 cp /out/installer-base/SHA256SUMS /out/installer-base-SHA256SUMS.txt
 mkdir -p /build/updates/etc/anaconda/profile.d
 cp /src/iso/omadora.conf /build/updates/etc/anaconda/profile.d/
+# Anaconda loads this file as interactive defaults. Passing --ks to mkksiso
+# instead enables automatedInstall, which the modern Web UI cannot handle.
+# Leave storage and account selection entirely to the wizard.
+mkdir -p /build/updates/usr/share/anaconda
+cp /build/omadora.ks /build/updates/usr/share/anaconda/interactive-defaults.ks
 printf '[Main]\nProduct=Omadora\nVersion=44\nIsFinal=False\n' >/build/updates/.buildstamp
 mkdir -p /build/images
 (cd /build/updates && find . -print0 | cpio --null -o -H newc | gzip -9) >/build/images/updates.img
 # Auto-load customization from the already mounted installation media. An
 # explicit inst.updates=LABEL path can select the overlapping USB partition
 # after Anaconda has mounted the whole ISO device, which Linux refuses to open.
-mkksiso --ks /build/omadora.ks --add /out/payload/omadora-root.tar.xz --add /build/images \
+mkksiso --add /out/payload/omadora-root.tar.xz --add /build/images \
   --volid OMADORA_44 --cmdline 'inst.graphical inst.profile=omadora' \
   --replace 'Omadora 44' 'Omadora' \
   /out/installer-base/boot.iso /out/Omadora-44-x86_64.iso
