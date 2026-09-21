@@ -17,6 +17,8 @@ The ISO contains the OS, desktop, pywal16, previews and all 332 full-size
 wallpapers. Installation and wallpaper selection do not require internet.
 Downloading new apps or updates does require internet. GNOME is available as a
 fallback session. Proprietary NVIDIA drivers remain an explicit optional setup.
+Full-size image data lives separately from the versioned desktop runtime, so
+ordinary desktop upgrades preserve the offline wallpaper collection.
 
 The production installer has no preselected disk, unattended partitioning,
 default user/password, autologin or debug access. Anaconda handles storage,

@@ -25,6 +25,11 @@ class OfflineImage(unittest.TestCase):
             lib = wall.Library(Path(tmp) / 'home', root)
             with patch.object(wall, 'urlopen', side_effect=AssertionError('Network used')):
                 self.assertEqual(lib.file(row), image)
+                shared = root.parent / 'omadora-wallpapers' / digest
+                shared.parent.mkdir()
+                image.rename(shared)
+                image = shared
+                self.assertEqual(lib.file(row), shared)
                 image.write_bytes(b'corruption')
                 with self.assertRaisesRegex(ValueError, 'damaged'):
                     lib.file(row)

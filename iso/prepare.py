@@ -33,7 +33,7 @@ for source, target in [('omadora.desktop', 'usr/share/wayland-sessions/omadora.d
 
 # The ISO includes every original so changing wallpaper never requires networking.
 catalog = json.loads((prefix / 'assets/wallpapers/catalog.json').read_text())
-originals = prefix / 'assets/wallpapers/originals'
+originals = prefix.parent / 'omadora-wallpapers'
 originals.mkdir()
 def download(row):
     with urlopen(catalog['base_url'] + row['asset'], timeout=90) as response:

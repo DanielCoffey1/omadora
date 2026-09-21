@@ -95,6 +95,9 @@ class Library:
             path = self.assets / DEFAULT
         elif (self.assets / 'originals' / row['id']).is_file():
             path = self.assets / 'originals' / row['id']
+        elif (self.root.parent / 'omadora-wallpapers' / row['id']).is_file():
+            # Image-provided data survives replacement of the versioned runtime.
+            path = self.root.parent / 'omadora-wallpapers' / row['id']
         else:
             self.cache.mkdir(parents=True, exist_ok=True)
             path = self.cache / row['id']
