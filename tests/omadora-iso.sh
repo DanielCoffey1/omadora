@@ -13,7 +13,7 @@ Xvfb :98 -screen 0 1920x1080x24 >vm-results/iso-xvfb.log 2>&1 &
 xvfb_pid=$!
 export DISPLAY=:98 LIBGL_ALWAYS_SOFTWARE=1
 for ((i=0; i<100; i++)); do xdpyinfo >/dev/null 2>&1 && break; sleep .1; done
-common=(-accel "$accel" -cpu "$cpu" -m 6144 -smp 2
+common=(-accel "$accel" -cpu "$cpu" -m 4096 -smp 2
   -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd
   -drive "if=pflash,format=raw,file=$vm_dir/OVMF_VARS.fd"
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2"
@@ -21,7 +21,9 @@ common=(-accel "$accel" -cpu "$cpu" -m 6144 -smp 2
   -device qemu-xhci,id=omadora-usb -device usb-tablet,bus=omadora-usb.0
   -netdev user,id=net0,restrict=on,hostfwd=tcp:127.0.0.1:2222-:22
   -device virtio-net-pci,netdev=net0)
-qemu-system-x86_64 "${common[@]}" -cdrom "$iso" -boot order=d \
+qemu-system-x86_64 "${common[@]}" \
+  -drive "if=none,file=$iso,format=raw,readonly=on,id=installer" \
+  -device usb-storage,bus=omadora-usb.0,drive=installer,bootindex=1 \
   -serial "unix:$vm_dir/iso-serial.sock,server=on,wait=off" \
   -qmp "unix:$vm_dir/iso-qmp.sock,server=on,wait=off" >vm-results/iso-qemu.log 2>&1 &
 qemu_pid=$!
@@ -29,6 +31,20 @@ ssh_options=(-i "$vm_dir/key" -p 2222 -o StrictHostKeyChecking=no -o UserKnownHo
 cleanup() {
   status=$?
   ssh "${ssh_options[@]}" root@127.0.0.1 'journalctl -b --no-pager; cat /tmp/anaconda.log /tmp/packaging.log /tmp/program.log 2>/dev/null' >vm-results/iso-guest.log 2>&1 || true
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager' >vm-results/installed-journal.log 2>&1 || true
+  python3 - <<'PY' || true
+import json, socket
+from pathlib import Path
+path = Path('/tmp/omadora-vm/qmp.sock')
+if not path.exists(): path = Path('/tmp/omadora-vm/iso-qmp.sock')
+s = socket.socket(socket.AF_UNIX); s.settimeout(5); s.connect(str(path))
+f = s.makefile('rwb'); f.readline()
+for command in ({'execute': 'qmp_capabilities'}, {'execute': 'screendump', 'arguments': {'filename': str(Path('vm-results/iso-console.png').resolve()), 'format': 'png'}}):
+    f.write((json.dumps(command)+'\n').encode()); f.flush()
+    while True:
+        response = json.loads(f.readline())
+        if 'return' in response or 'error' in response: break
+PY
   scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 \
     omadora-test@127.0.0.1:/tmp/omadora-vm-results/. vm-results/ 2>/dev/null || true
   kill "$qemu_pid" "$xvfb_pid" 2>/dev/null || true
