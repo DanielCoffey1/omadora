@@ -91,7 +91,10 @@ if os.environ.get('OMADORA_CUSTOM_ISO'):
     deadline = time.monotonic() + 180
 while time.monotonic() < deadline:
     # Pace input to the emulated UART, including while boot services are busy.
-    payload = ('\n' + command + '\n').encode()
+    # Switching from initramfs to the installer can interrupt a line midway.
+    # Cancel that unfinished input before retrying in the new debug shell.
+    prefix = '\x03\n' if os.environ.get('OMADORA_CUSTOM_ISO') else '\n'
+    payload = (prefix + command + '\n').encode()
     for offset in range(0, len(payload), 32):
         serial.sendall(payload[offset:offset + 32])
         time.sleep(.02)
