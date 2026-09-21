@@ -54,7 +54,8 @@ PY
 trap cleanup EXIT
 OMADORA_CUSTOM_ISO=1 python3 tests/fedora-workstation-install.py
 # Test access and display dimensions only. Account/configuration comes from ISO.
-scp -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null tests root@127.0.0.1:/mnt/sysroot/home/omadora-test/source-tests
+# Lorax retains scp but removes sftp-server from the installer runtime.
+scp -O -r -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null tests root@127.0.0.1:/mnt/sysroot/home/omadora-test/source-tests
 ssh "${ssh_options[@]}" root@127.0.0.1 'bash -s' <<'GUEST'
 set -eu
 target=/mnt/sysroot
