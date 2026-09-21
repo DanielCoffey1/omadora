@@ -16,7 +16,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '0.4.0-alpha'
+VERSION = '0.5.0-alpha'
 RELEASE_REF = 'v' + VERSION
 PREFIX = Path('/usr/local/share/omadora')
 COPR = 'nett00n/hyprland'
