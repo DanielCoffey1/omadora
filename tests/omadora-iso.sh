@@ -17,11 +17,12 @@ common=(-accel "$accel" -cpu "$cpu" -m 4096 -smp 2
   -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd
   -drive "if=pflash,format=raw,file=$vm_dir/OVMF_VARS.fd"
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2"
-  -device virtio-vga-gl -display gtk,gl=on
   -device qemu-xhci,id=omadora-usb -device usb-tablet,bus=omadora-usb.0
   -netdev user,id=net0,restrict=on,hostfwd=tcp:127.0.0.1:2222-:22
   -device virtio-net-pci,netdev=net0)
-qemu-system-x86_64 "${common[@]}" \
+# The installer compositor uses guest software rendering. Keeping it off the
+# host virgl path also allows QMP diagnostics if its graphics startup stalls.
+qemu-system-x86_64 "${common[@]}" -device virtio-vga -display gtk \
   -drive "if=none,file=$iso,format=raw,readonly=on,id=installer" \
   -device usb-storage,bus=omadora-usb.0,drive=installer,bootindex=1 \
   -serial "unix:$vm_dir/iso-serial.sock,server=on,wait=off" \
@@ -73,7 +74,7 @@ GUEST
 for ((i=0; i<90; i++)); do kill -0 "$qemu_pid" 2>/dev/null || break; sleep 1; done
 kill -0 "$qemu_pid" 2>/dev/null && exit 1
 # No CD or injected kernel/initrd: boot only the installed disk through UEFI.
-qemu-system-x86_64 "${common[@]}" -boot order=c \
+qemu-system-x86_64 "${common[@]}" -device virtio-vga-gl -display gtk,gl=on -boot order=c \
   -serial "file:$(pwd)/vm-results/installed-serial.log" \
   -qmp "unix:$vm_dir/qmp.sock,server=on,wait=off" >vm-results/installed-qemu.log 2>&1 &
 qemu_pid=$!
