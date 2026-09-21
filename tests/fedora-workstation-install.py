@@ -32,6 +32,7 @@ while not (VM / 'iso-serial.sock').exists():
 serial = socket.socket(socket.AF_UNIX)
 serial.settimeout(2)
 serial.connect(str(VM / 'iso-serial.sock'))
+shell_ready = threading.Event()
 key = base64.b64encode((VM / 'key.pub').read_bytes()).decode()
 command = (f"if [ ! -e /etc/initrd-release ]; then mkdir -p /root/.ssh; echo {key} | base64 -d >/root/.ssh/authorized_keys; "
            "chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys; "
@@ -40,12 +41,18 @@ def drain_serial():
     # Drain continuously: pausing reads around slow SSH probes backpressures
     # QEMU's emulated UART and can stall each kernel/systemd console write.
     with (OUT / 'iso-console.log').open('wb') as log:
+        recent = b''
         while True:
             try:
                 data = serial.recv(65536)
                 if not data:
                     return
                 log.write(data); log.flush()
+                recent = (recent + data)[-8192:]
+                # USB boots pass through GRUB first. Sending our shell script
+                # there interrupts its countdown and opens its command prompt.
+                if re.search(rb'(?:sh-[0-9.]+|\[root@[^\r\n]+\])#\s', recent):
+                    shell_ready.set()
             except socket.timeout:
                 continue
             except OSError:
@@ -53,6 +60,9 @@ def drain_serial():
 
 
 threading.Thread(target=drain_serial, daemon=True).start()
+if os.environ.get('OMADORA_CUSTOM_ISO'):
+    assert shell_ready.wait(300), 'Installer debug shell prompt did not appear after USB boot'
+    deadline = time.monotonic() + 180
 while time.monotonic() < deadline:
     # Pace input to the emulated UART, including while boot services are busy.
     payload = ('\n' + command + '\n').encode()

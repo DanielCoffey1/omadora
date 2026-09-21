@@ -23,7 +23,7 @@ printf '[Main]\nProduct=Omadora\nVersion=44\nIsFinal=False\n' >/build/updates/.b
 (cd /build/updates && find . -print0 | cpio --null -o -H newc | gzip -9) >/build/updates.img
 mkksiso --ks /build/omadora.ks --add /out/payload/omadora-root.tar.xz --updates /build/updates.img \
   --volid OMADORA_44 --cmdline 'inst.graphical inst.webui inst.profile=omadora' \
-  --replace 'Install Fedora' 'Install Omadora' \
+  --replace 'Fedora 44' 'Omadora' \
   /build/fedora-boot.iso /out/Omadora-44-x86_64.iso
 (cd /out && sha256sum Omadora-44-x86_64.iso >SHA256SUMS)
 ls -lh /out/Omadora-44-x86_64.iso
