@@ -43,7 +43,7 @@ def test():
     v.guest('grim /tmp/omadora-vm-results/wallpaper-applied.png')
     # Confirm the compositor still accepts commands and the themed shell is alive.
     assert json.loads(v.guest('hyprctl monitors -j'))
-    assert v.guest('omarchy-shell -q shell isReady') == 'true'
+    assert v.guest('omarchy-shell -q shell ping') == 'ok'
     v.guest('omadora wallpaper apply Nepal_5160x2160.png', timeout=150)
     v.guest('grim /tmp/omadora-vm-results/wallpaper-nepal.png')
     return 'Nepal initialized; GTK wallpaper browser rendered; clicking a downloaded wallpaper regenerated colors; Nepal restored; compositor and shell remained responsive.'
