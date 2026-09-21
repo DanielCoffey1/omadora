@@ -2,14 +2,24 @@
 
 ## Release defaults
 
-The current bootstrap and adapter default to `v0.3.0-alpha`, which includes
+The current bootstrap and adapter default to `v0.3.1-alpha`, which includes
 all fixes and themed application logos described below. See the
-[release notes](releases/v0.3.0-alpha.md). The original `v0.1.0-alpha` tag and
+[release notes](releases/v0.3.1-alpha.md). The original `v0.1.0-alpha` tag and
 its bootstrap remain unchanged. Existing installations must explicitly run
-`omadora upgrade --ref v0.3.0-alpha` from GNOME or a TTY to move to this release.
+`omadora upgrade --ref v0.3.1-alpha` from GNOME or a TTY to move to this release.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
+
+Automatic NVIDIA installation passes [73 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35551055072)
+and [Fedora installation/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35551055057)
+at `b3eff20`. The first integration attempt hit a COPR HTTP 503 downloading
+Hyprsunset; the unchanged rerun passed. [All three GPU package jobs](https://github.com/DanielCoffey1/omadora/actions/runs/35551005407)
+passed at `298ddd9`, exercising the automatic entry point for both current and
+580xx NVIDIA branches, including gaming libraries, module builds and initramfs.
+The later `b3eff20` change routes pending Secure Boot password input to the
+terminal; its source tests check that routing. Firmware enrollment and PCI IDs
+remain simulated in containers, and physical GPU behavior remains unverified.
 
 Graphics setup passes [70 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35545467488)
 at `47019bb`, [Fedora install/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35545292134)
