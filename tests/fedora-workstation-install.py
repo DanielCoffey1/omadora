@@ -161,6 +161,23 @@ with sync_playwright() as pw:
                     raise
                 time.sleep(5)
         page.locator('#installation-next-btn').wait_for(state='visible', timeout=180000)
+        if os.environ.get('OMADORA_CUSTOM_ISO'):
+            # Retain the actual kiosk display as well as the tunneled browser.
+            # A working HTTP UI alone does not show that USB users see a wizard.
+            with socket.socket(socket.AF_UNIX) as screen:
+                screen.settimeout(10)
+                screen.connect('/tmp/omadora-vm/iso-qmp.sock')
+                stream = screen.makefile('rwb'); stream.readline()
+                for action in ({'execute': 'qmp_capabilities'},
+                               {'execute': 'screendump', 'arguments': {
+                                   'filename': str((OUT / 'iso-wizard-console.png').resolve()),
+                                   'format': 'png'}}):
+                    stream.write((json.dumps(action) + '\n').encode()); stream.flush()
+                    while True:
+                        response = json.loads(stream.readline())
+                        assert 'error' not in response, response
+                        if 'return' in response:
+                            break
         for step in range(20):
             time.sleep(3)
             frame = next((f for f in page.frames if f.locator('#installation-next-btn').count()), page.main_frame)
