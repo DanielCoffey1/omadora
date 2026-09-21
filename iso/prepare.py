@@ -16,7 +16,8 @@ import omadora as a
 root = Path(sys.argv[1]).resolve()
 assert root == Path('/build/root'), 'Only the disposable build root is supported'
 prefix = root / 'usr/local/share/omadora'
-subprocess.run(['chroot', str(root), 'rpm', '-q', 'amd-gpu-firmware', 'intel-gpu-firmware'], check=True)
+subprocess.run(['chroot', str(root), 'rpm', '-q', 'amd-gpu-firmware', 'intel-gpu-firmware', 'systemd-pam'], check=True)
+assert (root / 'usr/lib64/security/pam_systemd.so').is_file(), 'Desktop logins require pam_systemd'
 upstream = Path('/build/upstream')
 a.fetch_upstream(upstream)
 a.assemble(upstream, prefix)

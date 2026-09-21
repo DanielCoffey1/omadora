@@ -17,6 +17,7 @@ efibootmgr
 selinux-policy-targeted
 policycoreutils
 authselect
+systemd-pam
 shadow-utils
 sudo
 passwd
