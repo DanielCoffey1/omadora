@@ -30,7 +30,7 @@ qemu_pid=$!
 ssh_options=(-i "$vm_dir/key" -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o BatchMode=yes)
 cleanup() {
   status=$?
-  ssh "${ssh_options[@]}" root@127.0.0.1 'journalctl -b --no-pager; cat /tmp/anaconda.log /tmp/packaging.log /tmp/program.log 2>/dev/null' >vm-results/iso-guest.log 2>&1 || true
+  ssh "${ssh_options[@]}" root@127.0.0.1 'systemctl list-jobs --no-pager; systemctl status anaconda-pre anaconda anaconda-direct --no-pager; ps -eo pid,ppid,stat,wchan,args; cat /usr/lib/systemd/system/anaconda-pre.service; journalctl -b --no-pager; cat /tmp/anaconda.log /tmp/packaging.log /tmp/program.log 2>/dev/null' >vm-results/iso-guest.log 2>&1 || true
   ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo journalctl -b --no-pager' >vm-results/installed-journal.log 2>&1 || true
   python3 - <<'PY' || true
 import json, socket
