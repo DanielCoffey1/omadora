@@ -1,5 +1,4 @@
 """Drive the stock Anaconda Web UI in a disposable, loopback-only ISO VM."""
-import base64
 import json
 import os
 import re
@@ -33,10 +32,11 @@ serial = socket.socket(socket.AF_UNIX)
 serial.settimeout(2)
 serial.connect(str(VM / 'iso-serial.sock'))
 shell_ready = threading.Event()
-key = base64.b64encode((VM / 'key.pub').read_bytes()).decode()
-command = (f"if [ ! -e /etc/initrd-release ]; then mkdir -p /root/.ssh; echo {key} | base64 -d >/root/.ssh/authorized_keys; "
+key = shlex.quote((VM / 'key.pub').read_text().strip())
+command = (f"if [ ! -e /etc/initrd-release ]; then mkdir -p /root/.ssh; printf '%s\\n' {key} >/root/.ssh/authorized_keys; "
            "chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys; "
-           "restorecon -RF /root/.ssh; echo root:omadora-live-test-only | chpasswd; systemctl start sshd; echo ISO_SSH_READY; fi")
+           "restorecon -RF /root/.ssh; echo root:omadora-live-test-only | chpasswd; ssh-keygen -A; "
+           "systemctl reset-failed sshd; systemctl start sshd && echo ISO_SSH_READY || journalctl -u sshd -n 20 --no-pager; fi")
 def drain_serial():
     # Drain continuously: pausing reads around slow SSH probes backpressures
     # QEMU's emulated UART and can stall each kernel/systemd console write.
@@ -200,7 +200,7 @@ chroot "$target" rpm -qa | sort >/tmp/iso-installed-packages.txt
 {admin_check}
 {password_setup}
 install -d -m700 "$target/home/omadora-test/.ssh"
-echo {key} | base64 -d >"$target/home/omadora-test/.ssh/authorized_keys"
+printf '%s\\n' {key} >"$target/home/omadora-test/.ssh/authorized_keys"
 chmod 600 "$target/home/omadora-test/.ssh/authorized_keys"
 chroot "$target" chown -R omadora-test:omadora-test /home/omadora-test/.ssh
 printf 'omadora-test ALL=(ALL) NOPASSWD:ALL\\n' >"$target/etc/sudoers.d/omadora-test"
