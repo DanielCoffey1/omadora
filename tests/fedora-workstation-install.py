@@ -177,6 +177,8 @@ with sync_playwright() as pw:
 # existing acceptance suite, not a replacement desktop environment or kernel.
 account_setup = ('chroot "$target" id omadora-test' if os.environ.get('OMADORA_CUSTOM_ISO') else
                  'chroot "$target" id omadora-test || chroot "$target" useradd -m -G wheel omadora-test')
+admin_check = ('chroot "$target" id -nG omadora-test | tr " " "\\n" | grep -qx wheel'
+               if os.environ.get('OMADORA_CUSTOM_ISO') else '')
 password_setup = '' if os.environ.get('OMADORA_CUSTOM_ISO') else 'echo omadora-test:omadora-vm-test-only | chroot "$target" chpasswd'
 script = f'''
 set -eu
@@ -185,6 +187,7 @@ test -f "$target/etc/fedora-release"
 cat "$target/etc/os-release"
 chroot "$target" rpm -qa | sort >/tmp/iso-installed-packages.txt
 {account_setup}
+{admin_check}
 {password_setup}
 install -d -m700 "$target/home/omadora-test/.ssh"
 echo {key} | base64 -d >"$target/home/omadora-test/.ssh/authorized_keys"

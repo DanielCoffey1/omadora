@@ -82,6 +82,7 @@ for ((i=0; i<90; i++)); do
   sleep 3
 done
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'test -f ~/.local/state/omadora/image-user.json; test -d /sys/firmware/efi; getenforce | grep Enforcing; if curl -fsS --connect-timeout 3 --max-time 5 https://example.com; then exit 1; fi'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'if grep -Eq "systemd.debug_shell|inst.sshd" /proc/cmdline; then echo "Installer debug access leaked into installed boot configuration" >&2; exit 1; fi'
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
 python3 tests/fedora-vm-wallpapers.py
 echo 'PASS: offline UEFI ISO installation, installer-created account, Omadora first login, wallpaper apply/import/remove.'
