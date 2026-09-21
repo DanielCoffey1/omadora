@@ -73,7 +73,7 @@ jobs:
             set -eu
             dnf install -y lorax
             mkdir -p /out/test
-            mkksiso --cmdline "console=ttyS0,115200 systemd.debug_shell=ttyS0 inst.sshd" /out/Omadora-44-x86_64.iso /out/test/omadora-test.iso
+            mkksiso --cmdline "console=ttyS0,115200 console=tty0 systemd.debug_shell=ttyS0 inst.sshd" /out/Omadora-44-x86_64.iso /out/test/omadora-test.iso
           '
       - name: Save ISO and build evidence
         if: always() && inputs.reuse_build == ''

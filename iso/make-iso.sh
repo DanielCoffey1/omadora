@@ -34,6 +34,8 @@ xorriso -indev /out/Omadora-44-x86_64.iso -ls /images
 ls -lh /out/Omadora-44-x86_64.iso
 mkdir -p /out/test
 # Only this unshipped copy enables serial debug access for the disposable VM.
-mkksiso --cmdline 'console=ttyS0,115200 systemd.debug_shell=ttyS0 inst.sshd' \
+# Keep tty0 primary: Anaconda's pre-start logger acquires /dev/console, which
+# must not be the terminal already owned by the test debug shell.
+mkksiso --cmdline 'console=ttyS0,115200 console=tty0 systemd.debug_shell=ttyS0 inst.sshd' \
   /out/Omadora-44-x86_64.iso /out/test/omadora-test.iso
 echo 'PASS: built offline Omadora installer ISO.'

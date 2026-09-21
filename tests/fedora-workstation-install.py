@@ -33,10 +33,11 @@ serial.settimeout(2)
 serial.connect(str(VM / 'iso-serial.sock'))
 shell_ready = threading.Event()
 key = shlex.quote((VM / 'key.pub').read_text().strip())
+ssh_service = 'anaconda-sshd' if os.environ.get('OMADORA_CUSTOM_ISO') else 'sshd'
 command = (f"if [ ! -e /etc/initrd-release ]; then mkdir -p /root/.ssh; printf '%s\\n' {key} >/root/.ssh/authorized_keys; "
            "chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys; "
            "restorecon -RF /root/.ssh; echo root:omadora-live-test-only | chpasswd; ssh-keygen -A; "
-           "systemctl reset-failed sshd; systemctl start sshd && echo ISO_SSH_READY || journalctl -u sshd -n 20 --no-pager; fi")
+           f"systemctl reset-failed {ssh_service}; systemctl start {ssh_service} && echo ISO_SSH_READY || journalctl -u {ssh_service} -n 20 --no-pager; fi")
 def drain_serial():
     # Drain continuously: pausing reads around slow SSH probes backpressures
     # QEMU's emulated UART and can stall each kernel/systemd console write.
