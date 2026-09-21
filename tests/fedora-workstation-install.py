@@ -106,6 +106,15 @@ while time.monotonic() < deadline:
 else:
     raise RuntimeError('Live ISO debug-shell SSH bootstrap did not finish')
 # Keep draining while Anaconda runs so the boot console never blocks the guest.
+live_logs = []
+if os.environ.get('OMADORA_CUSTOM_ISO'):
+    # The installer can reboot when its local browser exits. Stream diagnostics
+    # off the guest immediately so that a reboot cannot erase the failure.
+    for name, command in (
+            ('iso-live-journal.log', 'journalctl -b -f --no-pager'),
+            ('iso-live-anaconda.log', 'tail -n +1 -F /tmp/anaconda.log /tmp/program.log /tmp/packaging.log')):
+        live_logs.append(subprocess.Popen(SSH + [command], stdout=(OUT / name).open('w'),
+                                          stderr=subprocess.STDOUT))
 (OUT / 'iso-baseline.log').write_text(guest('cat /etc/os-release; cat /proc/cmdline; rpm -q anaconda-core anaconda-webui; lsblk -f'))
 if os.environ.get('OMADORA_CUSTOM_ISO'):
     guest("test -f /etc/anaconda/profile.d/omadora.conf && grep -qx 'Product=Omadora' /.buildstamp")
