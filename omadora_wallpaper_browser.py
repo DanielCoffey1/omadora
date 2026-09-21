@@ -1,5 +1,9 @@
 """Searchable GTK4 wallpaper previews; file and palette work stays off the UI thread."""
 from concurrent.futures import ThreadPoolExecutor
+import os
+# Let GTK use the output's native scale instead of inheriting a forced terminal scale.
+os.environ.pop('GDK_SCALE', None)
+os.environ.pop('GDK_DPI_SCALE', None)
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, Gio, GLib
@@ -8,7 +12,7 @@ from gi.repository import Gtk, Gio, GLib
 def run(library, mode='browse'):
     class Browser(Gtk.Application):
         def __init__(self):
-            super().__init__(application_id='org.omadora.Wallpapers')
+            super().__init__(application_id='org.omadora.Wallpapers', flags=Gio.ApplicationFlags.NON_UNIQUE)
             self.pool = ThreadPoolExecutor(max_workers=1)
             self.busy = False
             self.chosen = None

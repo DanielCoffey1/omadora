@@ -91,3 +91,17 @@ class Wallpapers(unittest.TestCase):
                 with self.assertRaises(RuntimeError): lib.apply(wall.DEFAULT)
             self.assertEqual((target / 'colors.toml').read_text(), 'old palette')
             self.assertIsNone(lib.load()['selected'])
+
+    def test_late_toolkit_failure_restores_current_palette_and_selection(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(wall.Library, 'locked', contextlib.nullcontext):
+            lib = wall.Library(tmp)
+            current = Path(tmp) / '.local/state/omarchy/current'
+            current.mkdir(parents=True)
+            (current / 'theme.name').write_text('previous-theme')
+            lib.save(dict(hidden=[], added=[], selected='previous-wallpaper'))
+            def applied(*args, **kwargs):
+                (current / 'theme.name').write_text('omadora-wallpaper')
+            with patch.object(lib, 'generate', return_value=dict(background='#112233')), patch.object(wall.subprocess, 'run', side_effect=applied), patch.object(lib, 'toolkit_colors', side_effect=OSError('disk error')):
+                with self.assertRaises(OSError): lib.apply(wall.DEFAULT)
+            self.assertEqual((current / 'theme.name').read_text(), 'previous-theme')
+            self.assertEqual(lib.load()['selected'], 'previous-wallpaper')

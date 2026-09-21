@@ -12,6 +12,19 @@
 
 Omadora is not an official release of Fedora, Omarchy or any third-party application.
 
+Wallpaper colors use [pywal16](https://github.com/eylles/pywal16) 3.8.15 (MIT),
+bundled from the verified PyPI wheel recorded in `vendor/pywal16.lock.json`.
+Its license and distribution metadata are retained alongside the module.
+ImageMagick performs palette extraction; Fedora packages provide GTK4, Pillow
+and Qt6ct. No root pip installation is used.
+
+The 332 wallpapers were supplied by the project owner from their
+`aesthetic-wallpapers-main/wallpapers/images` collection. Omadora does not claim
+authorship or relicense those images under its code license. The catalog records
+original filenames and SHA-256 checksums; the wallpaper asset release holds the
+full-size originals and the repository holds generated previews plus the Nepal
+default.
+
 Optional download URL/checksum research also used
 [omacom/omarchy-pkgs at 03ef2e3](https://github.com/omacom/omarchy-pkgs/tree/03ef2e3ef7b2219fae97b1c2578a99d4cd9e3f8f).
 Arch build/install recipes are not executed. Downloaded applications and fonts

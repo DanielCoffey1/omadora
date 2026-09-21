@@ -56,6 +56,13 @@ class Library:
         self.directory = self.home / '.local/share/omadora/wallpapers'
         self.state = self.directory / 'library.json'
         self.cache = self.home / '.cache/omadora/wallpapers'
+        for relative in ('.local/share/omadora/wallpapers', '.cache/omadora/wallpapers',
+                         '.config/omarchy/themes', '.local/state/omarchy/current',
+                         '.config/gtk-3.0', '.config/gtk-4.0', '.config/qt6ct/colors'):
+            for part in [Path(relative), *Path(relative).parents]:
+                if (self.home / part).is_symlink():
+                    raise ValueError('Wallpaper storage/config parent must not be a symlink: ' + str(part))
+
 
     def load(self):
         return json.loads(self.state.read_text()) if self.state.exists() else dict(hidden=[], added=[], selected=None)
@@ -166,6 +173,10 @@ class Library:
     def _apply(self, row, headless=False):
         image = self.file(row)
         colors = self.generate(image)
+        with self.theme_transaction():
+            self.commit_theme(row, image, colors, headless)
+
+    def commit_theme(self, row, image, colors, headless):
         themes = self.home / '.config/omarchy/themes'
         themes.mkdir(parents=True, exist_ok=True)
         target = themes / THEME
@@ -194,6 +205,40 @@ class Library:
                 raise
         self.toolkit_colors(colors)
         state = self.load(); state['selected'] = row['id']; self.save(state)
+
+    @contextlib.contextmanager
+    def theme_transaction(self):
+        # Save the last working generated state before the upstream apply script
+        # swaps its theme directory. Restore it if a hook or toolkit write fails.
+        paths = ['.local/state/omarchy/current', '.config/omarchy/themes/' + THEME,
+                 '.local/share/omadora/wallpapers/library.json',
+                 '.config/gtk-3.0/gtk.css', '.config/gtk-3.0/omadora-colors.css',
+                 '.config/gtk-4.0/gtk.css', '.config/gtk-4.0/omadora-colors.css',
+                 '.config/qt6ct/qt6ct.conf', '.config/qt6ct/colors/Omadora.conf']
+        self.cache.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=self.cache) as temporary:
+            saved = []
+            for index, relative in enumerate(paths):
+                path = self.home / relative
+                backup = Path(temporary) / str(index)
+                exists = path.exists() or path.is_symlink()
+                if exists:
+                    if path.is_symlink(): backup.symlink_to(os.readlink(path))
+                    elif path.is_dir(): shutil.copytree(path, backup, symlinks=True)
+                    else: shutil.copy2(path, backup)
+                saved.append((path, backup, exists))
+            try:
+                yield
+            except BaseException:
+                for path, backup, existed in reversed(saved):
+                    if path.is_symlink() or path.is_file(): path.unlink()
+                    elif path.is_dir(): shutil.rmtree(path)
+                    if existed:
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        if backup.is_symlink(): path.symlink_to(os.readlink(backup))
+                        elif backup.is_dir(): shutil.copytree(backup, path, symlinks=True)
+                        else: shutil.copy2(backup, path)
+                raise
 
     def toolkit_colors(self, c):
         definitions = dict(theme_bg_color=c['background'], theme_fg_color=c['foreground'],
