@@ -200,8 +200,9 @@ with sync_playwright() as pw:
             if account.is_visible():
                 frame.locator('#anaconda-screen-accounts-create-account-full-name').fill('Omadora Test')
                 # Wait for the asynchronous username suggestion before replacing
-                # it, otherwise its response can overwrite our explicit name.
-                expect(account).not_to_have_value('')
+                # it. The full-name field triggers the suggestion on blur.
+                account.focus()
+                expect(account).not_to_have_value('', timeout=30000)
                 account.fill('omadora-test')
                 for suffix in ('password-field', 'password-confirm-field'):
                     frame.locator('#anaconda-screen-accounts-create-account-' + suffix).fill('omadora-vm-test-only')
