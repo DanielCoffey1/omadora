@@ -11,16 +11,21 @@ The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
 
-Wallpaper colors pass [77 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35557107434)
-and [Fedora installation/upgrade/recovery](https://github.com/DanielCoffey1/omadora/actions/runs/35557107422)
-at `6925728`. Tests execute real pywal16/ImageMagick extraction, verify the Nepal
+Wallpaper colors pass [77 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35558619059)
+and [Fedora installation/upgrade/recovery](https://github.com/DanielCoffey1/omadora/actions/runs/35558618995)
+at `5858532`. Tests execute real pywal16/ImageMagick extraction, verify the Nepal
 default and generated shell/terminal/Hyprland templates, parse GTK4 CSS, exercise
 adding and removing wallpapers, and verify that imported originals survive.
 Checks cover corrupt downloads and restoring theme/configuration state after
 failed applications, and re-adding a previously removed personal wallpaper.
-The later code commit changes only the graphical acceptance test.
 All 332 uploaded wallpaper asset sizes and available server SHA-256 digests match
-the checked-in catalog. Graphical wallpaper selection acceptance is still pending.
+the checked-in catalog. The [graphical wallpaper acceptance](https://github.com/DanielCoffey1/omadora/actions/runs/35558618945)
+passes at `5858532`: Nepal initialized, the GTK preview browser rendered, a real
+click downloaded/applied a wallpaper and changed the palette, Add imported an
+image, and Remove confirmed/removes the active image and restored Nepal. The
+compositor and shell remained responsive; imported originals survived. Browser,
+removal confirmation and restored-Nepal screenshots were reviewed. This uses a
+Fedora Cloud VM with the Workstation package environment, not physical hardware.
 The first attempt of run `35557273103` did not reach the browser: GDM retained
 the active session and Aquamarine timed out waiting for activation. This is a
 remaining desktop startup limitation; palette tests do not establish that it is
