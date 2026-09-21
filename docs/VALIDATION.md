@@ -2,14 +2,24 @@
 
 ## Release defaults
 
-The current bootstrap and adapter default to `v0.2.2-alpha`, which includes
+The current bootstrap and adapter default to `v0.4.0-alpha`, which includes
 all fixes and themed application logos described below. See the
-[release notes](releases/v0.2.2-alpha.md). The original `v0.1.0-alpha` tag and
+[release notes](releases/v0.4.0-alpha.md). The original `v0.1.0-alpha` tag and
 its bootstrap remain unchanged. Existing installations must explicitly run
-`omadora upgrade --ref v0.2.2-alpha` from GNOME or a TTY to move to this release.
+`omadora upgrade --ref v0.4.0-alpha` from GNOME or a TTY to move to this release.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
+
+Wallpaper colors pass [77 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35556720885)
+at `7572080` and [Fedora installation/upgrade/recovery](https://github.com/DanielCoffey1/omadora/actions/runs/35556207524)
+at `5a5b99d`. Tests execute real pywal16/ImageMagick extraction, verify the Nepal
+default and generated shell/terminal/Hyprland templates, parse GTK4 CSS, exercise
+adding and removing wallpapers, and verify that imported originals survive.
+Checks cover corrupt downloads and restoring theme/configuration state after
+failed applications. The later commits change only the graphical acceptance test.
+All 332 uploaded wallpaper asset sizes and available server SHA-256 digests match
+the checked-in catalog. Graphical wallpaper selection acceptance is still pending.
 
 The interactive keybindings fix passes [59 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35467969723),
 [Fedora install/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35467895020),

@@ -16,7 +16,7 @@ picker. Selecting a category never installs a bundle.
 | --- | --- |
 | Package / AUR | Searchable available RPM list; AUR becomes a validated COPR owner/project and package prompt |
 | TUI / Web App | Foot launchers for installed terminal commands; Firefox web launchers |
-| Theme / Background | Upstream theme import and current-theme background folder |
+| Theme / Background | Wallpaper library with Add/Remove controls and automatic pywal16 colors; see [wallpapers](WALLPAPERS.md) |
 | Fonts | Fedora Cascadia Mono, Fira Code and Bitstream Vera Mono; pinned Meslo, Victor Mono and Iosevka Nerd Font archives |
 | Browser | Chrome, Edge, Brave, Brave Origin, Zen and Chromium; Firefox is in the base |
 | Editor | VS Code, Zed, Sublime Text, Helix, Vim, Emacs and Cursor |
