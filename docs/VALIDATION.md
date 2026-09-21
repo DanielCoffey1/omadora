@@ -2,7 +2,7 @@
 
 ## Release defaults
 
-The current bootstrap and adapter default to `v0.4.0-alpha`, which includes
+The published release remains `v0.4.0-alpha`, which includes
 all fixes and themed application logos described below. See the
 [release notes](releases/v0.4.0-alpha.md). The original `v0.1.0-alpha` tag and
 its bootstrap remain unchanged. Existing installations must explicitly run
@@ -10,6 +10,15 @@ its bootstrap remain unchanged. Existing installations must explicitly run
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
+
+The `v0.5.0-alpha` ISO candidate is under validation; it is not yet a published
+or installation-validated release. Main's version defaults are prepared for it.
+[Fedora image account integration](https://github.com/DanielCoffey1/omadora/actions/runs/35564026416)
+at `ff63643` initializes a second user's Nepal wallpaper, fonts and configuration,
+verifies user ownership, preserves edited keybindings on the second login, and
+performs a real desktop upgrade using the image account's installation metadata.
+This component test does not establish USB boot, disk installation or a graphical
+first login. See [ISO validation scope](ISO.md) for the separate acceptance test.
 
 Wallpaper colors pass [77 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35558619059)
 and [Fedora installation/upgrade/recovery](https://github.com/DanielCoffey1/omadora/actions/runs/35558618995)
