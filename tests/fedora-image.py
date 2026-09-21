@@ -14,6 +14,9 @@ marker = Path('/etc/omadora/image.json')
 assert not marker.exists()
 marker.parent.mkdir(exist_ok=True)
 marker.write_text(json.dumps({'name': 'Omadora', 'fixture': 'first-login-component-test'}))
+sudo_rule = Path('/etc/sudoers.d/omadora-image-test')
+sudo_rule.write_text('omadora-image-test ALL=(ALL) NOPASSWD: ALL\n')
+sudo_rule.chmod(0o440)
 try:
     with tempfile.TemporaryDirectory(prefix='omadora-image-runtime-') as tmp:
         os.chown(tmp, user.pw_uid, user.pw_gid)
@@ -41,6 +44,11 @@ try:
         assert bindings.read_text() == before
         assert complete.read_text() == first
         assert json.loads(metadata.read_text()) == installation
-    print('PASS: new image user gets Nepal/config/fonts/toolkit palette; second login preserves personal edits.')
+        subprocess.run(['sudo', '-iu', user.pw_name, 'env', 'XDG_RUNTIME_DIR=' + tmp,
+                        'dbus-run-session', '--', 'python3', '/src/omadora.py', 'upgrade', '--local'], check=True)
+        assert bindings.read_text() == before
+        assert json.loads(metadata.read_text())['origin'] == 'offline-image'
+    print('PASS: image user gets Nepal/config/fonts/palette, preserves edits across login, and performs a normal upgrade.')
 finally:
     marker.unlink()
+    sudo_rule.unlink()
