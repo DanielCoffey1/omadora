@@ -14,8 +14,10 @@ def browser():
 
 
 def click(x, y):
-    # The VM has a PS/2 relative pointer, not a USB absolute tablet.
-    v.guest(f'hyprctl dispatch movecursor {int(x)} {int(y)}')
+    # The wallpaper VM has a USB tablet for direct absolute pointer input.
+    v.qmp('input-send-event', {'events': [
+        {'type': 'abs', 'data': {'axis': 'x', 'value': round(x * 32767 / 1920)}},
+        {'type': 'abs', 'data': {'axis': 'y', 'value': round(y * 32767 / 1080)}}]})
     time.sleep(.3)
     for down in (True, False):
         v.qmp('input-send-event', {'events': [{'type': 'btn', 'data': {'button': 'left', 'down': down}}]})
@@ -27,7 +29,9 @@ def test():
     assert v.guest('cat ~/.local/state/omarchy/current/theme.name') == 'omadora-wallpaper'
     assert v.guest('readlink -f ~/.local/state/omarchy/current/background').endswith('Nepal_5160x2160.png')
     before = v.guest('cat ~/.local/state/omarchy/current/theme/colors.toml')
-    # Use the actual Style menu action, as configured for users.
+    # Verify and execute the Style menu action configured for users.
+    menu = json.loads(v.guest('cat $OMARCHY_PATH/default/omarchy/omarchy-menu.jsonc'))
+    assert menu['style.wallpapers']['action'] == 'omadora wallpaper browse'
     v.guest('nohup omadora wallpaper browse >/tmp/omadora-vm-results/wallpaper-browser.log 2>&1 </dev/null &')
     v.wait_for(browser, 30)
     window = browser(); x, y = window['at']
@@ -48,7 +52,7 @@ def test():
     v.guest('grim /tmp/omadora-vm-results/wallpaper-applied.png')
     # Confirm the compositor still accepts commands and the themed shell is alive.
     assert json.loads(v.guest('hyprctl monitors -j'))
-    assert v.guest('omarchy-shell -q shell ping') == 'ok'
+    assert v.guest('omarchy-shell shell ping') == 'ok'
     # Native Add dialog: import a user image with real keyboard input.
     v.guest("python3 -c \"from PIL import Image; Image.new('RGB',(80,60),'#52697b').save('/tmp/omadora-test.png')\"")
     window = browser(); x, y = window['at']; width = window['size'][0]

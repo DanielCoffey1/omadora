@@ -62,10 +62,14 @@ elif [[ ${VM_SLEEP_DIAGNOSTIC:-} == bochs-gpu ]]; then
   # bochs-display is not a VGA device, so suppress QEMU's automatic std VGA.
   graphics=(-vga none -device bochs-display -display gtk,gl=off)
 fi
+input_devices=()
+if [[ ${VM_SUITE:-apps} == wallpapers ]]; then
+  input_devices=(-device qemu-xhci,id=omadora-usb -device usb-tablet,bus=omadora-usb.0)
+fi
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
   -drive "file=$vm_dir/disk.qcow2,if=virtio,format=qcow2" \
   "${boot_drives[@]}" \
-  "${graphics[@]}" \
+  "${graphics[@]}" "${input_devices[@]}" \
   -audiodev driver=none,id=audio0 -device intel-hda -device hda-duplex,audiodev=audio0 \
   -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22 -device virtio-net-pci,netdev=net0 \
   -serial "file:$task_root/vm-results/serial.log" \
