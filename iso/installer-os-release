@@ -1,0 +1,15 @@
+NAME="Omadora"
+VERSION="44 (Workstation Edition)"
+ID=fedora
+VERSION_ID=44
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f44"
+PRETTY_NAME="Omadora 44"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+HOME_URL="https://github.com/DanielCoffey1/omadora"
+DOCUMENTATION_URL="https://github.com/DanielCoffey1/omadora/blob/main/docs/ISO.md"
+SUPPORT_URL="https://github.com/DanielCoffey1/omadora/issues"
+BUG_REPORT_URL="https://github.com/DanielCoffey1/omadora/issues"
+VARIANT="Workstation Edition"
+VARIANT_ID=workstation

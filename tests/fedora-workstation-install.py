@@ -9,7 +9,7 @@ import threading
 import time
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 OUT = Path('vm-results')
 VM = Path('/tmp/omadora-vm')
@@ -199,9 +199,13 @@ with sync_playwright() as pw:
             account = frame.locator('#anaconda-screen-accounts-create-account-user-name')
             if account.is_visible():
                 frame.locator('#anaconda-screen-accounts-create-account-full-name').fill('Omadora Test')
+                # Wait for the asynchronous username suggestion before replacing
+                # it, otherwise its response can overwrite our explicit name.
+                expect(account).not_to_have_value('')
                 account.fill('omadora-test')
                 for suffix in ('password-field', 'password-confirm-field'):
                     frame.locator('#anaconda-screen-accounts-create-account-' + suffix).fill('omadora-vm-test-only')
+                expect(account).to_have_value('omadora-test')
             timezone = frame.locator('#anaconda-screen-date-time-region-toggle')
             if timezone.is_visible():
                 automatic = frame.locator('#anaconda-screen-date-time-auto-timezone')
@@ -216,6 +220,7 @@ with sync_playwright() as pw:
                 encryption.uncheck()
             confirmation = frame.locator('#anaconda-screen-review-next-confirmation-checkbox')
             if confirmation.is_visible():
+                assert 'Omadora Test (omadora-test)' in text, 'Review contains an unexpected account'
                 confirmation.check()
             frame.locator('#installation-next-btn').click()
         else:

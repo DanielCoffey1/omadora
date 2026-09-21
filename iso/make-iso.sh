@@ -14,6 +14,7 @@ ksvalidator -v F44 /build/omadora.ks
 cp /out/installer-base/SHA256SUMS /out/installer-base-SHA256SUMS.txt
 mkdir -p /build/updates/etc/anaconda/profile.d
 cp /src/iso/omadora.conf /build/updates/etc/anaconda/profile.d/
+install -Dm644 /src/iso/installer-os-release /build/updates/usr/lib/os-release
 # Anaconda loads this file as interactive defaults. Passing --ks to mkksiso
 # instead enables automatedInstall, which the modern Web UI cannot handle.
 # Leave storage and account selection entirely to the wizard.
