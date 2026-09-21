@@ -77,6 +77,7 @@ class GPU(unittest.TestCase):
             self.assertEqual(gpu.setup(a, nvidia=True), 3)
         calls = [c.args for c in a.run.call_args_list]
         self.assertIn(('sudo', 'mokutil', '--import', gpu.CERT), calls)
+        self.assertTrue(all('-y' in c for c in calls if c[:3] == ('sudo', 'dnf', 'install')))
         self.assertFalse(any(any(str(x).startswith('akmod-nvidia-') for x in c) for c in calls))
         self.assertFalse(any('dracut' in c for c in calls))
 

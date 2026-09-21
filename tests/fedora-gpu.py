@@ -15,7 +15,7 @@ class Adapter:
         args = list(map(str, args))
         if args[0] == 'sudo':
             args.pop(0)
-        if args[:3] == ['dnf', 'install', 'akmods'] or args[:2] == ['dnf', 'install']:
+        if args[:2] == ['dnf', 'install'] and '-y' not in args:
             args.insert(2, '-y')
         if args[:2] == ['mokutil', '--test-key']:
             print('SIMULATED: firmware already trusts the locally generated certificate', flush=True)

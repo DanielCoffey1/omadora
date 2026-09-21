@@ -179,14 +179,14 @@ def setup(a, gaming=False, nvidia=False, dry_run=False):
         if Path('/usr/bin/nvidia-uninstall').exists():
             raise ValueError('An NVIDIA .run installation is present; migrate it to RPM Fusion before using this setup.')
     common = mesa_packages(gpus, gaming) + ['vulkan-tools', 'pciutils', 'mokutil']
-    a.run('sudo', 'dnf', 'install', *common)
+    a.run('sudo', 'dnf', 'install', '-y', *common)
     if cards and not nvidia:
         print('NVIDIA detected. For a verified driver choice, log out of Hyprland and run: omadora gpu setup --nvidia' + (' --gaming' if gaming else ''))
     if not nvidia:
         print('Fedora graphics libraries installed. Run omadora gpu status in the desktop to check acceleration.')
         return
     for kind in ('free', 'nonfree'):
-        a.run('sudo', 'dnf', 'install', f'https://mirrors.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-44.noarch.rpm')
+        a.run('sudo', 'dnf', 'install', '-y', f'https://mirrors.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-44.noarch.rpm')
     selected = candidate(a, '', cards) or candidate(a, '-580xx', cards)
     if not selected:
         raise ValueError('No verified current or 580xx driver supports all detected NVIDIA GPUs. Legacy/mixed hardware needs manual review; no NVIDIA driver was installed.')
@@ -199,14 +199,14 @@ def setup(a, gaming=False, nvidia=False, dry_run=False):
     state = secure_boot()
     if state == 'unknown':
         raise ValueError('Cannot determine Secure Boot state. NVIDIA installation stopped.')
-    a.run('sudo', 'dnf', 'install', 'akmods', 'kernel-devel-matched')
+    a.run('sudo', 'dnf', 'install', '-y', 'akmods', 'kernel-devel-matched')
     if state == 'enabled':
         a.run('sudo', '/usr/sbin/kmodgenca', '-a')
         if a.run('mokutil', '--test-key', CERT, check=False, capture=True).returncode != 0:
             print('Secure Boot requires one firmware approval. Choose a temporary enrollment password now. Reboot, choose Enroll MOK → Continue → Yes, enter it, then rerun this same setup command. NVIDIA driver installation waits until enrollment is complete.', flush=True)
             a.run('sudo', 'mokutil', '--import', CERT)
             return 3
-    a.run('sudo', 'dnf', 'install', *nvidia_packages(suffix, version, gaming))
+    a.run('sudo', 'dnf', 'install', '-y', *nvidia_packages(suffix, version, gaming))
     # Build for the latest installed kernel, whose matching headers were ensured.
     kernels = a.run('rpm', '-q', 'kernel-devel', '--qf=%{VERSION}-%{RELEASE}.%{ARCH}\n', capture=True).stdout.splitlines()
     if not kernels or any(not re.fullmatch(r'[A-Za-z0-9._+-]+', k) for k in kernels):
