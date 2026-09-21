@@ -15,6 +15,7 @@ sudo -iu omadora-test bash -c 'cd /src && python3 omadora.py install'
 test -s /usr/share/wayland-sessions/omadora.desktop
 test -s /etc/pam.d/omarchy-lock-password
 test "$(stat -c '%U' /usr/local/share/omadora/omadora.py)" = root
+python3 /src/tests/fedora-image.py
 rpm -q tuned-ppd
 if rpm -q power-profiles-daemon; then echo 'Conflicting power daemon installed'; exit 1; fi
 sudo -iu omadora-test /usr/local/bin/omadora about

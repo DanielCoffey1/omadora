@@ -19,6 +19,8 @@ prefix = root / 'usr/local/share/omadora'
 upstream = Path('/build/upstream')
 a.fetch_upstream(upstream)
 a.assemble(upstream, prefix)
+shutil.copy2(SOURCE / 'LICENSE', prefix / 'LICENSE')
+shutil.copytree(SOURCE / 'docs', prefix / 'docs')
 for name in ('omadora', 'omadora-session'):
     path = root / 'usr/local/bin' / name
     path.parent.mkdir(parents=True, exist_ok=True)

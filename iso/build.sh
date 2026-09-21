@@ -28,11 +28,17 @@ for directory in /build/root/usr/lib/modules/*; do
 done
 chroot /build/root /sbin/setfiles -F -e /proc -e /sys -e /dev -e /run /etc/selinux/targeted/contexts/files/file_contexts /
 cleanup
+for point in dev proc sys run; do
+  if mountpoint -q "/build/root/$point"; then
+    echo "Build mount remains active: $point" >&2
+    exit 1
+  fi
+done
 trap - EXIT
 find /build/root/var/cache -mindepth 1 -delete
 find /build/root/var/log -type f -exec truncate -s 0 {} +
 rm -f /build/root/var/lib/systemd/random-seed /build/root/etc/ssh/ssh_host_* /build/root/root/.bash_history
-tar --xattrs --acls --selinux --numeric-owner -C /build/root -c . | xz -T2 -6 > /build/omadora-root.tar.xz
+tar --one-file-system --xattrs --acls --selinux --numeric-owner -C /build/root -c . | xz -T2 -6 > /build/omadora-root.tar.xz
 payload_sha=$(sha256sum /build/omadora-root.tar.xz | cut -d' ' -f1)
 sed "s/@PAYLOAD_SHA256@/$payload_sha/" /src/iso/installer.ks.in >/build/omadora.ks
 ksvalidator -v F44 /build/omadora.ks

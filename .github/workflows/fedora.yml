@@ -12,6 +12,8 @@ on:
       - 'tests/fedora-apps.py'
       - 'tests/fedora-maintenance.py'
       - 'omadora.py'
+      - 'omadora_image.py'
+      - 'tests/fedora-image.py'
       - 'omadora_wallpapers.py'
       - 'omadora_wallpaper_browser.py'
       - 'tests/fedora-wallpapers.py'
