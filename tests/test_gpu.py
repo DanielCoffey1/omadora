@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, mock_open
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -73,10 +73,14 @@ class GPU(unittest.TestCase):
         a.run.return_value = subprocess.CompletedProcess([], 1, '')
         with patch.object(gpu, 'detect', return_value=[card()]), \
              patch.object(gpu, 'candidate', return_value=('', '615.71.09')), \
-             patch.object(gpu, 'secure_boot', return_value='enabled'):
+             patch.object(gpu, 'secure_boot', return_value='enabled'), \
+             patch('builtins.open', mock_open()) as terminal:
             self.assertEqual(gpu.setup(a, nvidia=True), 3)
         calls = [c.args for c in a.run.call_args_list]
         self.assertIn(('sudo', 'mokutil', '--import', gpu.CERT), calls)
+        enrollment = next(c for c in a.run.call_args_list if '--import' in c.args)
+        self.assertIs(enrollment.kwargs['stdin'], terminal.return_value)
+        terminal.assert_called_once_with('/dev/tty', 'r')
         self.assertTrue(all('-y' in c for c in calls if c[:3] == ('sudo', 'dnf', 'install')))
         self.assertFalse(any(any(str(x).startswith('akmod-nvidia-') for x in c) for c in calls))
         self.assertFalse(any('dracut' in c for c in calls))

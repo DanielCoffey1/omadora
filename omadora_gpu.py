@@ -204,7 +204,13 @@ def setup(a, gaming=False, nvidia=False, dry_run=False):
         a.run('sudo', '/usr/sbin/kmodgenca', '-a')
         if a.run('mokutil', '--test-key', CERT, check=False, capture=True).returncode != 0:
             print('Secure Boot requires one firmware approval. Choose a temporary enrollment password now. Reboot, choose Enroll MOK → Continue → Yes, enter it, then rerun this same setup command. NVIDIA driver installation waits until enrollment is complete.', flush=True)
-            a.run('sudo', 'mokutil', '--import', CERT)
+            # The bootstrap may inherit curl's pipe; passwords must come from the terminal.
+            try:
+                terminal = open('/dev/tty', 'r')
+            except OSError as error:
+                raise ValueError('Secure Boot enrollment requires an interactive terminal. Rerun from a GNOME terminal or TTY.') from error
+            with terminal:
+                a.run('sudo', 'mokutil', '--import', CERT, stdin=terminal)
             return 3
     a.run('sudo', 'dnf', 'install', '-y', *nvidia_packages(suffix, version, gaming))
     # Build for the latest installed kernel, whose matching headers were ensured.

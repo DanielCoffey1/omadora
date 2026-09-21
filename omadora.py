@@ -31,10 +31,10 @@ UNPORTED = ('omarchy-install-', 'omarchy-setup-', 'omarchy-provision-',
             'omarchy-refresh-', 'omarchy-pkg-', 'omarchy-theme-set-browser')
 
 
-def run(*argv, capture=False, check=True, env=None):
+def run(*argv, capture=False, check=True, env=None, stdin=None):
     result = subprocess.run([str(a) for a in argv], check=False, text=True,
                             stdout=subprocess.PIPE if capture else None,
-                            stderr=subprocess.PIPE if capture else None, env=env)
+                            stderr=subprocess.PIPE if capture else None, env=env, stdin=stdin)
     if check and result.returncode:
         if capture:
             print(result.stdout or '', end='', file=sys.stderr)
