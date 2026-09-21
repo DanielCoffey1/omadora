@@ -18,15 +18,16 @@ developers. The installer requests sudo for packages/system files, enables the
 documented desktop COPRs and backs up managed user configuration. Save the
 backup path it prints. Internet access is required.
 
-After installation, log out. Select your user in GDM, choose **Omadora** in
+After installation, reboot if NVIDIA drivers were installed; otherwise log out. Select your user in GDM, choose **Omadora** in
 the gear menu, and log in. Check the version with `omadora about`. Use the
 desktop's **Install** menu for optional apps, including Gaming and AI.
 
 ## Graphics and gaming
 
 Fresh installs ensure AMD/Intel Mesa and firmware packages for detected hardware.
-For NVIDIA, remain in GNOME and run `omadora gpu setup --nvidia --gaming` before
-starting Omadora. Secure Boot enrollment may require a reboot and rerunning setup.
+NVIDIA drivers and matching gaming libraries are installed automatically. If
+Secure Boot enrollment is requested, reboot, approve Enroll MOK, then rerun the
+same installer command from GNOME/TTY. Reboot after successful NVIDIA installation.
 **Setup → Graphics** provides status and optional gaming-library setup. See
 [GPU setup, supported branches and hybrid laptops](GRAPHICS.md).
 
