@@ -112,7 +112,7 @@ if os.environ.get('OMADORA_CUSTOM_ISO'):
     # off the guest immediately so that a reboot cannot erase the failure.
     for name, command in (
             ('iso-live-journal.log', 'journalctl -b -f --no-pager'),
-            ('iso-live-anaconda.log', 'tail -n +1 -F /tmp/anaconda.log /tmp/program.log /tmp/packaging.log')):
+            ('iso-live-anaconda.log', 'tail -n +1 -F /tmp/anaconda.log /tmp/program.log /tmp/packaging.log /tmp/webui-browser.log')):
         live_logs.append(subprocess.Popen(SSH + [command], stdout=(OUT / name).open('w'),
                                           stderr=subprocess.STDOUT))
 (OUT / 'iso-baseline.log').write_text(guest('cat /etc/os-release; cat /proc/cmdline; rpm -q anaconda-core anaconda-webui; lsblk -f'))
@@ -271,7 +271,9 @@ print(guest('bash -c ' + shlex.quote(script)), flush=True)
 (OUT / 'iso-installed-packages.txt').write_text(guest('cat /tmp/iso-installed-packages.txt'))
 (OUT / 'iso-provenance.json').write_text(json.dumps({
     'image': 'Omadora-44-x86_64.iso' if os.environ.get('OMADORA_CUSTOM_ISO') else 'Fedora-Workstation-Live-44-1.7.x86_64.iso',
-    'installer': 'unmodified Anaconda Web UI', 'firmware': 'UEFI',
+    'installer': ('Anaconda Web UI with upstream boot-media launcher backport'
+                  if os.environ.get('OMADORA_CUSTOM_ISO') else 'unmodified Anaconda Web UI'),
+    'firmware': 'UEFI',
     'test_instrumentation': ['loopback SSH tunnel to local installer', 'live-only serial debug shell/firstboot mask',
                              'ephemeral SSH key', 'test user/password', 'test sudo rule'],
     'desktop_added_by_dnf': False,

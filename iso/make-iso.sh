@@ -19,6 +19,10 @@ cp /src/iso/omadora.conf /build/updates/etc/anaconda/profile.d/
 # Leave storage and account selection entirely to the wizard.
 mkdir -p /build/updates/usr/share/anaconda
 cp /build/omadora.ks /build/updates/usr/share/anaconda/interactive-defaults.ks
+install -Dm755 /src/iso/vendor/anaconda-webui/webui-desktop \
+  /build/updates/usr/libexec/anaconda/webui-desktop
+install -Dm644 /src/iso/vendor/anaconda-webui/LICENSE \
+  /build/updates/usr/share/licenses/omadora-installer/anaconda-webui-LICENSE
 printf '[Main]\nProduct=Omadora\nVersion=44\nIsFinal=False\n' >/build/updates/.buildstamp
 mkdir -p /build/images
 (cd /build/updates && find . -print0 | cpio --null -o -H newc | gzip -9) >/build/images/updates.img

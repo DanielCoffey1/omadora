@@ -39,6 +39,8 @@ Fedora 44 container. Lorax composes a Fedora installer runtime with the modern
 Anaconda Web UI, which is absent from the stock Everything netinstaller ISO.
 The embedded image source and post-install setup use Anaconda's
 `interactive-defaults.ks`; they do not activate automated Kickstart mode.
+An [upstream browser-launcher fix](../iso/vendor/anaconda-webui/README.md) is
+backported for the standalone Wayland session on installer media.
 The runtime is combined with a complete root filesystem with pinned
 Omadora/Omarchy sources. RPMs come from Fedora and
 the same documented COPRs as the normal installer. The build records the exact
