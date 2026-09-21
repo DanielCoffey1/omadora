@@ -109,6 +109,7 @@ else:
 (OUT / 'iso-baseline.log').write_text(guest('cat /etc/os-release; cat /proc/cmdline; rpm -q anaconda-core anaconda-webui; lsblk -f'))
 if os.environ.get('OMADORA_CUSTOM_ISO'):
     guest("test -f /etc/anaconda/profile.d/omadora.conf && grep -qx 'Product=Omadora' /.buildstamp")
+    guest('test -d /usr/share/cockpit/anaconda-webui')
 # SSH can become ready before GNOME exports DISPLAY. Anaconda's browser exits
 # immediately when that variable is absent, taking its backend down with it.
 if not os.environ.get('OMADORA_CUSTOM_ISO'):

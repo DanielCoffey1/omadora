@@ -10,6 +10,10 @@ on:
         description: Optional prior run ID with a completed system image (rebuild only ISO packaging)
         type: string
         default: ''
+      reuse_installer:
+        description: Optional prior run ID with a composed Anaconda Web UI runtime
+        type: string
+        default: ''
 permissions:
   contents: read
   actions: read
@@ -53,6 +57,26 @@ jobs:
           name: omadora-image-payload
           path: iso-results/payload
           run-id: ${{ inputs.reuse_payload }}
+          github-token: ${{ github.token }}
+      - name: Compose Fedora installer with the modern wizard
+        id: installer
+        if: inputs.reuse_build == '' && inputs.reuse_installer == ''
+        run: docker exec omadora-iso-build bash /src/iso/build-installer.sh
+      - name: Save reusable installer runtime
+        if: steps.installer.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: omadora-installer-base
+          path: iso-results/installer-base/
+          compression-level: 0
+          retention-days: 7
+      - name: Download prior installer runtime
+        if: inputs.reuse_build == '' && inputs.reuse_installer != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: omadora-installer-base
+          path: iso-results/installer-base
+          run-id: ${{ inputs.reuse_installer }}
           github-token: ${{ github.token }}
       - name: Assemble bootable ISO
         if: inputs.reuse_build == ''

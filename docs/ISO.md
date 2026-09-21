@@ -35,8 +35,10 @@ configuration runs as the signed-in user without sudo or network access.
 ## Build and verification
 
 Run the **Omadora offline ISO** GitHub Actions workflow. It builds in a disposable
-Fedora 44 container, using a checked Fedora netinstaller ISO plus a complete
-root filesystem with pinned Omadora/Omarchy sources. RPMs come from Fedora and
+Fedora 44 container. Lorax composes a Fedora installer runtime with the modern
+Anaconda Web UI, which is absent from the stock Everything netinstaller ISO.
+The runtime is combined with a complete root filesystem with pinned
+Omadora/Omarchy sources. RPMs come from Fedora and
 the same documented COPRs as the normal installer. The build records the exact
 package inventory, source revision and final ISO SHA-256. Repository package
 updates mean two builds of the same source may differ.
