@@ -26,7 +26,7 @@ for directory in /build/root/usr/lib/modules/*; do
   version=${directory##*/}
   chroot /build/root dracut --force --no-hostonly "/boot/initramfs-$version.img" "$version"
 done
-chroot /build/root /sbin/setfiles -F -e /proc -e /sys -e /dev -e /run -r / /etc/selinux/targeted/contexts/files/file_contexts /
+chroot /build/root /sbin/setfiles -F -e /proc -e /sys -e /dev -e /run /etc/selinux/targeted/contexts/files/file_contexts /
 cleanup
 trap - EXIT
 find /build/root/var/cache -mindepth 1 -delete
