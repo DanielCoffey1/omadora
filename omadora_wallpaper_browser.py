@@ -124,7 +124,7 @@ def run(library, mode='browse'):
             if not self.chosen:
                 self.status.set_text('Right-click a wallpaper to select it for removal.'); return
             row = self.chosen
-            dialog = Gtk.MessageDialog(transient_for=self.window, modal=True, buttons=Gtk.ButtonsType.OK_CANCEL,
+            dialog = Gtk.MessageDialog(application=self, title='Remove wallpaper', transient_for=self.window, modal=True, buttons=Gtk.ButtonsType.OK_CANCEL,
                                        text='Remove ' + row['name'] + '?', secondary_text='Removes it from this library. Your original imported file is kept. If it is active, another wallpaper will be applied first.')
             def response(prompt, answer):
                 prompt.destroy()

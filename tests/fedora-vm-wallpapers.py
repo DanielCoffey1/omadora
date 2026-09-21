@@ -64,11 +64,17 @@ def test():
         v.keys({'/': 'slash', '-': 'minus', '.': 'dot'}.get(char, char))
     v.keys('ret')
     v.wait_for(lambda: any(r['name'] == 'omadora-test.png' for r in json.loads(v.guest('omadora wallpaper list'))), 25)
+    # Saving the library precedes GTK's completion callback and grid rebuild.
+    time.sleep(3)
     # Remove the active wallpaper through its confirmation dialog.
     click(x + width - 90, y + 35)
     def dialog():
-        return next((c for c in json.loads(v.guest('hyprctl clients -j')) if c['class'] == 'org.omadora.Wallpapers' and c['address'] != window['address']), None)
-    v.wait_for(dialog, 15)
+        return next((c for c in json.loads(v.guest('hyprctl clients -j')) if c['title'] == 'Remove wallpaper'), None)
+    try:
+        v.wait_for(dialog, 15)
+    finally:
+        v.guest('grim /tmp/omadora-vm-results/wallpaper-remove-dialog.png')
+        v.guest('hyprctl clients -j > /tmp/omadora-vm-results/wallpaper-clients.json')
     prompt = dialog()
     v.guest('grim /tmp/omadora-vm-results/wallpaper-remove-dialog.png')
     click(prompt['at'][0] + prompt['size'][0] - 45, prompt['at'][1] + prompt['size'][1] - 25)

@@ -11,15 +11,20 @@ The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
 
-Wallpaper colors pass [77 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35556720885)
-at `7572080` and [Fedora installation/upgrade/recovery](https://github.com/DanielCoffey1/omadora/actions/runs/35556207524)
-at `5a5b99d`. Tests execute real pywal16/ImageMagick extraction, verify the Nepal
+Wallpaper colors pass [77 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35557107434)
+and [Fedora installation/upgrade/recovery](https://github.com/DanielCoffey1/omadora/actions/runs/35557107422)
+at `6925728`. Tests execute real pywal16/ImageMagick extraction, verify the Nepal
 default and generated shell/terminal/Hyprland templates, parse GTK4 CSS, exercise
 adding and removing wallpapers, and verify that imported originals survive.
 Checks cover corrupt downloads and restoring theme/configuration state after
-failed applications. The later commits change only the graphical acceptance test.
+failed applications, and re-adding a previously removed personal wallpaper.
+The later code commit changes only the graphical acceptance test.
 All 332 uploaded wallpaper asset sizes and available server SHA-256 digests match
 the checked-in catalog. Graphical wallpaper selection acceptance is still pending.
+The first attempt of run `35557273103` did not reach the browser: GDM retained
+the active session and Aquamarine timed out waiting for activation. This is a
+remaining desktop startup limitation; palette tests do not establish that it is
+fixed. Earlier graphical runs reached and rendered the Nepal desktop and browser.
 
 The interactive keybindings fix passes [59 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35467969723),
 [Fedora install/upgrade integration](https://github.com/DanielCoffey1/omadora/actions/runs/35467895020),
