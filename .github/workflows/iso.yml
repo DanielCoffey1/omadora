@@ -6,6 +6,10 @@ on:
         description: Optional prior ISO workflow run ID (retest its exact ISO, without rebuilding)
         type: string
         default: ''
+      reuse_payload:
+        description: Optional prior run ID with a completed system image (rebuild only ISO packaging)
+        type: string
+        default: ''
 permissions:
   contents: read
   actions: read
@@ -20,13 +24,39 @@ jobs:
           sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet
           docker image prune --all --force
           df -h .
-      - name: Build offline installer in disposable Fedora container
+      - name: Start disposable Fedora builder
         if: inputs.reuse_build == ''
         run: |
           mkdir -p iso-results
-          docker run --name omadora-iso-build --privileged \
+          docker run -d --name omadora-iso-build --privileged \
             -v "$PWD:/src:ro" -v "$PWD/iso-results:/out" \
-            quay.io/fedora/fedora:44 bash /src/iso/build.sh
+            quay.io/fedora/fedora:44 sleep infinity
+      - name: Install and configure the offline system
+        if: inputs.reuse_build == '' && inputs.reuse_payload == ''
+        run: docker exec omadora-iso-build bash /src/iso/build-root.sh
+      - name: Pack system image
+        id: pack
+        if: inputs.reuse_build == '' && inputs.reuse_payload == ''
+        run: docker exec omadora-iso-build bash /src/iso/pack.sh
+      - name: Save reusable system image
+        if: steps.pack.outcome == 'success' && inputs.reuse_build == '' && inputs.reuse_payload == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: omadora-image-payload
+          path: iso-results/payload/
+          compression-level: 0
+          retention-days: 7
+      - name: Download prior system image
+        if: inputs.reuse_build == '' && inputs.reuse_payload != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: omadora-image-payload
+          path: iso-results/payload
+          run-id: ${{ inputs.reuse_payload }}
+          github-token: ${{ github.token }}
+      - name: Assemble bootable ISO
+        if: inputs.reuse_build == ''
+        run: docker exec omadora-iso-build bash /src/iso/make-iso.sh
       - name: Download exact previously built ISO
         if: inputs.reuse_build != ''
         uses: actions/download-artifact@v4
@@ -73,3 +103,6 @@ jobs:
         with:
           name: omadora-iso-acceptance
           path: vm-results/
+      - name: Clean up builder
+        if: always()
+        run: docker rm -f omadora-iso-build || true
