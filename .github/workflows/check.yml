@@ -13,6 +13,8 @@ jobs:
           git -C /tmp/omadora-upstream remote add origin https://github.com/omacom/omarchy.git
           git -C /tmp/omadora-upstream fetch --depth 1 origin c668141e9c42b13c80c9ca4ea108e11708c5e8a5
           git -C /tmp/omadora-upstream checkout --detach FETCH_HEAD
+      - name: Wallpaper test dependencies
+        run: python3 -m pip install Pillow
       - name: Unit and upstream assembly checks
         env:
           OMADORA_TEST_UPSTREAM: /tmp/omadora-upstream

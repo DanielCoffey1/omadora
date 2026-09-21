@@ -22,6 +22,7 @@ sudo -iu omadora-test bash -c 'export PATH=/usr/local/share/omadora/bin:/usr/loc
 sudo -iu omadora-test bash -c 'test -s ~/.local/state/omarchy/current/theme/colors.toml; test -e ~/.local/state/omarchy/current/background'
 XDG_RUNTIME_DIR=$(mktemp -d) Hyprland --version
 quickshell --version
+sudo -iu omadora-test python3 /src/tests/fedora-wallpapers.py
 sudo -iu omadora-test bash /src/tests/fedora-config.sh
 sudo -iu omadora-test python3 /src/tests/fedora-app-refresh.py
 cp /tmp/omadora-app-refresh.log /results/

@@ -22,6 +22,7 @@ PREFIX = Path('/usr/local/share/omadora')
 COPR = 'nett00n/hyprland'
 SCREENSAVER_COPR = 'whelanh/omarchy'
 CONFIGS = ('hypr', 'foot', 'omarchy')
+WALLPAPER_CONFIGS = {'.config/gtk-3.0/gtk.css', '.config/gtk-3.0/omadora-colors.css', '.config/gtk-4.0/gtk.css', '.config/gtk-4.0/omadora-colors.css', '.config/qt6ct/qt6ct.conf', '.config/qt6ct/colors/Omadora.conf'}
 FONT_CONFIG = '.config/fontconfig/conf.d/99-omadora.conf'
 DESKTOP_KEYS = ('color-scheme', 'gtk-theme', 'icon-theme')
 DISALLOWED = re.compile(r'\b(pacman|yay|paru|mkinitcpio|limine|arch-chroot|pacstrap|ufw)\b')
@@ -249,6 +250,13 @@ def menu_for_fedora(menu, apps, blocked):
     result['setup.gpu.libraries'] = {'label': 'Gaming graphics', 'icon': '', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
     result['setup.gpu.nvidia'] = {'label': 'NVIDIA drivers', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --nvidia --gaming'}
     result['install.gaming.graphics'] = {'label': 'GPU setup', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
+    for key in list(result):
+        if key in ('style.theme', 'style.background', 'remove.theme', 'update.themes') or key.startswith(('install.style.theme', 'install.style.background', 'remove.style.theme', 'remove.style.background')):
+            del result[key]
+    result['style.wallpapers'] = {'label': 'Wallpapers & colors', 'icon': '', 'action': 'omadora wallpaper browse'}
+    result['install.style'] = {'label': 'Style', 'icon': '󰏘'}
+    result['install.style.wallpaper'] = {'label': 'Add wallpapers', 'icon': '', 'action': 'omadora wallpaper add-dialog'}
+    result['remove.wallpaper'] = {'label': 'Remove wallpapers', 'icon': '', 'action': 'omadora wallpaper remove-dialog'}
     return result
 
 
@@ -294,11 +302,13 @@ def assemble(source, output):
     for name in ('LICENSE', 'version'):
         shutil.copy2(source / name, tree / name)
     for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'omadora_optional.py',
-                 'omadora_workflows.py', 'omadora_applications.py', 'omadora_gpu.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
+                 'omadora_workflows.py', 'omadora_applications.py', 'omadora_gpu.py', 'omadora_wallpapers.py', 'omadora_wallpaper_browser.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
         shutil.copy2(ROOT / name, output / name)
     write(output / 'release.json', json.dumps({'version': VERSION, 'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
     shutil.copytree(ROOT / 'assets', output / 'assets')
+    shutil.copytree(ROOT / 'vendor', output / 'vendor', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+    write(output / 'bin/wal', '#!/bin/sh\nexport PYTHONPATH=/usr/local/share/omadora/vendor\nexec python3 -m pywal "$@"\n', 0o755)
     # Load from the versioned runtime so upgrades/rollbacks do not depend on
     # refreshing an old per-user copy of the font or changing the user's theme.
     menu_qml = tree / 'shell/plugins/menu/Menu.qml'
@@ -332,7 +342,7 @@ def assemble(source, output):
            # compositor child processes after asynchronous environment import.
            'export GDK_BACKEND="wayland,x11,*"\n'
            'export QT_QPA_PLATFORM="wayland;xcb"\n'
-           'export QT_QPA_PLATFORMTHEME=gtk3\n'
+           'export QT_QPA_PLATFORMTHEME=qt6ct\n'
            'export MOZ_ENABLE_WAYLAND=1\n'
            'export ELECTRON_OZONE_PLATFORM_HINT=wayland\n'
            'export OZONE_PLATFORM=wayland\n')
@@ -358,7 +368,15 @@ fi
 '''
     write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + session_activation + 'exec uwsm start -e -D Hyprland -- /usr/share/wayland-sessions/hyprland.desktop\n', 0o755)
 
+    envs = tree / 'default/hypr/envs.lua'
+    write(envs, envs.read_text().replace('hl.env("QT_QPA_PLATFORMTHEME", "gtk3")', 'hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")'))
     overrides = {
+        'omarchy-theme-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',
+        'omarchy-theme-bg-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',
+        'omarchy-theme-bg-next': 'exec omadora wallpaper next',
+        'omarchy-theme-bg-install': 'exec omadora wallpaper add-dialog',
+        'omarchy-theme-install': 'exec omadora wallpaper add-dialog',
+        'omarchy-theme-remove': 'exec omadora wallpaper remove-dialog',
         # The pinned helper is portable; an Arch-only comment previously caused
         # the conservative command scanner to block it.
         'omarchy-theme-set-gnome': '\n'.join(line for line in
@@ -458,7 +476,7 @@ fi
     # Browser policy tinting depends on upstream install helpers and a
     # privileged /usr/bin entrypoint. Fedora browsers retain their own policies.
     theme_set = tree / 'bin/omarchy-theme-set'
-    write(theme_set, theme_set.read_text().replace('  omarchy-theme-set-browser\n', ''), 0o755)
+    write(theme_set, theme_set.read_text().replace('  omarchy-theme-set-browser\n', '').replace('omarchy-theme-set-templates\n', 'omarchy-theme-set-templates || exit 1\n'), 0o755)
     for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
         path = tree / 'bin' / name
         write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)
@@ -529,6 +547,7 @@ def apply_branding(tree):
 def backup_user(home, backup):
     """Copy exact config trees including symlinks; record absence for restore."""
     paths = [f'.config/{name}' for name in CONFIGS] + ['.config/uwsm/env-hyprland', '.local/state/omarchy', FONT_CONFIG, '.local/share/fonts/omadora']
+    paths += sorted(WALLPAPER_CONFIGS)
     manifest = []
     for relative in paths:
         source = home / relative
@@ -551,7 +570,7 @@ def restore_user(home, backup):
     manifest = read_json(backup / 'manifest.json')
     paths = {entry['path'] for entry in manifest}
     # Backups made before the font integration fix remain restorable.
-    if paths not in (allowed, allowed | {FONT_CONFIG}, allowed | {FONT_CONFIG, '.local/share/fonts/omadora'}) or len(manifest) != len(paths):
+    if paths not in (allowed, allowed | {FONT_CONFIG}, allowed | {FONT_CONFIG, '.local/share/fonts/omadora'}, allowed | {FONT_CONFIG, '.local/share/fonts/omadora'} | WALLPAPER_CONFIGS) or len(manifest) != len(paths):
         raise ValueError('Invalid backup manifest')
     # A parent may have been replaced with a symlink since installation.
     # Never follow it while removing managed paths or writing the rescue copy.
@@ -734,7 +753,7 @@ def _install():
         env = dict(os.environ, OMARCHY_PATH=str(PREFIX / 'upstream'), OMARCHY_THEME_HEADLESS='1',
                    XDG_RUNTIME_DIR=probe_env['XDG_RUNTIME_DIR'],
                    PATH=f'{PREFIX}/bin:{PREFIX}/upstream/bin:' + os.environ['PATH'])
-        run(PREFIX / 'upstream/bin/omarchy-theme-set', 'tokyo-night', env=env)
+        run(PREFIX / 'bin/omadora', 'wallpaper', 'apply', 'Nepal_5160x2160.png', '--headless', env=env)
         run('Hyprland', '--verify-config', '--config', home / '.config/hypr/hyprland.lua', env=env)
         # Publish the login session last, after successful config/theme setup.
         lifecycle().root(sys.modules[__name__], 'activate', transaction['id'])
@@ -792,12 +811,20 @@ def main():
     g = gpu_sub.add_parser('status'); g.add_argument('--json', action='store_true')
     g = gpu_sub.add_parser('setup'); g.add_argument('--gaming', action='store_true'); g.add_argument('--nvidia', action='store_true'); g.add_argument('--dry-run', action='store_true')
     g = gpu_sub.add_parser('run'); g.add_argument('--pci'); g.add_argument('application', nargs=argparse.REMAINDER)
+    p = sub.add_parser('wallpaper')
+    p.add_argument('action', choices=('browse', 'add-dialog', 'remove-dialog', 'list', 'apply', 'add', 'remove', 'next'))
+    p.add_argument('value', nargs='?'); p.add_argument('--headless', action='store_true')
     sub.add_parser('refresh-apps')
     sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')
     p = sub.add_parser('pkg-present'); p.add_argument('packages', nargs='+')
     p = sub.add_parser('powerprofile'); p.add_argument('action', choices=('get', 'list', 'set')); p.add_argument('profile', nargs='?')
     p = sub.add_parser('restore-config'); p.add_argument('backup', type=Path)
     args = parser.parse_args()
+    if args.command == 'wallpaper':
+        import omadora_wallpapers
+        if args.action in ('add', 'remove') and not args.value:
+            parser.error('Supply a wallpaper path or ID')
+        return omadora_wallpapers.main(args.action, args.value, args.headless)
     if args.command == 'install':
         install(args.dry_run)
     elif args.command == 'upgrade':

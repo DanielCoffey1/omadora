@@ -78,3 +78,8 @@ pulseaudio-utils
 pciutils
 mokutil
 vulkan-tools
+
+# Wallpaper palette extraction and preview browser
+python3-pillow
+gtk4
+qt6ct

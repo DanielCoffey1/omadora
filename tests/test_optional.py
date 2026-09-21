@@ -41,7 +41,7 @@ class OptionalTests(unittest.TestCase):
             self.skipTest('Requires pinned upstream')
         original = adapter.load_menu(Path(upstream) / 'default/omarchy/omarchy-menu.jsonc')
         menu = adapter.menu_for_fedora(original, adapter.read_json(ROOT / 'apps.json'), [])
-        replacements = {'install.aur': 'install.copr-package',
+        replacements = {'install.style.theme': 'install.style.wallpaper', 'install.style.background': 'install.style.wallpaper', 'install.aur': 'install.copr-package',
                         'install.development.docker-dbs': 'install.development.database'}
         core = {'install.browser.firefox', 'install.terminal.foot'}
         for key, item in original.items():

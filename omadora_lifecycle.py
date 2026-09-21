@@ -19,7 +19,8 @@ def safe_home():
     for relative in ('.config', '.config/uwsm', '.local', '.local/state',
                      '.local/state/omadora', '.local/state/omadora/backups',
                      '.local/state/omarchy', '.local/share', '.local/share/fonts',
-                     '.local/share/fonts/omadora', '.config/fontconfig', '.config/fontconfig/conf.d'):
+                     '.local/share/fonts/omadora', '.config/fontconfig', '.config/fontconfig/conf.d',
+                     '.config/gtk-3.0', '.config/gtk-4.0', '.config/qt6ct', '.config/qt6ct/colors'):
         if (Path.home() / relative).is_symlink():
             raise ValueError('Lifecycle target must not be a symlink: ~/' + relative)
 
