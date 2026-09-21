@@ -2,6 +2,7 @@
 import base64
 import json
 import os
+import re
 import shlex
 import socket
 import subprocess
@@ -133,6 +134,15 @@ with sync_playwright() as pw:
                 account.fill('omadora-test')
                 for suffix in ('password-field', 'password-confirm-field'):
                     frame.locator('#anaconda-screen-accounts-create-account-' + suffix).fill('omadora-vm-test-only')
+            timezone = frame.locator('#anaconda-screen-date-time-region-toggle')
+            if timezone.is_visible():
+                automatic = frame.locator('#anaconda-screen-date-time-auto-timezone')
+                if automatic.is_visible():
+                    automatic.uncheck()
+                timezone.click()
+                frame.locator('#anaconda-screen-date-time-region').get_by_role('option', name='America', exact=True).click()
+                frame.locator('#anaconda-screen-date-time-city-toggle').click()
+                frame.locator('#anaconda-screen-date-time-city').get_by_role('option', name=re.compile(r'^New[ _]York$')).click()
             encryption = frame.locator('#disk-encryption-encrypt-devices')
             if encryption.is_visible():
                 encryption.uncheck()

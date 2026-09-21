@@ -1,8 +1,14 @@
 name: Omadora offline ISO
 on:
   workflow_dispatch:
+    inputs:
+      reuse_build:
+        description: Optional prior ISO workflow run ID (retest its exact ISO, without rebuilding)
+        type: string
+        default: ''
 permissions:
   contents: read
+  actions: read
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,13 +21,32 @@ jobs:
           docker image prune --all --force
           df -h .
       - name: Build offline installer in disposable Fedora container
+        if: inputs.reuse_build == ''
         run: |
           mkdir -p iso-results
           docker run --name omadora-iso-build --privileged \
             -v "$PWD:/src:ro" -v "$PWD/iso-results:/out" \
             quay.io/fedora/fedora:44 bash /src/iso/build.sh
+      - name: Download exact previously built ISO
+        if: inputs.reuse_build != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: omadora-offline-iso
+          path: iso-results
+          run-id: ${{ inputs.reuse_build }}
+          github-token: ${{ github.token }}
+      - name: Make private test media from the previous ISO
+        if: inputs.reuse_build != ''
+        run: |
+          cd iso-results && sha256sum -c SHA256SUMS && cd ..
+          docker run --rm --privileged -v "$PWD/iso-results:/out" quay.io/fedora/fedora:44 bash -c '
+            set -eu
+            dnf install -y lorax
+            mkdir -p /out/test
+            mkksiso --cmdline "console=ttyS0,115200 systemd.debug_shell=ttyS0 inst.sshd" /out/Omadora-44-x86_64.iso /out/test/omadora-test.iso
+          '
       - name: Save ISO and build evidence
-        if: always()
+        if: always() && inputs.reuse_build == ''
         uses: actions/upload-artifact@v4
         with:
           name: omadora-offline-iso
