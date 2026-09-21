@@ -75,11 +75,14 @@ GUEST
 for ((i=0; i<90; i++)); do kill -0 "$qemu_pid" 2>/dev/null || break; sleep 1; done
 kill -0 "$qemu_pid" 2>/dev/null && exit 1
 # No CD or injected kernel/initrd: boot only the installed disk through UEFI.
-qemu-system-x86_64 "${common[@]}" -device virtio-vga-gl -display gtk,gl=on -boot order=c \
+# Use the established Bochs fixture; host virgl can hang QEMU (including QMP)
+# during graphical startup, preventing even failure screenshots from being saved.
+qemu-system-x86_64 "${common[@]}" -vga none -device bochs-display -display gtk,gl=off -boot order=c \
   -serial "file:$(pwd)/vm-results/installed-serial.log" \
   -qmp "unix:$vm_dir/qmp.sock,server=on,wait=off" >vm-results/installed-qemu.log 2>&1 &
 qemu_pid=$!
-for ((i=0; i<90; i++)); do
+ready_deadline=$((SECONDS + 300))
+while ((SECONDS < ready_deadline)); do
   if ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'test -f ~/.local/state/omadora/image-user.json'; then break; fi
   sleep 3
 done
