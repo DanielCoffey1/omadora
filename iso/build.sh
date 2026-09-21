@@ -6,6 +6,7 @@ set -euo pipefail
 mkdir -p /build /out
 exec > >(tee /out/build.log) 2>&1
 dnf install -y dnf5-plugins python3 git curl lorax xorriso isomd5sum xz cpio dosfstools mtools
+git config --global --add safe.directory /src
 dnf copr enable -y nett00n/hyprland
 dnf copr enable -y whelanh/omarchy
 mapfile -t packages < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' /src/packages/core.txt /src/iso/packages.txt)
@@ -44,6 +45,7 @@ expected=$(sed -n "s/^SHA256 ($image) = //p" /out/fedora-CHECKSUM)
 printf '%s  /build/fedora-boot.iso\n' "$expected" | sha256sum -c -
 mkdir -p /build/updates/etc/anaconda/profile.d
 cp /src/iso/omadora.conf /build/updates/etc/anaconda/profile.d/
+printf '[Main]\nProduct=Omadora\nVersion=44\nIsFinal=False\n' >/build/updates/.buildstamp
 (cd /build/updates && find . -print0 | cpio --null -o -H newc | gzip -9) >/build/updates.img
 mkksiso --ks /build/omadora.ks --add /build/omadora-root.tar.xz --updates /build/updates.img \
   --volid OMADORA_44 --cmdline 'inst.graphical inst.webui inst.profile=omadora' \
