@@ -53,6 +53,8 @@ class Wallpapers(unittest.TestCase):
             lib.remove(row['id'])
             self.assertTrue(original.exists())
             self.assertFalse((lib.directory / row['local']).exists())
+            restored = lib.add(original)
+            self.assertEqual(lib.lookup(restored['id'])['name'], original.name)
 
     def test_failed_replacement_does_not_remove_active_wallpaper(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(wall.Library, 'locked', contextlib.nullcontext):

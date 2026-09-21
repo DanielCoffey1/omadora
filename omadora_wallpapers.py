@@ -143,6 +143,7 @@ class Library:
             (self.directory / local).write_bytes(content)
             preview.save(self.directory / (digest + '.jpg'), quality=80)
             row = dict(id=digest, sha256=digest, name=source.name, size=len(content), local=local)
+            state['hidden'] = [v for v in state['hidden'] if v != digest]
             state['added'].append(row); self.save(state)
             return row
 
