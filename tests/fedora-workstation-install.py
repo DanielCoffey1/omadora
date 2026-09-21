@@ -263,7 +263,8 @@ chroot "$target" rpm -qa | sort >/tmp/iso-installed-packages.txt
 {account_setup}
 {admin_check}
 {password_setup}
-install -d -m700 "$target/home/omadora-test/.ssh"
+mkdir -p "$target/home/omadora-test/.ssh"
+chmod 700 "$target/home/omadora-test/.ssh"
 printf '%s\\n' {key} >"$target/home/omadora-test/.ssh/authorized_keys"
 chmod 600 "$target/home/omadora-test/.ssh/authorized_keys"
 chroot "$target" chown -R omadora-test:omadora-test /home/omadora-test/.ssh
