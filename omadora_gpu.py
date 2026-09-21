@@ -147,16 +147,6 @@ def nvidia_packages(suffix, version, gaming):
     return packages
 
 
-def install_detected(a):
-    """Prepare NVIDIA before a fresh desktop deployment; never hide failures."""
-    if not any(g['vendor'] == 'NVIDIA' for g in managed(detect())):
-        return False
-    print('NVIDIA detected: automatically checking and installing compatible drivers and gaming libraries.', flush=True)
-    if setup(a, gaming=True, nvidia=True) == 3:
-        raise ValueError('NVIDIA setup is waiting for Secure Boot enrollment. Reboot, approve Enroll MOK with your enrollment password, then rerun the same Omadora installer command from GNOME or a TTY. The Omadora desktop has not been deployed.')
-    return True
-
-
 def setup(a, gaming=False, nvidia=False, dry_run=False):
     gpus = detect()
     usable = managed(gpus)

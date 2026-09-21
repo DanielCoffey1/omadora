@@ -134,31 +134,23 @@ class GPU(unittest.TestCase):
                 gpu.launch(['game'])
 
 
-class AutomaticNVIDIA(unittest.TestCase):
-    def test_fresh_install_selects_only_managed_nvidia(self):
-        for cards, expected in (([card()], True), ([card('AMD')], False),
-                                ([card(driver='vfio-pci')], False), ([], False)):
-            with self.subTest(cards=cards), patch.object(gpu, 'detect', return_value=cards), patch.object(gpu, 'setup') as setup:
-                setup.return_value = None
-                adapter = Mock()
-                self.assertEqual(gpu.install_detected(adapter), expected)
-                if expected:
-                    setup.assert_called_once_with(adapter, gaming=True, nvidia=True)
-                else:
-                    setup.assert_not_called()
-
-    def test_pending_enrollment_or_driver_failure_stops_fresh_install(self):
-        with patch.object(gpu, 'detect', return_value=[card()]), patch.object(gpu, 'setup') as setup:
-            setup.return_value = 3
-            with self.assertRaisesRegex(ValueError, 'rerun the same Omadora installer'):
-                gpu.install_detected(Mock())
-            setup.side_effect = subprocess.CalledProcessError(1, ['akmods'])
-            with self.assertRaises(subprocess.CalledProcessError):
-                gpu.install_detected(Mock())
-
-    def test_setup_precedes_deployment_and_is_not_in_upgrade_preparation(self):
-        import inspect
+class ManualNVIDIA(unittest.TestCase):
+    def test_nvidia_install_preview_keeps_drivers_manual(self):
+        import contextlib
+        import io
+        import json
         import omadora
-        source = inspect.getsource(omadora._install)
-        self.assertLess(source.index('omadora_gpu.install_detected'), source.index('lifecycle().prepare'))
-        self.assertNotIn('install_detected', inspect.getsource(omadora.prepare_runtime))
+        output = io.StringIO()
+        with patch.object(gpu, 'detect', return_value=[card()]), patch.object(gpu, 'setup') as setup, contextlib.redirect_stdout(output):
+            omadora.install(dry_run=True)
+        self.assertFalse(json.loads(output.getvalue())['nvidia_driver_automatic'])
+        setup.assert_not_called()
+
+    def test_runtime_preparation_does_not_install_nvidia_drivers(self):
+        import omadora
+        adapter_run = Mock(return_value=subprocess.CompletedProcess([], 0, 'Hyprland 0.55.0'))
+        with tempfile.TemporaryDirectory() as tmp, patch.object(gpu, 'detect', return_value=[card()]), patch.object(gpu, 'setup') as setup, patch.object(omadora, 'run', adapter_run), patch.object(omadora.shutil, 'which', return_value='/usr/bin/tool'):
+            omadora.prepare_runtime(Path(tmp))
+        setup.assert_not_called()
+        arguments = [str(arg) for call in adapter_run.call_args_list for arg in call.args]
+        self.assertFalse(any('nvidia' in arg.lower() or 'rpmfusion' in arg.lower() for arg in arguments))

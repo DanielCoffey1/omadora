@@ -41,10 +41,7 @@ card = dict(pci='0000:01:00.0', vendor='NVIDIA', device='1b80' if mode == 'legac
             subvendor='10de', subdevice='0000', driver='', boot_display=True)
 cards = [card] if mode != 'mesa' else [card | dict(vendor='AMD'), card | dict(vendor='Intel', pci='0000:00:02.0')]
 with patch.object(gpu, 'detect', return_value=cards), patch.object(gpu, 'secure_boot', return_value='enabled' if mode == 'current' else 'disabled'):
-    if mode == 'mesa':
-        gpu.setup(Adapter(), gaming=True)
-    else:
-        assert gpu.install_detected(Adapter())
+    gpu.setup(Adapter(), gaming=True, nvidia=mode != 'mesa')
 if mode == 'mesa':
     subprocess.run(['rpm', '-q', *gpu.mesa_packages(cards, True)], check=True)
     subprocess.run(['vulkaninfo', '--summary'], check=True)
