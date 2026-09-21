@@ -302,7 +302,7 @@ def assemble(source, output):
     for name in ('LICENSE', 'version'):
         shutil.copy2(source / name, tree / name)
     for name in ('omadora.py', 'omadora_deploy.py', 'omadora_lifecycle.py', 'omadora_optional.py',
-                 'omadora_workflows.py', 'omadora_applications.py', 'omadora_gpu.py', 'omadora_wallpapers.py', 'omadora_wallpaper_browser.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
+                 'omadora_workflows.py', 'omadora_applications.py', 'omadora_gpu.py', 'omadora_image.py', 'omadora_wallpapers.py', 'omadora_wallpaper_browser.py', 'apps.json', 'optional.json', 'upstream.lock.json'):
         shutil.copy2(ROOT / name, output / name)
     write(output / 'release.json', json.dumps({'version': VERSION, 'revision': lifecycle().revision(ROOT)}))
     shutil.copytree(ROOT / 'packages', output / 'packages')
@@ -366,7 +366,8 @@ if [[ -n ${XDG_SESSION_ID:-} && -n ${XDG_SEAT:-} ]]; then
   fi
 fi
 '''
-    write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + session_activation + 'exec uwsm start -e -D Hyprland -- /usr/share/wayland-sessions/hyprland.desktop\n', 0o755)
+    image_setup = 'if [[ -f /etc/omadora/image.json ]]; then\n  python3 /usr/local/share/omadora/omadora_image.py || exit 1\nfi\n'
+    write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + image_setup + session_activation + 'exec uwsm start -e -D Hyprland -- /usr/share/wayland-sessions/hyprland.desktop\n', 0o755)
 
     envs = tree / 'default/hypr/envs.lua'
     write(envs, envs.read_text().replace('hl.env("QT_QPA_PLATFORMTHEME", "gtk3")', 'hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")'))

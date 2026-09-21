@@ -93,6 +93,8 @@ class Library:
             path = self.directory / row['local']
         elif row['name'] == DEFAULT:
             path = self.assets / DEFAULT
+        elif (self.assets / 'originals' / row['id']).is_file():
+            path = self.assets / 'originals' / row['id']
         else:
             self.cache.mkdir(parents=True, exist_ok=True)
             path = self.cache / row['id']

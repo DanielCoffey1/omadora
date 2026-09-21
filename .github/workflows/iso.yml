@@ -1,0 +1,30 @@
+name: Omadora offline ISO
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make room for the image build
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet
+          docker image prune --all --force
+          df -h .
+      - name: Build offline installer in disposable Fedora container
+        run: |
+          mkdir -p iso-results
+          docker run --name omadora-iso-build --privileged \
+            -v "$PWD:/src:ro" -v "$PWD/iso-results:/out" \
+            quay.io/fedora/fedora:44 bash /src/iso/build.sh
+      - name: Save ISO and build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omadora-offline-iso
+          compression-level: 0
+          retention-days: 7
+          path: iso-results/

@@ -1,0 +1,28 @@
+# Interactive installation: intentionally no disk, partition or user directives.
+# Anaconda requires the user to review storage before writing to any disk.
+graphical
+liveimg --url=file:///run/install/repo/omadora-root.tar.xz --checksum=@PAYLOAD_SHA256@
+rootpw --lock
+selinux --enforcing
+firewall --enabled
+firstboot --disable
+services --enabled=NetworkManager,gdm,firewalld,chronyd
+
+%post --erroronfail --log=/var/log/omadora-image-install.log
+set -eu
+# Make Omadora the account's first session. No passwords or autologin are shipped.
+python3 - <<'PY'
+import pathlib, pwd
+users = [u for u in pwd.getpwall() if 1000 <= u.pw_uid < 60000 and u.pw_shell not in ('/sbin/nologin', '/bin/false')]
+if not users:
+    raise SystemExit('Create a regular account in the installer before continuing.')
+directory = pathlib.Path('/var/lib/AccountsService/users')
+directory.mkdir(parents=True, exist_ok=True)
+for user in users:
+    path = directory / user.pw_name
+    path.write_text('[User]\nSession=omadora\nXSession=omadora\nSystemAccount=false\n')
+    path.chmod(0o600)
+PY
+systemctl set-default graphical.target
+restorecon -RF /usr/local /etc/omadora /var/lib/AccountsService
+%end
