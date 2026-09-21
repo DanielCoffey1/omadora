@@ -1,8 +1,18 @@
 # Omadora offline installer
 
-The ISO is in development. Do not treat a build artifact as a validated release
-until its installation acceptance test passes. The existing v0.4.0-alpha
-command-line installer remains the published release.
+The v0.5.0-alpha ISO passed an offline UEFI installation and first-desktop test
+on September 21, 2026. It is an alpha for hardware testing. A permanent public
+download host is still being arranged; GitHub's per-release-file limit is smaller
+than this image. Maintainers can retrieve the tested ISO from
+[build 35575539480](https://github.com/DanielCoffey1/omadora/actions/runs/35575539480)
+while its build artifact is retained. The normal command-line installer remains
+available for an existing fresh Fedora Workstation installation.
+
+Tested file: `Omadora-44-x86_64.iso`, 3,933,077,504 bytes (about 3.9 GB).
+
+```text
+SHA256: 9d503966771259684490fd22bd6eda5fc73d8b4f9e0dd6c81d03cc51709e3488
+```
 
 ![Omadora's graphical installer welcome screen](images/iso-welcome.png)
 
@@ -55,6 +65,17 @@ created through the installer. It then boots the installed disk with no ISO and
 checks first-login configuration, SELinux, the desktop, and offline wallpaper
 selection/import/removal. The test-only ISO is never included in public artifacts.
 Test credentials and SSH access are injected only into the disposable guest.
+The installed desktop uses a Bochs virtual display because host virgl stalled
+the test VM. GDM autologin is enabled only in that test to exercise first-login
+setup. Physical USB boot, normal password login on this ISO, Secure Boot, BIOS
+boot, encrypted installation and hardware-specific behavior still need testing.
+The ISO ships no autologin configuration or preset user password.
+
+Both the system payload and installer packaging in the tested file were built
+from `0d230f909300e5da5c9163df9f3faf22522d7b5a`. Preparation verifies
+`systemd-pam`, which is required for GDM and user sessions with weak RPM
+dependencies disabled. Desktop, wallpaper browser and installer-completion
+screenshots from the passing run were reviewed.
 
 Upstream references: [Lorax image embedding](https://weldr.io/lorax/mkksiso.html)
 and [Anaconda configuration](https://github.com/rhinstaller/anaconda/blob/main/data/anaconda.conf).

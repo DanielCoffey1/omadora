@@ -2,23 +2,33 @@
 
 ## Release defaults
 
-The published release remains `v0.4.0-alpha`, which includes
+The published release is `v0.5.0-alpha`, which includes
 all fixes and themed application logos described below. See the
-[release notes](releases/v0.4.0-alpha.md). The original `v0.1.0-alpha` tag and
+[release notes](releases/v0.5.0-alpha.md). The original `v0.1.0-alpha` tag and
 its bootstrap remain unchanged. Existing installations must explicitly run
-`omadora upgrade --ref v0.4.0-alpha` from GNOME or a TTY to move to this release.
+`omadora upgrade --ref v0.5.0-alpha` from GNOME or a TTY to move to this release.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
 
-The `v0.5.0-alpha` ISO candidate is under validation; it is not yet a published
-or installation-validated release. Main's version defaults are prepared for it.
+The `v0.5.0-alpha` ISO passes the complete
+[offline UEFI installation and desktop test](https://github.com/DanielCoffey1/omadora/actions/runs/35575539480)
+at `0d230f9`, alongside
+[source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35575539260).
+The test boots the ISO as USB media, creates an administrator through Anaconda,
+installs with WAN access blocked, then boots the installed disk without the ISO.
+It verifies automatic Nepal setup, installation metadata, SELinux enforcing,
+desktop/menu/screensaver rendering, fonts, dark preference and wallpaper
+apply/import/removal. Screenshots were reviewed. A Bochs virtual display and
+test-only GDM autologin are used; physical hardware, normal ISO password login,
+Secure Boot, BIOS and encrypted installation are not established by this run.
+The tested ISO hash and public-hosting status are recorded in [the USB guide](ISO.md).
+
 [Fedora image account integration](https://github.com/DanielCoffey1/omadora/actions/runs/35564026416)
 at `ff63643` initializes a second user's Nepal wallpaper, fonts and configuration,
 verifies user ownership, preserves edited keybindings on the second login, and
 performs a real desktop upgrade using the image account's installation metadata.
-This component test does not establish USB boot, disk installation or a graphical
-first login. See [ISO validation scope](ISO.md) for the separate acceptance test.
+That component test is separate from the full ISO acceptance run above.
 
 Wallpaper colors pass [77 source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35558619059)
 and [Fedora installation/upgrade/recovery](https://github.com/DanielCoffey1/omadora/actions/runs/35558618995)

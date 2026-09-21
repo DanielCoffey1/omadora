@@ -8,9 +8,11 @@ Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/
 
 ## Install
 
-The v0.5.0-alpha ISO is currently a release candidate under validation. Use the
-[published v0.4.0-alpha release](https://github.com/DanielCoffey1/omadora/releases/tag/v0.4.0-alpha)
-until v0.5.0-alpha is published. See [offline ISO development](docs/ISO.md).
+The **offline ISO** provides a graphical wizard: choose your disk and account,
+install, then reboot into Omadora. It includes pywal16 and all 332 wallpapers,
+with Nepal selected automatically. [USB guide and verified build](docs/ISO.md).
+Offline UEFI installation and first login passed in a VM; hardware testing and
+a permanent public ISO download host remain open.
 
 The [fresh Fedora Workstation ISO acceptance test](docs/WORKSTATION_ISO.md)
 passes installation, reboot and all 15 desktop/update/rollback/recovery checks
