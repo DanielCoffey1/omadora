@@ -16,6 +16,7 @@ import omadora as a
 root = Path(sys.argv[1]).resolve()
 assert root == Path('/build/root'), 'Only the disposable build root is supported'
 prefix = root / 'usr/local/share/omadora'
+subprocess.run(['chroot', str(root), 'rpm', '-q', 'amd-gpu-firmware', 'intel-gpu-firmware'], check=True)
 upstream = Path('/build/upstream')
 a.fetch_upstream(upstream)
 a.assemble(upstream, prefix)

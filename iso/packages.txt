@@ -1,5 +1,6 @@
 # Bootable Workstation base; optional productivity/gaming applications excluded.
 @core
+@hardware-support
 fedora-release-workstation
 fedora-release-identity-workstation
 kernel

@@ -20,7 +20,7 @@ fallback session. Proprietary NVIDIA drivers remain an explicit optional setup.
 Full-size image data lives separately from the versioned desktop runtime, so
 ordinary desktop upgrades preserve the offline wallpaper collection.
 
-The production installer has no preselected disk, unattended partitioning,
+The production installer has no hard-coded destination disk, unattended partitioning,
 default user/password, autologin or debug access. Anaconda handles storage,
 encryption, account creation and bootloader installation. First-login desktop
 configuration runs as the signed-in user without sudo or network access.
