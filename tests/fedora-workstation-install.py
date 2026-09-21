@@ -1,6 +1,7 @@
 """Drive the stock Anaconda Web UI in a disposable, loopback-only ISO VM."""
 import base64
 import json
+import os
 import shlex
 import socket
 import subprocess
@@ -68,19 +69,20 @@ else:
 (OUT / 'iso-baseline.log').write_text(guest('cat /etc/os-release; cat /proc/cmdline; rpm -q anaconda-core anaconda-webui; lsblk -f'))
 # SSH can become ready before GNOME exports DISPLAY. Anaconda's browser exits
 # immediately when that variable is absent, taking its backend down with it.
-deadline = time.monotonic() + 180
-while True:
-    session_env = dict(line.split('=', 1) for line in guest(
-        'runuser -u liveuser -- env XDG_RUNTIME_DIR=/run/user/1000 '
-        'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus '
-        'systemctl --user show-environment 2>/dev/null || true').splitlines() if '=' in line)
-    if session_env.get('DISPLAY') and session_env.get('WAYLAND_DISPLAY'):
-        break
-    assert time.monotonic() < deadline, 'Live GNOME display environment unavailable'
-    time.sleep(2)
-display_env = ' '.join(shlex.quote(key + '=' + session_env[key]) for key in
-                       ('DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY') if session_env.get(key))
-guest('nohup env PKEXEC_UID=1000 ' + display_env + ' liveinst >/tmp/omadora-liveinst.log 2>&1 </dev/null &')
+if not os.environ.get('OMADORA_CUSTOM_ISO'):
+    deadline = time.monotonic() + 180
+    while True:
+        session_env = dict(line.split('=', 1) for line in guest(
+            'runuser -u liveuser -- env XDG_RUNTIME_DIR=/run/user/1000 '
+            'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus '
+            'systemctl --user show-environment 2>/dev/null || true').splitlines() if '=' in line)
+        if session_env.get('DISPLAY') and session_env.get('WAYLAND_DISPLAY'):
+            break
+        assert time.monotonic() < deadline, 'Live GNOME display environment unavailable'
+        time.sleep(2)
+    display_env = ' '.join(shlex.quote(key + '=' + session_env[key]) for key in
+                           ('DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY') if session_env.get(key))
+    guest('nohup env PKEXEC_UID=1000 ' + display_env + ' liveinst >/tmp/omadora-liveinst.log 2>&1 </dev/null &')
 # Fedora 44 liveinst serves the local installer over HTTP on guest loopback:80.
 # Tunnel that existing service rather than depending on newer remote boot flags.
 tunnel = subprocess.Popen(SSH[:-1] + ['-N', '-o', 'ExitOnForwardFailure=yes',
@@ -163,14 +165,17 @@ with sync_playwright() as pw:
 
 # Anaconda installed the disk. Add only the CI access settings needed by the
 # existing acceptance suite, not a replacement desktop environment or kernel.
+account_setup = ('chroot "$target" id omadora-test' if os.environ.get('OMADORA_CUSTOM_ISO') else
+                 'chroot "$target" id omadora-test || chroot "$target" useradd -m -G wheel omadora-test')
+password_setup = '' if os.environ.get('OMADORA_CUSTOM_ISO') else 'echo omadora-test:omadora-vm-test-only | chroot "$target" chpasswd'
 script = f'''
 set -eu
 target=/mnt/sysroot
 test -f "$target/etc/fedora-release"
 cat "$target/etc/os-release"
 chroot "$target" rpm -qa | sort >/tmp/iso-installed-packages.txt
-chroot "$target" id omadora-test || chroot "$target" useradd -m -G wheel omadora-test
-echo omadora-test:omadora-vm-test-only | chroot "$target" chpasswd
+{account_setup}
+{password_setup}
 install -d -m700 "$target/home/omadora-test/.ssh"
 echo {key} | base64 -d >"$target/home/omadora-test/.ssh/authorized_keys"
 chmod 600 "$target/home/omadora-test/.ssh/authorized_keys"
@@ -184,10 +189,10 @@ sync
 print(guest('bash -c ' + shlex.quote(script)), flush=True)
 (OUT / 'iso-installed-packages.txt').write_text(guest('cat /tmp/iso-installed-packages.txt'))
 (OUT / 'iso-provenance.json').write_text(json.dumps({
-    'image': 'Fedora-Workstation-Live-44-1.7.x86_64.iso',
+    'image': 'Omadora-44-x86_64.iso' if os.environ.get('OMADORA_CUSTOM_ISO') else 'Fedora-Workstation-Live-44-1.7.x86_64.iso',
     'installer': 'unmodified Anaconda Web UI', 'firmware': 'UEFI',
     'test_instrumentation': ['loopback SSH tunnel to local installer', 'live-only serial debug shell/firstboot mask',
                              'ephemeral SSH key', 'test user/password', 'test sudo rule'],
     'desktop_added_by_dnf': False,
 }, indent=2))
-print('PASS: official Workstation Live ISO installed through Anaconda', flush=True)
+print('PASS: ISO installed through Anaconda', flush=True)

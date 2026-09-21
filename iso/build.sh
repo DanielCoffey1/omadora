@@ -25,7 +25,7 @@ for directory in /build/root/usr/lib/modules/*; do
   version=${directory##*/}
   chroot /build/root dracut --force --no-hostonly "/boot/initramfs-$version.img" "$version"
 done
-chroot /build/root /sbin/setfiles -F -r / /etc/selinux/targeted/contexts/files/file_contexts /usr/local /etc/omadora
+chroot /build/root /sbin/setfiles -F -e /proc -e /sys -e /dev -e /run -r / /etc/selinux/targeted/contexts/files/file_contexts /
 cleanup
 trap - EXIT
 find /build/root/var/cache -mindepth 1 -delete
@@ -51,4 +51,8 @@ mkksiso --ks /build/omadora.ks --add /build/omadora-root.tar.xz --updates /build
   /build/fedora-boot.iso /out/Omadora-44-x86_64.iso
 (cd /out && sha256sum Omadora-44-x86_64.iso >SHA256SUMS)
 ls -lh /out/Omadora-44-x86_64.iso
+mkdir -p /out/test
+# Only this unshipped copy enables serial debug access for the disposable VM.
+mkksiso --cmdline 'console=ttyS0,115200 systemd.debug_shell=ttyS0 inst.sshd' \
+  /out/Omadora-44-x86_64.iso /out/test/omadora-test.iso
 echo 'PASS: built offline Omadora installer ISO.'

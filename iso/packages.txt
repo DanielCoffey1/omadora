@@ -24,7 +24,6 @@ chrony
 NetworkManager-wifi
 NetworkManager-bluetooth
 NetworkManager-tui
-iwlax2xx-firmware
 mesa-dri-drivers
 mesa-vulkan-drivers
 vulkan-loader

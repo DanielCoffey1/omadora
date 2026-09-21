@@ -27,4 +27,24 @@ jobs:
           name: omadora-offline-iso
           compression-level: 0
           retention-days: 7
-          path: iso-results/
+          path: |
+            iso-results/*.iso
+            iso-results/*.txt
+            iso-results/*.json
+            iso-results/*.log
+            iso-results/SHA256SUMS
+            iso-results/fedora-CHECKSUM
+      - name: Install VM test tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils ovmf xvfb x11-utils libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium
+      - name: Install and boot with internet blocked
+        run: bash tests/omadora-iso.sh
+      - name: Save installation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omadora-iso-acceptance
+          path: vm-results/
