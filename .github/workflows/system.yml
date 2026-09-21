@@ -9,6 +9,7 @@ on:
         options:
           - system
           - keybindings
+          - wallpapers
 permissions:
   contents: read
 jobs:
