@@ -4,6 +4,8 @@ The ISO is in development. Do not treat a build artifact as a validated release
 until its installation acceptance test passes. The existing v0.4.0-alpha
 command-line installer remains the published release.
 
+![Omadora's graphical installer welcome screen](images/iso-welcome.png)
+
 ## Intended installation flow
 
 1. Open [Fedora Media Writer](https://github.com/FedoraQt/MediaWriter), choose the
