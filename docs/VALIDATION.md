@@ -2,11 +2,11 @@
 
 ## Release defaults
 
-The published release is `v0.5.0-alpha`, which includes
-all fixes and themed application logos described below. See the
-[release notes](releases/v0.5.0-alpha.md). The original `v0.1.0-alpha` tag and
-its bootstrap remain unchanged. Existing installations must explicitly run
-`omadora upgrade --ref v0.5.0-alpha` from GNOME or a TTY to move to this release.
+The current source release is `v0.6.0-alpha`; see its
+[release notes](releases/v0.6.0-alpha.md). Existing installations must explicitly
+run `omadora upgrade --ref v0.6.0-alpha` from GNOME or a TTY to move to it.
+The latest published offline ISO remains `v0.5.0-alpha`; the validation results
+below apply to that ISO and earlier source revisions unless stated otherwise.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
