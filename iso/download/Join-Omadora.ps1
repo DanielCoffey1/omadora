@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $target = Join-Path $PSScriptRoot 'Omadora-44-x86_64.iso'
-$expected = '9d503966771259684490fd22bd6eda5fc73d8b4f9e0dd6c81d03cc51709e3488'
+$expected = '082bf82c7f10947971def9f13655181c3bde1f5ba29e168df029d6e1c9759f8f'
 if (Test-Path -LiteralPath $target) { throw 'An ISO already exists here. Move it elsewhere before joining the parts.' }
 $parts = @('Omadora-44-x86_64.iso.part1', 'Omadora-44-x86_64.iso.part2')
 foreach ($part in $parts) {

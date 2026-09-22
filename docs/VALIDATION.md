@@ -5,19 +5,22 @@
 The current source release is `v0.6.0-alpha`; see its
 [release notes](releases/v0.6.0-alpha.md). Existing installations must explicitly
 run `omadora upgrade --ref v0.6.0-alpha` from GNOME or a TTY to move to it.
-The latest published offline ISO remains `v0.5.0-alpha`; the validation results
-below apply to that ISO and earlier source revisions unless stated otherwise.
+The latest published offline ISO is `v0.6.0-alpha`; its offline installation
+and desktop test passed as recorded below. Other results retain their stated
+source revisions.
 The v0.6.0-alpha candidate passed its adapter/assembly check, while its Fedora
 integration run stopped on timeouts fetching `nett00n/hyprland` and
-`whelanh/omarchy` COPR metadata. No new full installation pass is claimed.
+`whelanh/omarchy` COPR metadata. The ISO reuses the previously tested Fedora packages to avoid
+that outage.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
 
-The `v0.5.0-alpha` ISO passes the complete
-[offline UEFI installation and desktop test](https://github.com/DanielCoffey1/omadora/actions/runs/35575539480)
-at `0d230f9`, alongside
-[source checks](https://github.com/DanielCoffey1/omadora/actions/runs/35575539260).
+The `v0.6.0-alpha` ISO passes the complete
+[offline UEFI installation and desktop test](https://github.com/DanielCoffey1/omadora/actions/runs/35687217730).
+Its desktop is from release commit `199df46`, with installer packaging from
+`5c53400`, the Fedora payload from run `35575539480`, and the same installer
+runtime used for v0.5.0-alpha (run `35566340967`).
 The test boots the ISO as USB media, creates an administrator through Anaconda,
 installs with WAN access blocked, then boots the installed disk without the ISO.
 It verifies automatic Nepal setup, installation metadata, SELinux enforcing,

@@ -1,8 +1,8 @@
 # Omadora offline installer
 
-The v0.5.0-alpha ISO passed an offline UEFI installation and first-desktop test
-on September 21, 2026. It is an alpha for hardware testing. Download the ISO
-parts and joining helpers from the [v0.5.0-alpha release](https://github.com/DanielCoffey1/omadora/releases/tag/v0.5.0-alpha).
+The v0.6.0-alpha ISO passed an offline UEFI installation and first-desktop test
+on September 22, 2026. It is an alpha for hardware testing. Download the ISO
+parts and joining helpers from the [v0.6.0-alpha release](https://github.com/DanielCoffey1/omadora/releases/tag/v0.6.0-alpha).
 On Windows, put both parts, `Join-Omadora.cmd` and `Join-Omadora.ps1` in one
 folder and double-click `Join-Omadora.cmd`. It combines and verifies the image.
 Allow about 8 GB of free space. Linux/macOS instructions are on the release page.
@@ -10,10 +10,10 @@ GitHub's file-size limit requires two parts; the completed ISO is unchanged.
 The normal command-line installer remains available for an existing fresh
 Fedora Workstation installation.
 
-Tested file: `Omadora-44-x86_64.iso`, 3,933,077,504 bytes (about 3.9 GB).
+Tested file: `Omadora-44-x86_64.iso`, 3,933,732,864 bytes.
 
 ```text
-SHA256: 9d503966771259684490fd22bd6eda5fc73d8b4f9e0dd6c81d03cc51709e3488
+SHA256: 082bf82c7f10947971def9f13655181c3bde1f5ba29e168df029d6e1c9759f8f
 ```
 
 ![Omadora's graphical installer welcome screen](images/iso-welcome.png)
@@ -61,6 +61,23 @@ the same documented COPRs as the normal installer. The build records the exact
 package inventory, source revision and final ISO SHA-256. Repository package
 updates mean two builds of the same source may differ.
 
+When reusing the v0.5.0-alpha build during a COPR outage, use both saved
+components: system payload from run `35575539480` and installer runtime from
+run `35566340967`. The successful v0.5.0-alpha run reused that installer runtime;
+it did not upload a new copy. For the v0.6.0-alpha desktop:
+
+```sh
+gh workflow run iso.yml --ref main \
+  -f reuse_payload=35575539480 \
+  -f payload_source_ref=v0.6.0-alpha \
+  -f reuse_installer=35566340967
+```
+
+These workflow artifacts have seven-day retention. Confirm they have not expired
+before reusing them. This retains the prior Fedora package inventory and offline
+wallpapers, replaces the desktop with the tagged release, and runs the same
+offline installation test. Omitting `reuse_installer` composes a new runtime.
+
 The test boots a separately instrumented copy through UEFI, installs onto a blank
 60 GB virtual disk with WAN access blocked, and requires the user account to be
 created through the installer. It then boots the installed disk with no ISO and
@@ -73,8 +90,10 @@ setup. Physical USB boot, normal password login on this ISO, Secure Boot, BIOS
 boot, encrypted installation and hardware-specific behavior still need testing.
 The ISO ships no autologin configuration or preset user password.
 
-Both the system payload and installer packaging in the tested file were built
-from `0d230f909300e5da5c9163df9f3faf22522d7b5a`. Preparation verifies
+The desktop in the tested payload is from the v0.6.0-alpha tag
+(`199df4664ed2a41d6bce880199ec25ce1dd10156`); installer packaging is from
+`5c53400`. Fedora packages and the installer runtime were reused from the
+previous successful ISO process described above. Preparation verifies
 `systemd-pam`, which is required for GDM and user sessions with weak RPM
 dependencies disabled. Desktop, wallpaper browser and installer-completion
 screenshots from the passing run were reviewed.

@@ -4,18 +4,19 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**v0.6.0-alpha.** [Release notes](docs/releases/v0.6.0-alpha.md) · [Quick start](docs/QUICKSTART.md). This source release adds NVIDIA driver setup to Install → Gaming, default-browser web apps, a theme-colored Fedora menu glyph, a 12-hour default clock, and terminals that start in the user's home directory. The previous offline ISO remains at v0.5.0-alpha; install from Fedora Workstation or upgrade an existing Omadora installation to get these changes. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md) for test scope and remaining limits.
+**v0.6.0-alpha.** [Release notes](docs/releases/v0.6.0-alpha.md) · [Quick start](docs/QUICKSTART.md). This release adds NVIDIA driver setup to Install → Gaming, default-browser web apps, a theme-colored Fedora menu glyph, a 12-hour default clock, and terminals that start in the user's home directory. The offline ISO includes these changes and passed installation and desktop testing. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md) for test scope and remaining limits.
 
 ## Install
 
-The previous **v0.5.0-alpha offline ISO** provides a graphical wizard: choose your disk and account,
+The **v0.6.0-alpha offline ISO** provides a graphical wizard: choose your disk and account,
 install, then reboot into Omadora. It includes pywal16 and all 332 wallpapers,
 with Nepal selected automatically. [USB guide and verified build](docs/ISO.md).
 Download the two ISO parts and Windows joining helpers from the
-[v0.5.0-alpha release](https://github.com/DanielCoffey1/omadora/releases/tag/v0.5.0-alpha).
-Offline UEFI installation and first login passed in a VM, and a user reported a
-successful hardware installation. That ISO predates the v0.6.0-alpha changes;
-upgrade after installation to get them. Broader hardware testing remains open.
+[v0.6.0-alpha release](https://github.com/DanielCoffey1/omadora/releases/tag/v0.6.0-alpha).
+Offline UEFI installation and first login passed in a VM. The ISO uses the same
+Fedora package inventory and installer runtime as the previous ISO, which also
+had a user-reported successful hardware installation. Broader hardware testing
+of this release remains open.
 
 The [fresh Fedora Workstation ISO acceptance test](docs/WORKSTATION_ISO.md)
 passes installation, reboot and all 15 desktop/update/rollback/recovery checks
