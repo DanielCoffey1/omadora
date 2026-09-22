@@ -1,12 +1,14 @@
 # Omadora offline installer
 
 The v0.5.0-alpha ISO passed an offline UEFI installation and first-desktop test
-on September 21, 2026. It is an alpha for hardware testing. A permanent public
-download host is still being arranged; GitHub's per-release-file limit is smaller
-than this image. Maintainers can retrieve the tested ISO from
-[build 35575539480](https://github.com/DanielCoffey1/omadora/actions/runs/35575539480)
-while its build artifact is retained. The normal command-line installer remains
-available for an existing fresh Fedora Workstation installation.
+on September 21, 2026. It is an alpha for hardware testing. Download the ISO
+parts and joining helpers from the [v0.5.0-alpha release](https://github.com/DanielCoffey1/omadora/releases/tag/v0.5.0-alpha).
+On Windows, put both parts, `Join-Omadora.cmd` and `Join-Omadora.ps1` in one
+folder and double-click `Join-Omadora.cmd`. It combines and verifies the image.
+Allow about 8 GB of free space. Linux/macOS instructions are on the release page.
+GitHub's file-size limit requires two parts; the completed ISO is unchanged.
+The normal command-line installer remains available for an existing fresh
+Fedora Workstation installation.
 
 Tested file: `Omadora-44-x86_64.iso`, 3,933,077,504 bytes (about 3.9 GB).
 
