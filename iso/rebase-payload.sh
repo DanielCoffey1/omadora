@@ -6,6 +6,8 @@ set -euo pipefail
 ref=${1:?Supply the release tag whose desktop will be embedded}
 [[ $ref =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha$ ]]
 test -f /out/payload/omadora-root.tar.xz
+# Reusing the payload skips build-root.sh, including its builder dependencies.
+dnf install -y git python3 tar xz
 (cd /out/payload && sha256sum -c SHA256SUMS)
 mkdir -p /build/root
 git clone --depth 1 --branch "$ref" https://github.com/DanielCoffey1/omadora.git /build/release-source
