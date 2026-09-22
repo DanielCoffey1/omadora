@@ -30,6 +30,8 @@ curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.6.0-alpha/
 ```
 
 Run as your regular user. The installer uses sudo for packages and system files.
+The release candidate's Fedora integration run was blocked by timeouts from the
+two required community COPR repositories; retry installation when they respond.
 
 Inspect the plan without changing anything:
 

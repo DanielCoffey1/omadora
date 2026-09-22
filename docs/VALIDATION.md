@@ -7,6 +7,9 @@ The current source release is `v0.6.0-alpha`; see its
 run `omadora upgrade --ref v0.6.0-alpha` from GNOME or a TTY to move to it.
 The latest published offline ISO remains `v0.5.0-alpha`; the validation results
 below apply to that ISO and earlier source revisions unless stated otherwise.
+The v0.6.0-alpha candidate passed its adapter/assembly check, while its Fedora
+integration run stopped on timeouts fetching `nett00n/hyprland` and
+`whelanh/omarchy` COPR metadata. No new full installation pass is claimed.
 The historical commit commands below remain useful for reproducing tests.
 
 ## Latest verified results
