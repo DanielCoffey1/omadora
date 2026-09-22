@@ -8,6 +8,7 @@
 - User-visible Omadora branding; original wordmark replaced, including the default screensaver and branding reset target. Upstream author/license attribution and technical names remain.
 - The bar menu button uses a Fedora glyph from Omadora's Nerd Font and inherits the bar's theme color.
 - The default bar clock uses 12-hour time with AM/PM.
+- New terminal windows opened by Omadora's terminal shortcut start in the user's home directory.
 - DNF package updates and RPM presence queries; cached DNF update checks for the bar.
 - Separate GDM entry, UWSM session environment, Fedora PAM includes and the upstream shell's polkit authentication agent.
 - Configuration backup and restore with preservation of post-install edits.
