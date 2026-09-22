@@ -386,7 +386,7 @@ fi
             if not line.lstrip().startswith('#')),
         'omarchy-launch-terminal': 'exec setsid uwsm-app -- foot "$@"',
         'omarchy-launch-browser': 'args=("$@"); for i in "${!args[@]}"; do [[ ${args[$i]} == --private ]] && args[$i]=--private-window; done; exec uwsm-app -- firefox "${args[@]}"',
-        'omarchy-launch-webapp': 'exec uwsm-app -- firefox "$@"',
+        'omarchy-launch-webapp': 'exec env -u BROWSER uwsm-app -- xdg-open "$@"',
         'omarchy-voxtype-config': 'if ! command -v voxtype >/dev/null; then exec foot omadora-terminal-action omadora app install dictation; fi\nomarchy-launch-floating-terminal-with-presentation "voxtype configure"',
         'omarchy-launch-about': 'exec foot --hold omadora about',
         'omarchy-update': 'exec omadora update',

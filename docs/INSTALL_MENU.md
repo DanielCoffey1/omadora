@@ -15,7 +15,7 @@ picker. Selecting a category never installs a bundle.
 | Area | Fedora implementation |
 | --- | --- |
 | Package / AUR | Searchable available RPM list; AUR becomes a validated COPR owner/project and package prompt |
-| TUI / Web App | Foot launchers for installed terminal commands; Firefox web launchers |
+| TUI / Web App | Foot launchers for installed terminal commands; web launchers use the current default browser |
 | Theme / Background | Wallpaper library with Add/Remove controls and automatic pywal16 colors; see [wallpapers](WALLPAPERS.md) |
 | Fonts | Fedora Cascadia Mono, Fira Code and Bitstream Vera Mono; pinned Meslo, Victor Mono and Iosevka Nerd Font archives |
 | Browser | Chrome, Edge, Brave, Brave Origin, Zen and Chromium; Firefox is in the base |

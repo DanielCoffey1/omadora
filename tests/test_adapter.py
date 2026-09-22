@@ -280,6 +280,8 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             self.assertNotRegex(active_model, r'\bpacman\b')
             self.assertIn('lua', adapter.packages())
             self.assertNotIn('omarchy-theme-set-browser', (tree / 'bin/omarchy-theme-set').read_text())
+            self.assertIn('exec env -u BROWSER uwsm-app -- xdg-open "$@"',
+                          (tree / 'bin/omarchy-launch-webapp').read_text())
             for unsupported in ('learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu', 'trigger.toggle.crash-capture', 'style.about'):
                 self.assertNotIn(unsupported, menu)
             self.assertNotIn('$HOME/.config/fontconfig/fonts.conf', (tree / 'bin/omarchy-font-set').read_text(encoding='utf-8'))
