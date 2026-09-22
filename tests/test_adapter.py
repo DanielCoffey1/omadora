@@ -37,6 +37,8 @@ class AdapterTests(unittest.TestCase):
         self.assertIn('install.service.dropbox', menu)
         self.assertIn('install.browser.brave', menu)
         self.assertIn('install.gaming.minecraft', menu)
+        self.assertEqual(menu['install.gaming.nvidia']['action'],
+                         'foot omadora-terminal-action omadora gpu setup --nvidia --gaming')
         self.assertFalse(set(apps['ghostty']['packages']) & set(adapter.packages()))
 
     def test_optional_copr_is_enabled_only_for_install(self):

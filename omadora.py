@@ -250,6 +250,7 @@ def menu_for_fedora(menu, apps, blocked):
     result['setup.gpu.libraries'] = {'label': 'Gaming graphics', 'icon': '', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
     result['setup.gpu.nvidia'] = {'label': 'NVIDIA drivers', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --nvidia --gaming'}
     result['install.gaming.graphics'] = {'label': 'GPU setup', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
+    result['install.gaming.nvidia'] = {'label': 'NVIDIA drivers', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --nvidia --gaming'}
     for key in list(result):
         if key in ('style.theme', 'style.background', 'remove.theme', 'update.themes') or key.startswith(('install.style.theme', 'install.style.background', 'remove.style.theme', 'remove.style.background')):
             del result[key]

@@ -20,7 +20,8 @@ driver compatibility and firmware enrollment need checking.
 
 Open **Setup → Graphics** for status, gaming libraries or NVIDIA driver setup.
 The **Install → Gaming → GPU setup** entry installs the optional gaming
-graphics libraries and explains the NVIDIA path if needed.
+graphics libraries. **Install → Gaming → NVIDIA drivers** starts the NVIDIA
+driver and gaming library setup described below.
 
 ```bash
 omadora gpu status
