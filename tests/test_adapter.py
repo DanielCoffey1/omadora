@@ -266,6 +266,15 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             self.assertIn('tui = "top"', utilities)
             menu_qml = (tree / 'shell/plugins/menu/Menu.qml').read_text(encoding='utf-8')
             self.assertIn('FontLoader { source: "../../../../assets/fonts/OmadoraAppIcons.ttf" }', menu_qml)
+            bar_menu = (tree / 'shell/plugins/menu/BarWidget.qml').read_text(encoding='utf-8')
+            self.assertIn('text: ""\n    fontFamily: "JetBrainsMonoNL Nerd Font"', bar_menu)
+            self.assertNotIn('fontFamily: "omarchy"', bar_menu)
+            clock = (tree / 'shell/plugins/panels/clock/BarWidget.qml').read_text(encoding='utf-8')
+            self.assertIn('setting("format", "dddd h:mm AP")', clock)
+            self.assertIn('setting("verticalFormat", "h\\n—\\nmm AP")', clock)
+            clock_settings = next(widget for widget in adapter.read_json(tree / 'config/omarchy/shell.json')['bar']['layout']['center']
+                                  if widget['id'] == 'omarchy.clock')
+            self.assertEqual(clock_settings['format'], 'dddd h:mm AP')
             self.assertIn('color: row.hasCursor ? root.selectedText : root.foreground', menu_qml)
             self.assertTrue((output / 'assets/fonts/OmadoraAppIcons.ttf').is_file())
             # Preserve both entry points to the imported, searchable guide.

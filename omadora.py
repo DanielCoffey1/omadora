@@ -315,6 +315,13 @@ def assemble(source, output):
     menu_qml = tree / 'shell/plugins/menu/Menu.qml'
     write(menu_qml, menu_qml.read_text(encoding='utf-8').replace('  id: root\n',
         '  id: root\n\n  FontLoader { source: "../../../../assets/fonts/OmadoraAppIcons.ttf" }\n', 1))
+    bar_menu = tree / 'shell/plugins/menu/BarWidget.qml'
+    bar_menu_text = bar_menu.read_text(encoding='utf-8')
+    old_logo = 'text: "\\ue900"\n    fontFamily: "omarchy"'
+    if bar_menu_text.count(old_logo) != 1:
+        raise ValueError('Upstream bar menu logo changed; Omadora branding needs review.')
+    write(bar_menu, bar_menu_text.replace(old_logo,
+        'text: ""\n    fontFamily: "JetBrainsMonoNL Nerd Font"'))
 
     library = tree / 'shell/services/AppLibrary.qml'
     text = library.read_text(encoding='utf-8')
@@ -427,7 +434,19 @@ fi
     shell_config = read_json(tree / 'config/omarchy/shell.json')
     for position, widgets in shell_config['bar']['layout'].items():
         shell_config['bar']['layout'][position] = [w for w in widgets if w['id'] != 'omarchy.agents']
+    for widgets in shell_config['bar']['layout'].values():
+        for widget in widgets:
+            if widget['id'] == 'omarchy.clock':
+                widget['format'] = 'dddd h:mm AP'
+                widget['verticalFormat'] = 'h\n—\nmm AP'
     write(tree / 'config/omarchy/shell.json', json.dumps(shell_config, indent=2))
+    clock_widget = tree / 'shell/plugins/panels/clock/BarWidget.qml'
+    clock_text = clock_widget.read_text(encoding='utf-8')
+    if clock_text.count('setting("format", "dddd HH:mm")') != 1 or clock_text.count('setting("verticalFormat", "HH\\n—\\nmm")') != 1:
+        raise ValueError('Upstream clock defaults changed; Omadora format needs review.')
+    write(clock_widget, clock_text.replace('setting("format", "dddd HH:mm")',
+        'setting("format", "dddd h:mm AP")').replace('setting("verticalFormat", "HH\\n—\\nmm")',
+        'setting("verticalFormat", "h\\n—\\nmm AP")'))
     foot = tree / 'config/foot/foot.ini'
     write(foot, foot.read_text().replace('JetBrainsMono Nerd Font', 'JetBrainsMonoNL Nerd Font'))
     # Keep absent optional programs out of the advertised keybindings.
