@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [[ -z ${1:-} ]]; then
+  echo 'Usage: omarchy-launch-webapp URL [browser flags...]' >&2
+  exit 2
+fi
+
+url=$1
+shift
+# Match the local Brave Origin launcher, with Fedora Chromium for fresh installs.
+for browser in brave-origin-stable brave-browser-stable brave-browser chromium-browser chromium; do
+  if command -v "$browser" >/dev/null 2>&1; then
+    exec uwsm-app -- "$browser" --app="$url" "$@"
+  fi
+done
+
+echo 'No webapp browser found. Install Chromium with: sudo dnf install chromium' >&2
+exit 1

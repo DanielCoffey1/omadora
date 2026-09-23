@@ -15,7 +15,7 @@
 
 ## Differences from upstream
 
-- Firefox is the default browser; web links open as normal Firefox windows rather than Chromium app-mode windows.
+- Firefox remains the standard browser launcher. Web apps open in separate windows without browser tabs using `--app=URL`, preferring native Brave Origin, then native Brave, then Fedora Chromium (included in the base packages). Webapp windows use that browser's regular profile and preserve additional launcher flags; they do not depend on the default browser setting.
 - Theme changes do not install machine-wide browser color policies. Chromium toolbar-color synchronization and Apple vendor HID brightness controls are not ported.
 - Screenshots retain the upstream keyboard region picker, including Escape cancellation and Ctrl+Enter for fullscreen, with grim/slurp capture and save/copy modes. The annotation editor, OCR and QR capture tools are not installed.
 - The recording indicator opens region/full-display recording and stops an active recording. Fedora's `wf-recorder` saves VP8 WebM files to the Videos folder, with optional desktop or microphone audio. Encoding uses the CPU; simultaneous audio mixing, webcam overlays and upstream GPU encoder options are not implemented.

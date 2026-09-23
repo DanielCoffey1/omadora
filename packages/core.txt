@@ -19,6 +19,8 @@ foot
 neovim
 nautilus
 firefox
+# Standalone webapp windows, independent of the default browser.
+chromium
 NetworkManager
 bluez
 wireplumber

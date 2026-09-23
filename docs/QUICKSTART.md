@@ -13,7 +13,8 @@ regular Fedora user:
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | OMADORA_REF=main bash
 ```
 
-This includes changes after v0.5.0-alpha: web apps follow the default browser,
+This includes changes after v0.5.0-alpha: web apps open in standalone app windows
+using native Brave when installed or the included Chromium,
 the bar clock uses 12-hour time with AM/PM, and the terminal shortcut opens in
 your home directory. `main` changes as updates are pushed; it is not a tagged
 release.
