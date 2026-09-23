@@ -383,9 +383,9 @@ fi
         'omarchy-theme-set-gnome': '\n'.join(line for line in
             (source / 'bin/omarchy-theme-set-gnome').read_text().splitlines()
             if not line.lstrip().startswith('#')),
-        'omarchy-launch-terminal': 'exec setsid uwsm-app -- foot "$@"',
+        'omarchy-launch-terminal': 'exec setsid uwsm-app -- foot --working-directory="$HOME" "$@"',
         'omarchy-launch-browser': 'args=("$@"); for i in "${!args[@]}"; do [[ ${args[$i]} == --private ]] && args[$i]=--private-window; done; exec uwsm-app -- firefox "${args[@]}"',
-        'omarchy-launch-webapp': 'exec uwsm-app -- firefox "$@"',
+        'omarchy-launch-webapp': 'exec env -u BROWSER uwsm-app -- xdg-open "$@"',
         'omarchy-voxtype-config': 'if ! command -v voxtype >/dev/null; then exec foot omadora-terminal-action omadora app install dictation; fi\nomarchy-launch-floating-terminal-with-presentation "voxtype configure"',
         'omarchy-launch-about': 'exec foot --hold omadora about',
         'omarchy-update': 'exec omadora update',
@@ -426,6 +426,10 @@ fi
     shell_config = read_json(tree / 'config/omarchy/shell.json')
     for position, widgets in shell_config['bar']['layout'].items():
         shell_config['bar']['layout'][position] = [w for w in widgets if w['id'] != 'omarchy.agents']
+        for widget in shell_config['bar']['layout'][position]:
+            if widget['id'] == 'omarchy.clock':
+                widget['format'] = 'dddd h:mm AP'
+                widget['verticalFormat'] = 'h\n—\nmm\nAP'
     write(tree / 'config/omarchy/shell.json', json.dumps(shell_config, indent=2))
     foot = tree / 'config/foot/foot.ini'
     write(foot, foot.read_text().replace('JetBrainsMono Nerd Font', 'JetBrainsMonoNL Nerd Font'))

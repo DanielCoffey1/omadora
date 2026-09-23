@@ -47,6 +47,7 @@ After installation, log out, select **Omadora** using GDM's gear menu, and log i
 - Upstream Hyprland layout, Quickshell bar, menus, notifications, lock screen and theme system.
 - Omadora text branding and an Omadora ASCII wordmark using the existing animated screensaver engine.
 - Foot terminal, Neovim, Firefox and Files, plus desktop infrastructure for networking, sound, brightness, clipboard and screenshots.
+- Web apps follow your default browser. The bar clock uses 12-hour time with AM/PM, and the terminal shortcut opens in your home directory.
 - Activity opens `top` in Foot. Screenshot selection supports Escape to cancel and Ctrl+Enter for fullscreen, saving and copying the image without an extra editor.
 - Omarchy's additional app and web-app shortcuts disabled; essential desktop shortcuts remain.
 - Optional software in **Install**, including AI, Gaming, Editor, Browser, Terminal, Services, Development and Style → Font, plus creative/media/productivity apps. Matching Remove menus. Web App installation and wallpaper-based color generation are also available; see [Install coverage](docs/INSTALL_MENU.md).
