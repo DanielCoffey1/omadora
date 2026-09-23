@@ -37,8 +37,6 @@ class AdapterTests(unittest.TestCase):
         self.assertIn('install.service.dropbox', menu)
         self.assertIn('install.browser.brave', menu)
         self.assertIn('install.gaming.minecraft', menu)
-        self.assertEqual(menu['install.gaming.nvidia']['action'],
-                         'foot omadora-terminal-action omadora gpu setup --nvidia --gaming')
         self.assertFalse(set(apps['ghostty']['packages']) & set(adapter.packages()))
 
     def test_optional_copr_is_enabled_only_for_install(self):
@@ -266,15 +264,6 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             self.assertIn('tui = "top"', utilities)
             menu_qml = (tree / 'shell/plugins/menu/Menu.qml').read_text(encoding='utf-8')
             self.assertIn('FontLoader { source: "../../../../assets/fonts/OmadoraAppIcons.ttf" }', menu_qml)
-            bar_menu = (tree / 'shell/plugins/menu/BarWidget.qml').read_text(encoding='utf-8')
-            self.assertIn('text: ""\n    fontFamily: "JetBrainsMonoNL Nerd Font"', bar_menu)
-            self.assertNotIn('fontFamily: "omarchy"', bar_menu)
-            clock = (tree / 'shell/plugins/panels/clock/BarWidget.qml').read_text(encoding='utf-8')
-            self.assertIn('setting("format", "dddd h:mm AP")', clock)
-            self.assertIn('setting("verticalFormat", "h\\n—\\nmm AP")', clock)
-            clock_settings = next(widget for widget in adapter.read_json(tree / 'config/omarchy/shell.json')['bar']['layout']['center']
-                                  if widget['id'] == 'omarchy.clock')
-            self.assertEqual(clock_settings['format'], 'dddd h:mm AP')
             self.assertIn('color: row.hasCursor ? root.selectedText : root.foreground', menu_qml)
             self.assertTrue((output / 'assets/fonts/OmadoraAppIcons.ttf').is_file())
             # Preserve both entry points to the imported, searchable guide.
@@ -289,10 +278,6 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             self.assertNotRegex(active_model, r'\bpacman\b')
             self.assertIn('lua', adapter.packages())
             self.assertNotIn('omarchy-theme-set-browser', (tree / 'bin/omarchy-theme-set').read_text())
-            self.assertIn('exec env -u BROWSER uwsm-app -- xdg-open "$@"',
-                          (tree / 'bin/omarchy-launch-webapp').read_text())
-            self.assertIn('foot --working-directory="$HOME" "$@"',
-                          (tree / 'bin/omarchy-launch-terminal').read_text())
             for unsupported in ('learn.tmux-keybindings', 'trigger.hardware.hybrid-gpu', 'trigger.toggle.crash-capture', 'style.about'):
                 self.assertNotIn(unsupported, menu)
             self.assertNotIn('$HOME/.config/fontconfig/fonts.conf', (tree / 'bin/omarchy-font-set').read_text(encoding='utf-8'))

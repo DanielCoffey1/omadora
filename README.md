@@ -4,19 +4,15 @@
 
 Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
-**v0.6.0-alpha.** [Release notes](docs/releases/v0.6.0-alpha.md) · [Quick start](docs/QUICKSTART.md). This release adds NVIDIA driver setup to Install → Gaming, default-browser web apps, a theme-colored Fedora menu glyph, a 12-hour default clock, and terminals that start in the user's home directory. The offline ISO includes these changes and passed installation and desktop testing. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md) for test scope and remaining limits.
+**v0.5.0-alpha.** [Release notes](docs/releases/v0.5.0-alpha.md) · [Quick start](docs/QUICKSTART.md). Fedora tests cover installation, the original 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam startup, GTK dark dialogs and the GDM inactive-session startup crash are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume passed three cycles with a [Bochs virtual display](docs/VIRTUAL_MACHINES.md); QEMU/virtio still fails.** A laptop smoke test was reported by the project owner; detailed hardware results, broader application workloads and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
 
 ## Install
 
-The **v0.6.0-alpha offline ISO** provides a graphical wizard: choose your disk and account,
+The **offline ISO** provides a graphical wizard: choose your disk and account,
 install, then reboot into Omadora. It includes pywal16 and all 332 wallpapers,
 with Nepal selected automatically. [USB guide and verified build](docs/ISO.md).
-Download the two ISO parts and Windows joining helpers from the
-[v0.6.0-alpha release](https://github.com/DanielCoffey1/omadora/releases/tag/v0.6.0-alpha).
-Offline UEFI installation and first login passed in a VM. The ISO uses the same
-Fedora package inventory and installer runtime as the previous ISO, which also
-had a user-reported successful hardware installation. Broader hardware testing
-of this release remains open.
+Offline UEFI installation and first login passed in a VM; hardware testing and
+a permanent public ISO download host remain open.
 
 The [fresh Fedora Workstation ISO acceptance test](docs/WORKSTATION_ISO.md)
 passes installation, reboot and all 15 desktop/update/rollback/recovery checks
@@ -27,12 +23,10 @@ and provides the local GPU/display/network/suspend checklist.
 Version-pinned alpha installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.6.0-alpha/boot.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.5.0-alpha/boot.sh | bash
 ```
 
 Run as your regular user. The installer uses sudo for packages and system files.
-The release candidate's Fedora integration run was blocked by timeouts from the
-two required community COPR repositories; retry installation when they respond.
 
 Inspect the plan without changing anything:
 
@@ -102,11 +96,11 @@ omadora app remove heroic
 
 Desktop dependencies come from Fedora and the community `nett00n/hyprland` COPR. `ttfx`, required for the upstream animated screensaver, comes from the community `whelanh/omarchy` COPR. These are external maintainers, not Fedora or Omadora's own package repositories. Enabling them can affect later DNF transactions. Missing or incompatible packages stop installation; the installer never uses `--skip-broken` or disables signature checks.
 
-Omadora source defaults to `v0.6.0-alpha`; Omarchy source is pinned separately. Plain `omadora upgrade` stays on its installed alpha; choose a newer published tag with `--ref`. RPM versions remain controlled by the configured repositories. The [alpha Fedora integration run](https://github.com/DanielCoffey1/omadora/actions/runs/35370788539) resolved and installed the core manifest successfully. This is not yet a reproducible package release. A maintained, versioned Omadora RPM repository is a stable-release requirement.
+Omadora source defaults to `v0.5.0-alpha`; Omarchy source is pinned separately. Plain `omadora upgrade` stays on this alpha; choose a future published tag with `--ref`. RPM versions remain controlled by the configured repositories. The [alpha Fedora integration run](https://github.com/DanielCoffey1/omadora/actions/runs/35370788539) resolved and installed the core manifest successfully. This is not yet a reproducible package release. A maintained, versioned Omadora RPM repository is a stable-release requirement.
 
 ```bash
 omadora update                  # Fedora package upgrades
-omadora upgrade --ref v0.6.0-alpha # Omadora desktop release; run from GNOME or a TTY
+omadora upgrade --ref v0.5.0-alpha # Omadora desktop release; run from GNOME or a TTY
 omadora rollback                # Previous desktop; run from GNOME or a TTY
 omadora recover                 # Complete recovery of an interrupted operation
 flatpak update --user           # Optional Flatpak updates
@@ -118,7 +112,7 @@ Desktop maintenance requires logging out of all Hyprland sessions. Upgrades fetc
 Older installations that do not recognize `upgrade` can use the bootstrap from GNOME or a TTY:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.6.0-alpha/boot.sh | bash -s -- upgrade
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.5.0-alpha/boot.sh | bash -s -- upgrade
 ```
 
 Re-running `install` still refuses to overwrite an existing deployment. Desktop recovery/rollback does not undo RPM transactions, enabled repositories, or Fedora upgrades. Fedora's kernel, bootloader, firewalld, SELinux and GNOME display manager remain under Fedora's management. Do not run Omarchy's upstream installation or migration scripts on Fedora.

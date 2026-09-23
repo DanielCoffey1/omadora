@@ -6,9 +6,6 @@
 - Minimal package manifest; no upstream application provisioning, app launchers, AI setup, Arch installation or migrations.
 - Generated Fedora Install/Remove menus for 93 optional choices, including Codex CLI and Claude Code. See [the full mapping](INSTALL_MENU.md).
 - User-visible Omadora branding; original wordmark replaced, including the default screensaver and branding reset target. Upstream author/license attribution and technical names remain.
-- The bar menu button uses a Fedora glyph from Omadora's Nerd Font and inherits the bar's theme color.
-- The default bar clock uses 12-hour time with AM/PM.
-- New terminal windows opened by Omadora's terminal shortcut start in the user's home directory.
 - DNF package updates and RPM presence queries; cached DNF update checks for the bar.
 - Separate GDM entry, UWSM session environment, Fedora PAM includes and the upstream shell's polkit authentication agent.
 - Configuration backup and restore with preservation of post-install edits.
@@ -18,7 +15,7 @@
 
 ## Differences from upstream
 
-- Firefox is the initial default browser; web apps open in the current default browser as normal browser windows rather than Chromium app-mode windows.
+- Firefox is the default browser; web links open as normal Firefox windows rather than Chromium app-mode windows.
 - Theme changes do not install machine-wide browser color policies. Chromium toolbar-color synchronization and Apple vendor HID brightness controls are not ported.
 - Screenshots retain the upstream keyboard region picker, including Escape cancellation and Ctrl+Enter for fullscreen, with grim/slurp capture and save/copy modes. The annotation editor, OCR and QR capture tools are not installed.
 - The recording indicator opens region/full-display recording and stops an active recording. Fedora's `wf-recorder` saves VP8 WebM files to the Videos folder, with optional desktop or microphone audio. Encoding uses the CPU; simultaneous audio mixing, webcam overlays and upstream GPU encoder options are not implemented.

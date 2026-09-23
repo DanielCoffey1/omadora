@@ -10,10 +10,6 @@ on:
         description: Optional prior run ID with a completed system image (rebuild only ISO packaging)
         type: string
         default: ''
-      payload_source_ref:
-        description: Release tag to rebase onto a reused system image (for COPR outages)
-        type: string
-        default: ''
       reuse_installer:
         description: Optional prior run ID with a composed Anaconda Web UI runtime
         type: string
@@ -62,9 +58,6 @@ jobs:
           path: iso-results/payload
           run-id: ${{ inputs.reuse_payload }}
           github-token: ${{ github.token }}
-      - name: Rebase reused image onto release source
-        if: inputs.reuse_build == '' && inputs.reuse_payload != '' && inputs.payload_source_ref != ''
-        run: docker exec omadora-iso-build bash /src/iso/rebase-payload.sh '${{ inputs.payload_source_ref }}'
       - name: Compose Fedora installer with the modern wizard
         id: installer
         if: inputs.reuse_build == '' && inputs.reuse_installer == ''
