@@ -20,7 +20,19 @@ in a UEFI VM with SELinux enforcing. Physical hardware validation remains open.
 The [hardware test kit](docs/HARDWARE_TESTING.md) collects a read-only baseline
 and provides the local GPU/display/network/suspend checklist.
 
-Version-pinned alpha installer:
+Install the latest development version from `main` on **Fedora Workstation 44,
+x86_64 (non-Atomic)**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | OMADORA_REF=main bash
+```
+
+This includes changes made after v0.5.0-alpha, including default-browser web
+apps, a 12-hour bar clock and terminals starting in your home directory. `main`
+changes as updates are pushed; it is not a tagged release. `OMADORA_REF=main`
+selects the latest source because the bootstrap otherwise fetches v0.5.0-alpha.
+
+To install the pinned **v0.5.0-alpha release** instead:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.5.0-alpha/boot.sh | bash

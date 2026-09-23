@@ -6,15 +6,27 @@ apps remain available. See [known limits](releases/v0.5.0-alpha.md).
 
 ## Install
 
-From a terminal as your regular Fedora user:
+For the latest development version from `main`, run from a terminal as your
+regular Fedora user:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh | OMADORA_REF=main bash
+```
+
+This includes changes after v0.5.0-alpha: web apps follow the default browser,
+the bar clock uses 12-hour time with AM/PM, and the terminal shortcut opens in
+your home directory. `main` changes as updates are pushed; it is not a tagged
+release.
+
+For the pinned **v0.5.0-alpha release**, use:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/v0.5.0-alpha/boot.sh | bash
 ```
 
-The bootstrap defaults to fetching `v0.5.0-alpha`, not `main`. Leave
-`OMADORA_REF` unset for this release; it is an explicit source override for
-developers. The installer requests sudo for packages/system files, enables the
+The bootstrap defaults to fetching `v0.5.0-alpha`; the latest-development
+command explicitly selects `main` with `OMADORA_REF=main`.
+The installer requests sudo for packages/system files, enables the
 documented desktop COPRs and backs up managed user configuration. Save the
 backup path it prints. Internet access is required.
 
