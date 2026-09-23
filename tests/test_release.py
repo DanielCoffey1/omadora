@@ -1,4 +1,4 @@
-"""Published bootstraps and ordinary upgrades must not silently follow main."""
+"""Release defaults stay pinned; development install commands explicitly opt in."""
 import importlib.util
 from pathlib import Path
 import re
@@ -24,7 +24,13 @@ class ReleaseTests(unittest.TestCase):
                 contents = (ROOT / name).read_text(encoding='utf-8')
                 refs = re.findall(r'raw.githubusercontent.com/DanielCoffey1/omadora/([^/]+)/boot.sh', contents)
                 self.assertTrue(refs, 'Document must include an installation or recovery command')
-                self.assertEqual(set(refs), {default})
+                development_docs = ('README.md', 'docs/QUICKSTART.md')
+                expected = {default, 'main'} if name in development_docs else {default}
+                self.assertEqual(set(refs), expected)
+                for line in contents.splitlines():
+                    if 'raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh' in line:
+                        self.assertRegex(line, r'\|\s*OMADORA_REF=main\s+bash\s*$',
+                                         'Development installs must explicitly select main')
 
     def test_cli_upgrade_defaults_to_release_and_allows_explicit_override(self):
         lifecycle = Mock()
