@@ -111,6 +111,29 @@ class AdapterTests(unittest.TestCase):
             self.assertEqual(destination.read_text(), 'custom configuration')
         self.assertEqual(adapter.kde_login_packages({'VARIANT_ID': 'workstation'}), [])
 
+    @unittest.skipIf(os.name == 'nt', 'Linux CI exercises display-manager symlinks')
+    def test_kde_login_preserves_custom_manager_and_saves_previous_plm_journal(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            alias = root / 'etc/systemd/system/display-manager.service'
+            alias.parent.mkdir(parents=True)
+            (root / 'run/systemd/system').mkdir(parents=True)
+            alias.symlink_to('/usr/lib/systemd/system/lightdm.service')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                adapter.configure_kde_login(root, root)
+            run.assert_not_called()
+            self.assertFalse((root / 'omadora-sddm.conf').exists())
+            alias.unlink()
+            alias.symlink_to('/usr/lib/systemd/system/plasmalogin.service')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(Path, 'home', return_value=root), patch.object(adapter, 'run', return_value=SimpleNamespace(stdout='previous greeter failure', stderr='')) as run:
+                adapter.configure_kde_login(root, root)
+            self.assertEqual((root / '.local/state/omadora/login-diagnostics.log').read_text(), 'previous greeter failure')
+            calls = [call.args for call in run.call_args_list]
+            self.assertIn(('sudo', 'systemctl', 'enable', '--force', 'sddm.service'), calls)
+            self.assertFalse(any('stop' in call or 'disable' in call or '--now' in call for call in calls))
+
     def test_only_supported_fedora(self):
         good = {'ID': 'fedora', 'VARIANT_ID': 'workstation', 'VERSION_ID': '44'}
         adapter.validate_target(good, 'x86_64')
