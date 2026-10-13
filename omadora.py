@@ -371,6 +371,13 @@ fi
     envs = tree / 'default/hypr/envs.lua'
     write(envs, envs.read_text().replace('hl.env("QT_QPA_PLATFORMTHEME", "gtk3")', 'hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")')
           .replace('require("default.hypr.nvidia")', '-- NVIDIA settings are managed manually on Fedora.'))
+    # Quickshell 0.3.2 releases its native lock before testing whether to emit
+    # lockStateChanged, leaving QML bindings stale. Notify after the normal,
+    # authenticated release; never bypass PAM or destroy an active lock.
+    lock_service = tree / 'shell/plugins/lock/Service.qml'
+    write(lock_service, lock_service.read_text().replace(
+        '    sessionLock.locked = false\n    logEvent("unlocked")',
+        '    sessionLock.locked = false\n    sessionLock.lockStateChanged()\n    logEvent("unlocked")'))
     overrides = {
         'omarchy-theme-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',
         'omarchy-theme-bg-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',

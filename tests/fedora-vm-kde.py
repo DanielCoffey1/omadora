@@ -62,7 +62,13 @@ def plasma_roundtrip():
     return 'Plasma started through Plasma Login Manager and returned to a running greeter; inspect screenshots.'
 
 
-v.check('password authentication', v.authentication)
+def repeated_authentication():
+    for _ in range(2):
+        v.authentication()
+    return 'Two lock cycles: wrong passwords rejected and correct password unlocked shell and compositor.'
+
+
+v.check('password authentication', repeated_authentication)
 v.check('keyboard and windows', v.keyboard_windows)
 v.check('clipboard', v.clipboard)
 v.check('power profiles', v.power)
