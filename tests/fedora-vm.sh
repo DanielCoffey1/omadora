@@ -124,6 +124,12 @@ sudo dnf --setopt=max_parallel_downloads=10 install -y --allowerasing "@$environ
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
 # so the emulated sound device has its normal driver after reboot.
 sudo dnf install -y kernel python3-pexpect
+if [[ $4 == kde ]]; then
+  # Cloud-init already supplied the fixture account. Model a desktop whose
+  # first-boot setup was completed, as required for running the installer as
+  # an existing regular user. This marker is test instrumentation only.
+  sudo touch /etc/plasma-setup-done
+fi
 else
   # Test instrumentation only; the desktop and kernel came from the Live ISO.
   sudo dnf install -y python3-pexpect
