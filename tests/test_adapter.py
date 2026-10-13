@@ -80,6 +80,37 @@ class AdapterTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'was not restored'):
                     adapter.desktop_settings('restore', backup)
 
+    def test_package_rename_is_automatic_only_when_old_package_is_installed(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        for installed in (False, True):
+            with patch.object(adapter, 'run', return_value=SimpleNamespace(returncode=0 if installed else 1)) as run:
+                adapter.migrate_package('kmime', 'kf6-kmime')
+            calls = [call.args for call in run.call_args_list]
+            self.assertEqual(calls[0], ('rpm', '-q', 'kmime'))
+            self.assertEqual(calls[1:], [('sudo', 'dnf', 'swap', '--refresh', '-y', 'kmime', 'kf6-kmime')] if installed else [])
+
+    def test_kde_login_configuration_selects_next_boot_without_stopping_session(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'run/systemd/system').mkdir(parents=True)
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                adapter.configure_kde_login(root, root)
+            calls = [call.args for call in run.call_args_list]
+            self.assertIn(('sudo', 'systemctl', 'enable', '--force', 'sddm.service'), calls)
+            self.assertFalse(any('stop' in call or '--now' in call for call in calls))
+            self.assertIn('GreeterEnvironment=QT_QUICK_BACKEND=software', (root / 'omadora-sddm.conf').read_text())
+            destination = root / 'etc/sddm.conf.d/90-omadora.conf'
+            destination.parent.mkdir(parents=True)
+            destination.write_text('custom configuration')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                with self.assertRaisesRegex(ValueError, 'custom'):
+                    adapter.configure_kde_login(root, root)
+            run.assert_not_called()
+            self.assertEqual(destination.read_text(), 'custom configuration')
+        self.assertEqual(adapter.kde_login_packages({'VARIANT_ID': 'workstation'}), [])
+
     def test_only_supported_fedora(self):
         good = {'ID': 'fedora', 'VARIANT_ID': 'workstation', 'VERSION_ID': '44'}
         adapter.validate_target(good, 'x86_64')

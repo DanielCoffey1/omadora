@@ -112,7 +112,7 @@ fi
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py omadora_deploy.py omadora_lifecycle.py omadora_optional.py omadora_workflows.py apps.json optional.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
 revision=$(git rev-parse HEAD)
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision ${VM_BASE:-cloud} ${VM_EDITION:-workstation}" <<'GUEST'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision ${VM_BASE:-cloud} ${VM_EDITION:-workstation} ${VM_LOGIN_MANAGER:-sddm}" <<'GUEST'
 set -euo pipefail
 if [[ $3 != workstation-iso ]]; then
 case "$4" in
@@ -160,8 +160,14 @@ sed -i \
 sudo mkdir -p /var/lib/AccountsService/users
 printf '[User]\nXSession=omadora\nSession=omadora\nSystemAccount=false\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null
 if [[ $4 == kde ]]; then
+  if [[ ${5:-sddm} == sddm ]]; then
+    sudo mkdir -p /etc/sddm.conf.d
+    printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/sddm.conf.d/99-omadora-test.conf >/dev/null
+    sudo systemctl enable --force sddm
+  else
   printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/plasmalogin.conf >/dev/null
-  sudo systemctl enable plasmalogin
+  sudo systemctl enable --force plasmalogin
+  fi
 else
   printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=omadora-test\n' | sudo tee /etc/gdm/custom.conf >/dev/null
   sudo systemctl enable gdm

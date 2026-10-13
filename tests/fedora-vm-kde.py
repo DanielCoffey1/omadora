@@ -4,6 +4,7 @@ Only the disposable guest's autologin configuration is changed. This is not
 a fresh KDE ISO or physical GPU test. Screenshots are retained for inspection.
 """
 import importlib.util
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -12,6 +13,10 @@ import time
 spec = importlib.util.spec_from_file_location('interactions', Path(__file__).with_name('fedora-vm-interactions.py'))
 v = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(v)
+MANAGER = os.environ.get('VM_LOGIN_MANAGER', 'sddm')
+assert MANAGER in ('sddm', 'plasmalogin')
+CONFIG = '/etc/sddm.conf.d/99-omadora-test.conf' if MANAGER == 'sddm' else '/etc/plasmalogin.conf'
+GREETER = '[s]ddm-greeter' if MANAGER == 'sddm' else '[p]lasma-login-greeter'
 
 
 def raw(command, timeout=90):
@@ -46,20 +51,20 @@ def logout(name):
     else:
         v.guest('omarchy-system-logout')
     wait_process(name, False)
-    v.wait_for(lambda: raw('pgrep -f "[p]lasma-login-greeter" >/dev/null && echo ready || true') == 'ready', 90)
+    v.wait_for(lambda: raw('pgrep -f "' + GREETER + '" >/dev/null && echo ready || true') == 'ready', 90)
     time.sleep(10)
-    raw('systemctl is-active plasmalogin | grep -x active')
+    raw('systemctl is-active ' + MANAGER + ' | grep -x active')
     screenshot(name + '-logout-greeter')
 
 
 def plasma_roundtrip():
     # Autologin is configured only to make session startup deterministic in CI.
-    raw("printf '[Autologin]\nUser=omadora-test\nSession=plasma.desktop\nRelogin=false\n' | sudo tee /etc/plasmalogin.conf >/dev/null; sudo systemctl restart plasmalogin")
+    raw("printf '[Autologin]\nUser=omadora-test\nSession=plasma.desktop\nRelogin=false\n' | sudo tee " + CONFIG + " >/dev/null; sudo systemctl restart " + MANAGER)
     wait_process('plasmashell')
     time.sleep(15)
     screenshot('plasma-desktop')
     logout('plasmashell')
-    return 'Plasma started through Plasma Login Manager and returned to a running greeter; inspect screenshots.'
+    return 'Plasma started through the selected login manager and returned to a running greeter; inspect screenshots.'
 
 
 def repeated_authentication():
@@ -75,5 +80,5 @@ v.check('power profiles', v.power)
 v.check('theme switching', v.themes)
 v.check('Omadora logout to KDE greeter', lambda: logout('Hyprland') or 'Session ended and greeter process returned; screenshot retained.')
 v.check('Plasma login and logout to greeter', plasma_roundtrip)
-(v.OUT / 'kde-login-journal.log').write_text(raw('sudo journalctl -b -u plasmalogin --no-pager'))
+(v.OUT / 'kde-login-journal.log').write_text(raw('sudo journalctl -b -u ' + MANAGER + ' --no-pager'))
 assert all(result['status'] == 'PASS' for result in v.results), v.results

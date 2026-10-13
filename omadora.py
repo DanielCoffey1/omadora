@@ -683,22 +683,72 @@ def install(dry_run=False):
     if dry_run:
         import omadora_gpu
         graphics = omadora_gpu.detect()
+        info = os_release() if Path('/etc/os-release').exists() else {}
         print(json.dumps({'target': 'Fedora Workstation or KDE Plasma Desktop 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
-                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics), 'prefix': str(PREFIX),
+                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics) + kde_login_packages(info), 'prefix': str(PREFIX),
                           'graphics': graphics, 'nvidia_driver_automatic': False,
-                          'optional_apps_preinstalled': [], 'gnome_removed': False}, indent=2))
+                          'optional_apps_preinstalled': [], 'gnome_removed': False,
+                          'package_migrations': {'kmime': 'kf6-kmime (only when kmime is installed)'},
+                          'kde_login_manager': 'SDDM X11 with software-rendered greeter; effective after reboot' if kde_login_packages(info) else 'unchanged'}, indent=2))
         return
     return lifecycle().perform(sys.modules[__name__], 'install')
 
 
+def migrate_package(old, new):
+    if run('rpm', '-q', old, capture=True, check=False).returncode == 0:
+        print(f'Migrating Fedora package {old} to {new}.', flush=True)
+        run('sudo', 'dnf', 'swap', '--refresh', '-y', old, new)
+
+
+def kde_login_packages(info=None):
+    return ['sddm', 'sddm-x11'] if (os_release() if info is None else info).get('VARIANT_ID') == 'kde' else []
+
+
+def configure_kde_login(temp, root=Path('/')):
+    if not kde_login_packages():
+        return
+    alias = root / 'etc/systemd/system/display-manager.service'
+    manager = alias.resolve().name if alias.is_symlink() else None
+    if manager not in (None, 'plasmalogin.service', 'sddm.service'):
+        print(f'Preserving custom login manager {manager}; SDDM was not enabled.', flush=True)
+        return
+    content = '[General]\nDisplayServer=x11\nGreeterEnvironment=QT_QUICK_BACKEND=software\n'
+    destination = root / 'etc/sddm.conf.d/90-omadora.conf'
+    if destination.is_symlink() or (destination.exists() and destination.read_text() != content):
+        raise ValueError('Refusing to overwrite custom /etc/sddm.conf.d/90-omadora.conf.')
+    config = temp / 'omadora-sddm.conf'
+    write(config, content)
+    run('sudo', 'install', '-D', '-m', '0644', config, destination)
+    # Select the next-boot login manager without killing the current session.
+    if (root / 'run/systemd/system').is_dir():
+        if manager == 'plasmalogin.service':
+            diagnostics = Path.home() / '.local/state/omadora/login-diagnostics.log'
+            logs = run('sudo', 'journalctl', '-b', '-u', 'plasmalogin', '-u', 'display-manager',
+                       '--no-pager', '-n', '200', capture=True, check=False)
+            write(diagnostics, logs.stdout + (logs.stderr or ''))
+            print(f'Previous login-manager diagnostics saved to {diagnostics}', flush=True)
+        # Both managers use the display-manager alias. Repoint it directly,
+        # avoiding a disabled-login-manager gap if package setup fails.
+        run('sudo', 'systemctl', 'enable', '--force', 'sddm.service')
+        run('sudo', 'systemctl', 'set-default', 'graphical.target')
+    print('KDE login screen: SDDM with an X11 software-rendered greeter is configured. Reboot after installation/upgrade; Omadora and Plasma sessions remain Wayland.', flush=True)
+
+
 def prepare_runtime(temp):
+    # Fedora renamed KMime; older KDE media can leave the former package
+    # installed alongside dependencies requesting the new name. Migrate it
+    # before the main RPM transaction instead of ignoring file conflicts.
+    migrate_package('kmime', 'kf6-kmime')
+    if kde_login_packages():
+        for old in ('sddm-wayland-plasma', 'sddm-wayland-generic'):
+            migrate_package(old, 'sddm-x11')
     run('sudo', 'dnf', 'install', '-y', 'dnf5-plugins')
     run('sudo', 'dnf', 'copr', 'enable', '-y', COPR)
     run('sudo', 'dnf', 'copr', 'enable', '-y', SCREENSAVER_COPR)
     # DNF's complete transaction must resolve. Never skip broken packages.
     import omadora_gpu
     gpus = omadora_gpu.detect()
-    run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus))
+    run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus), *kde_login_packages())
     if any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(gpus)):
         print('NVIDIA detected: Omadora leaves your NVIDIA driver unchanged. Install or update it yourself after installation, then reboot before testing Omadora.', flush=True)
     # Hyprland initializes its logger before processing --version and needs
@@ -774,7 +824,8 @@ def _install():
         lifecycle().root(sys.modules[__name__], 'activate', transaction['id'])
         run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
         lifecycle().commit(sys.modules[__name__], transaction)
-    print('Installed. Log out and select Omadora in your login screen session selector (GDM gear menu or KDE login screen session menu). Your existing desktop remains available.')
+        configure_kde_login(temp)
+    print('Installed. Reboot, then select Omadora in your login screen session selector (GDM gear menu or SDDM session menu). Your existing desktop remains available.')
 
 
 def installed(app):

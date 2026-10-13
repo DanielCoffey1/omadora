@@ -200,6 +200,7 @@ def upgrade_local(a):
         root(a, 'activate', transaction['id'])
         a.run('sudo', 'restorecon', '-RF', a.PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
         commit(a, transaction)
+        a.configure_kde_login(temp)
     print('Desktop upgraded. Personal configuration and selected theme/font were preserved. Log into Omadora to use it.')
 
 
