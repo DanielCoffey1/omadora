@@ -284,6 +284,18 @@ class Library:
         import io
         output = io.StringIO(); conf.write(output); atomic(path, output.getvalue())
 
+    def sync_toolkit(self):
+        """Follow the selected theme instead of retaining a wallpaper palette."""
+        import tomllib
+        path = self.home / '.local/state/omarchy/current/theme/colors.toml'
+        colors = tomllib.loads(path.read_text(encoding='utf-8'))
+        required = ('background', 'foreground', 'dark_background', 'lighter_background',
+                    'accent', 'bright_foreground', 'muted', 'red', 'green', 'yellow',
+                    'blue', 'magenta', 'cyan')
+        if any(not re.fullmatch(r'#[0-9a-fA-F]{6}', str(colors.get(key, ''))) for key in required):
+            raise ValueError('Selected theme has missing or invalid toolkit colors.')
+        self.toolkit_colors(colors)
+
     def remove(self, value):
         with self.locked():
             row = self.lookup(value)
@@ -312,6 +324,8 @@ def main(action, value=None, headless=False):
         return run(lib, action)
     if action == 'list':
         print(json.dumps(lib.entries(), indent=2))
+    elif action == 'sync-toolkit':
+        lib.sync_toolkit()
     elif action == 'apply':
         lib.apply(value or DEFAULT, headless)
     elif action == 'add':

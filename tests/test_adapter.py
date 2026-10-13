@@ -295,6 +295,14 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             self.assertIn('gtk-contained-dark.css', (output / 'share/themes/Adwaita-dark/gtk-3.0/gtk.css').read_text())
             self.assertNotIn('require("default.hypr.nvidia")', (tree / 'default/hypr/envs.lua').read_text())
             self.assertNotIn('LIBVA_DRIVER_NAME', (output / 'system/omadora-env').read_text())
+            lock_service = (tree / 'shell/plugins/lock/Service.qml').read_text()
+            self.assertIn('sessionLock.locked = false\n    sessionLock.lockStateChanged()\n    logEvent("unlocked")', lock_service)
+            self.assertIn('if (result === PamResult.Success) root.finishUnlock()', lock_service)
+            theme_set = (tree / 'bin/omarchy-theme-set').read_text()
+            self.assertLess(theme_set.index('mv "$NEXT_THEME_PATH" "$CURRENT_THEME_PATH"'),
+                            theme_set.index('omadora wallpaper sync-toolkit'))
+            self.assertLess(theme_set.index('omadora wallpaper sync-toolkit'),
+                            theme_set.index('flock -u 9'))
             self.assertIn('gsettings set', (tree / 'bin/omarchy-theme-set-gnome').read_text())
             logo = (tree / 'logo.txt').read_text(encoding='utf-8')
             self.assertEqual(logo, (tree / 'config/omarchy/branding/screensaver.txt').read_text(encoding='utf-8'))

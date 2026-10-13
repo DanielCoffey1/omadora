@@ -371,6 +371,13 @@ fi
     envs = tree / 'default/hypr/envs.lua'
     write(envs, envs.read_text().replace('hl.env("QT_QPA_PLATFORMTHEME", "gtk3")', 'hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")')
           .replace('require("default.hypr.nvidia")', '-- NVIDIA settings are managed manually on Fedora.'))
+    # Quickshell 0.3.2 releases its native lock before testing whether to emit
+    # lockStateChanged, leaving QML bindings stale. Notify after the normal,
+    # authenticated release; never bypass PAM or destroy an active lock.
+    lock_service = tree / 'shell/plugins/lock/Service.qml'
+    write(lock_service, lock_service.read_text().replace(
+        '    sessionLock.locked = false\n    logEvent("unlocked")',
+        '    sessionLock.locked = false\n    sessionLock.lockStateChanged()\n    logEvent("unlocked")'))
     overrides = {
         'omarchy-theme-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',
         'omarchy-theme-bg-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',
@@ -481,7 +488,10 @@ fi
     # Browser policy tinting depends on upstream install helpers and a
     # privileged /usr/bin entrypoint. Fedora browsers retain their own policies.
     theme_set = tree / 'bin/omarchy-theme-set'
-    write(theme_set, theme_set.read_text().replace('  omarchy-theme-set-browser\n', '').replace('omarchy-theme-set-templates\n', 'omarchy-theme-set-templates || exit 1\n'), 0o755)
+    write(theme_set, theme_set.read_text().replace('  omarchy-theme-set-browser\n', '')
+          .replace('omarchy-theme-set-templates\n', 'omarchy-theme-set-templates || exit 1\n')
+          .replace('mv "$NEXT_THEME_PATH" "$CURRENT_THEME_PATH"\n',
+                   'mv "$NEXT_THEME_PATH" "$CURRENT_THEME_PATH"\nomadora wallpaper sync-toolkit || exit 1\n'), 0o755)
     for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
         path = tree / 'bin' / name
         write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)
@@ -817,7 +827,7 @@ def main():
     g = gpu_sub.add_parser('setup'); g.add_argument('--gaming', action='store_true'); g.add_argument('--nvidia', action='store_true'); g.add_argument('--dry-run', action='store_true')
     g = gpu_sub.add_parser('run'); g.add_argument('--pci'); g.add_argument('application', nargs=argparse.REMAINDER)
     p = sub.add_parser('wallpaper')
-    p.add_argument('action', choices=('browse', 'add-dialog', 'remove-dialog', 'list', 'apply', 'add', 'remove', 'next'))
+    p.add_argument('action', choices=('browse', 'add-dialog', 'remove-dialog', 'list', 'apply', 'add', 'remove', 'next', 'sync-toolkit'))
     p.add_argument('value', nargs='?'); p.add_argument('--headless', action='store_true')
     sub.add_parser('refresh-apps')
     sub.add_parser('about'); sub.add_parser('update'); sub.add_parser('updates-available'); sub.add_parser('doctor')

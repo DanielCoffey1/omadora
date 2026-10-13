@@ -91,7 +91,16 @@ def lock_status():
 
 def unlock():
     type_password('omadora-vm-test-only')
-    wait_for(lambda: not lock_status()['locked'])
+    try:
+        wait_for(lambda: not lock_status()['locked'])
+    except AssertionError:
+        # Preserve both client state and the compositor's independent lock
+        # state. Successful PAM authentication alone is not proof of unlock.
+        state = lock_status()
+        (OUT / 'unlock-state.json').write_text(json.dumps(state, indent=2))
+        (OUT / 'unlock-monitors.json').write_text(guest('hyprctl monitors -j'))
+        guest('grim /tmp/omadora-vm-results/unlock-timeout.png')
+        raise AssertionError('Unlock timed out; shell state: ' + json.dumps(state))
     assert guest('omarchy-hyprland-session-locked; echo $?').endswith('1')
 
 
