@@ -168,7 +168,7 @@ printf '[User]\nXSession=omadora\nSession=omadora\nSystemAccount=false\n' | sudo
 if [[ $4 == kde ]]; then
   if [[ ${5:-sddm} == sddm ]]; then
     sudo mkdir -p /etc/sddm.conf.d
-    printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/sddm.conf.d/99-omadora-test.conf >/dev/null
+    printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/sddm.conf.d/zz-omadora-test.conf >/dev/null
     sudo systemctl enable --force sddm
   else
   printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/plasmalogin.conf >/dev/null

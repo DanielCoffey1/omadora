@@ -15,7 +15,7 @@ v = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(v)
 MANAGER = os.environ.get('VM_LOGIN_MANAGER', 'sddm')
 assert MANAGER in ('sddm', 'plasmalogin')
-CONFIG = '/etc/sddm.conf.d/99-omadora-test.conf' if MANAGER == 'sddm' else '/etc/plasmalogin.conf'
+CONFIG = '/etc/sddm.conf.d/zz-omadora-test.conf' if MANAGER == 'sddm' else '/etc/plasmalogin.conf'
 GREETER = '[s]ddm-greeter' if MANAGER == 'sddm' else '[p]lasma-login-greeter'
 
 
