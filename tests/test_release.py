@@ -29,7 +29,7 @@ class ReleaseTests(unittest.TestCase):
                 self.assertEqual(set(refs), expected)
                 for line in contents.splitlines():
                     if 'raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh' in line:
-                        self.assertRegex(line, r'\|\s*OMADORA_REF=main\s+bash\s*$',
+                        self.assertRegex(line, r'\|\s*OMADORA_REF=main\s+bash(?:\s+-s\s+--\s+upgrade)?\s*$',
                                          'Development installs must explicitly select main')
 
     def test_cli_upgrade_defaults_to_release_and_allows_explicit_override(self):

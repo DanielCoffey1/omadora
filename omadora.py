@@ -481,7 +481,10 @@ fi
     # Browser policy tinting depends on upstream install helpers and a
     # privileged /usr/bin entrypoint. Fedora browsers retain their own policies.
     theme_set = tree / 'bin/omarchy-theme-set'
-    write(theme_set, theme_set.read_text().replace('  omarchy-theme-set-browser\n', '').replace('omarchy-theme-set-templates\n', 'omarchy-theme-set-templates || exit 1\nomadora wallpaper sync-toolkit || exit 1\n'), 0o755)
+    write(theme_set, theme_set.read_text().replace('  omarchy-theme-set-browser\n', '')
+          .replace('omarchy-theme-set-templates\n', 'omarchy-theme-set-templates || exit 1\n')
+          .replace('mv "$NEXT_THEME_PATH" "$CURRENT_THEME_PATH"\n',
+                   'mv "$NEXT_THEME_PATH" "$CURRENT_THEME_PATH"\nomadora wallpaper sync-toolkit || exit 1\n'), 0o755)
     for name in ('omarchy-launch-tui', 'omarchy-launch-floating-terminal-with-presentation'):
         path = tree / 'bin' / name
         write(path, path.read_text().replace('xdg-terminal-exec', 'foot'), 0o755)
