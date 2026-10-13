@@ -8,6 +8,34 @@ Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/
 
 ## Install
 
+### Test KDE and manual NVIDIA setup on a new PC
+
+Start with a fresh **Fedora KDE Plasma Desktop or Workstation 44, x86_64
+(non-Atomic)** installation. Open a terminal and paste this command as your
+normal user:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/fix/kde-manual-nvidia/boot.sh | OMADORA_REF=fix/kde-manual-nvidia bash
+```
+
+This installs the test branch from [PR #1](https://github.com/DanielCoffey1/omadora/pull/1),
+including KDE support and manual NVIDIA driver management. Internet access is
+required. Enter your sudo password when prompted and save the configuration
+backup path printed by the installer.
+
+After installation, install NVIDIA drivers yourself if needed, then reboot.
+Select **Omadora** in SDDM's session menu (KDE) or GDM's gear menu (Workstation)
+and log in. Your existing Plasma or GNOME desktop remains available.
+
+If Omadora is already installed, log out of Omadora, enter Plasma/GNOME or a
+TTY, and use this command instead:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/fix/kde-manual-nvidia/boot.sh | OMADORA_REF=fix/kde-manual-nvidia bash -s -- upgrade
+```
+
+### Other installation options
+
 The **offline ISO** provides a graphical wizard: choose your disk and account,
 install, then reboot into Omadora. It includes pywal16 and all 332 wallpapers,
 with Nepal selected automatically. [USB guide and verified build](docs/ISO.md).
@@ -20,7 +48,7 @@ in a UEFI VM with SELinux enforcing. Physical hardware validation remains open.
 The [hardware test kit](docs/HARDWARE_TESTING.md) collects a read-only baseline
 and provides the local GPU/display/network/suspend checklist.
 
-Install the latest development version from `main` on **Fedora Workstation or KDE Plasma Desktop 44,
+Install the latest development version from `main` on **Fedora Workstation 44,
 x86_64 (non-Atomic)**:
 
 ```bash
@@ -32,7 +60,8 @@ apps, a 12-hour bar clock and terminals starting in your home directory. `main`
 changes as updates are pushed; it is not a tagged release. `OMADORA_REF=main`
 selects the latest source because the bootstrap otherwise fetches v0.5.0-alpha.
 
-The KDE and manual NVIDIA changes are available on the development branch;
+The KDE and manual NVIDIA changes are available on `fix/kde-manual-nvidia`
+using the test command above until PR #1 is merged;
 the pinned v0.5.0-alpha release still requires Workstation and retains its old
 optional NVIDIA setup.
 
