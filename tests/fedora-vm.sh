@@ -112,10 +112,15 @@ fi
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py omadora_deploy.py omadora_lifecycle.py omadora_optional.py omadora_workflows.py apps.json optional.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
 revision=$(git rev-parse HEAD)
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision ${VM_BASE:-cloud}" <<'GUEST'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision ${VM_BASE:-cloud} ${VM_EDITION:-workstation}" <<'GUEST'
 set -euo pipefail
 if [[ $3 != workstation-iso ]]; then
-sudo dnf --setopt=max_parallel_downloads=10 install -y --allowerasing @workstation-product-environment fedora-release-identity-workstation
+case "$4" in
+  workstation) environment=workstation-product-environment ;;
+  kde) environment=kde-desktop-environment ;;
+  *) echo 'Unsupported VM edition' >&2; exit 1 ;;
+esac
+sudo dnf --setopt=max_parallel_downloads=10 install -y --allowerasing "@$environment" "fedora-release-identity-$4"
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
 # so the emulated sound device has its normal driver after reboot.
 sudo dnf install -y kernel python3-pexpect
@@ -154,15 +159,22 @@ sed -i \
   -e 's/mode = "preferred"/mode = "1920x1080@60"/' ~/.config/hypr/monitors.lua
 sudo mkdir -p /var/lib/AccountsService/users
 printf '[User]\nXSession=omadora\nSession=omadora\nSystemAccount=false\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null
-printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=omadora-test\n' | sudo tee /etc/gdm/custom.conf >/dev/null
-sudo systemctl enable gdm
+if [[ $4 == kde ]]; then
+  printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/plasmalogin.conf >/dev/null
+  sudo systemctl enable plasmalogin
+else
+  printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=omadora-test\n' | sudo tee /etc/gdm/custom.conf >/dev/null
+  sudo systemctl enable gdm
+fi
 sudo systemctl set-default graphical.target
 GUEST
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'sudo systemctl reboot' || true
 sleep 15
 wait_ssh
 ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash ~/source/tests/fedora-vm-guest.sh'
-if [[ ${VM_SUITE:-apps} == system ]]; then
+if [[ ${VM_SUITE:-apps} == kde ]]; then
+  python3 tests/fedora-vm-kde.py
+elif [[ ${VM_SUITE:-apps} == system ]]; then
   python3 tests/fedora-vm-system.py
 elif [[ ${VM_SUITE:-apps} == wallpapers ]]; then
   python3 tests/fedora-vm-wallpapers.py
@@ -192,4 +204,4 @@ if Path('vm-results/apps/results.json').exists():
     expected = json.loads(selection_file.read_text()) if selection_file.exists() else list(json.loads(Path('apps.json').read_text()))
     assert {r['app'] for r in apps} == set(expected) and all('error' not in r and not r['remove'].startswith('FAIL') for r in apps), apps
 PY
-echo 'PASS: booted Fedora VM, GDM autologin, Hyprland, Quickshell IPC and screenshots.'
+echo 'PASS: booted Fedora VM, display-manager autologin, Hyprland, Quickshell IPC and screenshots.'
