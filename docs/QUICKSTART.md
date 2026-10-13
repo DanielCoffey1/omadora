@@ -32,7 +32,8 @@ documented desktop COPRs and backs up managed user configuration. Save the
 backup path it prints. Internet access is required.
 
 After installation, log out. Choose **Omadora** in the GDM gear menu
-(Workstation) or SDDM session selector (KDE), and log in. Check the version with `omadora about`. Use the
+(Workstation) or the KDE login screen session selector
+(Plasma Login Manager on Fedora 44, or SDDM where configured), and log in. Check the version with `omadora about`. Use the
 desktop's **Install** menu for optional apps, including Gaming and AI.
 
 ## Wallpapers

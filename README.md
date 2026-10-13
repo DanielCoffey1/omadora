@@ -24,7 +24,8 @@ required. Enter your sudo password when prompted and save the configuration
 backup path printed by the installer.
 
 After installation, install NVIDIA drivers yourself if needed, then reboot.
-Select **Omadora** in SDDM's session menu (KDE) or GDM's gear menu (Workstation)
+Select **Omadora** in the KDE login screen's session menu (Plasma Login Manager
+on Fedora 44, or SDDM where configured) or GDM's gear menu (Workstation)
 and log in. Your existing Plasma or GNOME desktop remains available.
 
 If Omadora is already installed, log out of Omadora, enter Plasma/GNOME or a
@@ -33,6 +34,36 @@ TTY, and use this command instead:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/fix/kde-manual-nvidia/boot.sh | OMADORA_REF=fix/kde-manual-nvidia bash -s -- upgrade
 ```
+
+### Fedora KDE package conflict
+
+If installation stops with files from `kf6-kmime` conflicting with an installed
+`kmime` package, Fedora's older KMime package needs to be replaced with its
+renamed counterpart. Run:
+
+```bash
+sudo dnf swap --refresh kmime kf6-kmime
+```
+
+Review the transaction before accepting. If it proposes removing Plasma or many
+unrelated applications, cancel and inspect the proposed changes. After a
+successful swap, rerun the fresh-install command above. This conflict happens
+before Omadora deploys its desktop configuration; the installer does not
+force package removal or overwrite conflicting RPM files.
+
+If signing out of Plasma produces a black screen before the login screen,
+press **Ctrl+Alt+F3** (some laptops also require **Fn**) and log into the text
+console. Collect the login-manager status and current boot logs before rebooting:
+
+```bash
+systemctl status display-manager --no-pager -l
+sudo journalctl -b -u display-manager -u plasmalogin -u sddm -u gdm --no-pager -n 100
+```
+
+An immediate black screen before choosing Omadora does not establish an
+Omadora session failure. The installation can update existing Plasma/Qt
+packages while resolving desktop dependencies. Save the logs and reboot once
+to test the login screen with those updates loaded.
 
 ### Other installation options
 
@@ -85,7 +116,7 @@ Install from a local checkout on Fedora:
 python3 omadora.py install
 ```
 
-After installation, log out and select **Omadora** using GDM's gear menu (Workstation) or SDDM's session selector (KDE). Your existing GNOME or Plasma desktop and Fedora apps remain available. Omadora does not replace the login manager.
+After installation, log out and select **Omadora** using GDM's gear menu (Workstation) or the KDE login screen's session selector (Plasma Login Manager on Fedora 44, or SDDM where configured). Your existing GNOME or Plasma desktop and Fedora apps remain available. Omadora does not replace the login manager.
 
 NVIDIA drivers are managed manually after installation. Omadora does not install proprietary NVIDIA drivers, build NVIDIA modules, rebuild the initramfs for them, or enroll Secure Boot keys. Existing drivers are left in place. See [graphics setup](docs/GRAPHICS.md).
 

@@ -764,7 +764,7 @@ def _install():
         lifecycle().root(sys.modules[__name__], 'activate', transaction['id'])
         run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
         lifecycle().commit(sys.modules[__name__], transaction)
-    print('Installed. Log out and select Omadora in your login screen session selector (GDM gear menu or SDDM session menu). Your existing desktop remains available.')
+    print('Installed. Log out and select Omadora in your login screen session selector (GDM gear menu or KDE login screen session menu). Your existing desktop remains available.')
 
 
 def installed(app):
