@@ -4,10 +4,8 @@ import os
 from pathlib import Path
 import re
 import subprocess
-import urllib.request
 
 VENDORS = {'1002': 'AMD', '8086': 'Intel', '10de': 'NVIDIA'}
-CERT = '/etc/pki/akmods/certs/public_key.der'
 
 
 def read(path, default=''):
@@ -106,108 +104,25 @@ def print_status():
     print(report['note'])
 
 
-def supported_ids(html):
-    # Read only Current, never the legacy tables later in the same document.
-    current = re.search(r'id="Current".*?<table\b.*?</table>', html, re.S)
-    if not current:
-        raise ValueError('NVIDIA support-list format changed; driver installation stopped.')
-    ids = set(re.findall(r'<tr id="devid([0-9A-Fa-f]{4}(?:_[0-9A-Fa-f]{4}_[0-9A-Fa-f]{4})?)"', current[0]))
-    if not ids:
-        raise ValueError('NVIDIA returned an empty support list.')
-    return {x.lower() for x in ids}
-
-
-def supports(gpu, ids):
-    return gpu['device'] in ids or '_'.join((gpu['device'], gpu['subvendor'], gpu['subdevice'])) in ids
-
-
-def candidate(a, suffix, gpus):
-    package = 'akmod-nvidia' + suffix
-    version = a.run('dnf', '-q', 'repoquery', '--available', '--latest-limit=1', '--arch=x86_64',
-                    '--repo=rpmfusion-nonfree,rpmfusion-nonfree-updates', '--qf=%{version}\n',
-                    package, capture=True).stdout.strip()
-    if not re.fullmatch(r'\d+(?:\.\d+){1,3}', version):
-        return None
-    url = f'https://download.nvidia.com/XFree86/Linux-x86_64/{version}/README/supportedchips.html'
-    with urllib.request.urlopen(url, timeout=30) as response:
-        ids = supported_ids(response.read(2_000_001).decode('utf-8'))
-    if all(supports(g, ids) for g in gpus):
-        return suffix, version
-    return None
-
-
-def nvidia_packages(suffix, version, gaming):
-    # Keep userspace and the akmod on the version whose support list was checked.
-    packages = [f'akmod-nvidia{suffix}-{version}',
-                f'xorg-x11-drv-nvidia{suffix}-{version}',
-                f'xorg-x11-drv-nvidia{suffix}-cuda-{version}',
-                f'xorg-x11-drv-nvidia{suffix}-libs-{version}-*.x86_64']
-    if gaming:
-        packages += [f'xorg-x11-drv-nvidia{suffix}-libs-{version}-*.i686', 'vulkan-loader.i686']
-    return packages
-
-
 def setup(a, gaming=False, nvidia=False, dry_run=False):
+    # Keep the old flag as an explicit error for existing installations/scripts.
+    # Reject it before detection, repository changes or privileged operations.
+    if nvidia:
+        raise ValueError('NVIDIA driver installation is managed manually. Install your driver outside Omadora, then reboot and use omadora gpu status.')
     gpus = detect()
-    usable = managed(gpus)
     print(json.dumps({'hardware': gpus, 'mesa_packages': mesa_packages(gpus, gaming),
-                      'gaming': gaming, 'nvidia_requested': nvidia}, indent=2))
-    if not usable:
+                      'gaming': gaming, 'nvidia_driver_automatic': False}, indent=2))
+    if not managed(gpus):
         print('No supported physical GPU found. Virtual and passthrough-owned devices are left alone.')
         return
-    cards = [g for g in usable if g['vendor'] == 'NVIDIA']
-    if nvidia and not cards:
-        raise ValueError('No NVIDIA display controller found.')
     if dry_run:
-        if nvidia:
-            print('Would enable RPM Fusion, verify current/580xx PCI support, check Secure Boot enrollment, install matched drivers and build modules. No changes made.')
         return
     a.preflight()
-    # Module replacement is performed from GNOME/TTY, not a live Hyprland session.
-    if nvidia:
-        a.lifecycle().offline(a)
-        if Path('/usr/bin/nvidia-uninstall').exists():
-            raise ValueError('An NVIDIA .run installation is present; migrate it to RPM Fusion before using this setup.')
     common = mesa_packages(gpus, gaming) + ['vulkan-tools', 'pciutils', 'mokutil']
     a.run('sudo', 'dnf', 'install', *common)
-    if cards and not nvidia:
-        print('NVIDIA detected. For a verified driver choice, log out of Hyprland and run: omadora gpu setup --nvidia' + (' --gaming' if gaming else ''))
-    if not nvidia:
-        print('Fedora graphics libraries installed. Run omadora gpu status in the desktop to check acceleration.')
-        return
-    for kind in ('free', 'nonfree'):
-        a.run('sudo', 'dnf', 'install', f'https://mirrors.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-44.noarch.rpm')
-    selected = candidate(a, '', cards) or candidate(a, '-580xx', cards)
-    if not selected:
-        raise ValueError('No verified current or 580xx driver supports all detected NVIDIA GPUs. Legacy/mixed hardware needs manual review; no NVIDIA driver was installed.')
-    suffix, version = selected
-    installed = a.run('rpm', '-qa', '--qf=%{NAME}\n', capture=True).stdout.splitlines()
-    allowed = 'akmod-nvidia' + suffix
-    if any((name.startswith('akmod-nvidia') and name != allowed) or
-           name.startswith(('nvidia-driver', 'cuda-drivers', 'kmod-nvidia-latest', 'dkms-nvidia')) for name in installed):
-        raise ValueError('Another NVIDIA driver branch/provider is installed. Resolve that installation before continuing.')
-    state = secure_boot()
-    if state == 'unknown':
-        raise ValueError('Cannot determine Secure Boot state. NVIDIA installation stopped.')
-    a.run('sudo', 'dnf', 'install', 'akmods', 'kernel-devel-matched')
-    if state == 'enabled':
-        a.run('sudo', '/usr/sbin/kmodgenca', '-a')
-        if a.run('mokutil', '--test-key', CERT, check=False, capture=True).returncode != 0:
-            print('Secure Boot requires one firmware approval. Choose a temporary enrollment password now. Reboot, choose Enroll MOK → Continue → Yes, enter it, then rerun this same setup command. NVIDIA driver installation waits until enrollment is complete.', flush=True)
-            a.run('sudo', 'mokutil', '--import', CERT)
-            return 3
-    a.run('sudo', 'dnf', 'install', *nvidia_packages(suffix, version, gaming))
-    # Build for the latest installed kernel, whose matching headers were ensured.
-    kernels = a.run('rpm', '-q', 'kernel-devel', '--qf=%{VERSION}-%{RELEASE}.%{ARCH}\n', capture=True).stdout.splitlines()
-    if not kernels or any(not re.fullmatch(r'[A-Za-z0-9._+-]+', k) for k in kernels):
-        raise ValueError('No valid matching kernel headers found. Do not reboot until the module build is resolved.')
-    for kernel in kernels:
-        a.run('sudo', 'akmods', '--force', '--rebuild', '--kernels', kernel, '--akmod', 'nvidia' + suffix)
-        a.run('modinfo', '-k', kernel, 'nvidia', capture=True)
-        if state == 'enabled' and not a.run('modinfo', '-k', kernel, '-F', 'signer', 'nvidia', capture=True).stdout.strip():
-            raise ValueError('NVIDIA module is unsigned. Resolve signing before rebooting.')
-        a.run('sudo', 'dracut', '--force', '--kver', kernel)
-    print('NVIDIA packages and kernel modules are installed. Reboot to activate them, then run omadora gpu status. No reboot or firmware changes were performed automatically.')
+    if any(g['vendor'] == 'NVIDIA' for g in managed(gpus)):
+        print('NVIDIA detected. Omadora leaves your driver unchanged; manage NVIDIA drivers and gaming libraries yourself.')
+    print('Fedora graphics libraries installed. Run omadora gpu status in the desktop to check acceleration.')
 
 
 def launch(command, pci=None):

@@ -4,9 +4,13 @@ set -euo pipefail
 exec > >(tee /results/fedora-install.log) 2>&1
 trap 'status=$?; printf "%s\n" "$status" >/results/exit-status; rpm -qa | sort >/results/packages.txt; exit "$status"' EXIT
 cat /etc/os-release
-# Supply a Workstation identity so the actual target preflight is exercised.
-# This is a container with Workstation identity, not a full Workstation VM.
-dnf install -y --allowerasing fedora-release-workstation fedora-release-identity-workstation tuned-ppd sudo git python3 policycoreutils procps-ng
+# Exercise both supported edition identities, without claiming desktop coverage.
+edition=${OMADORA_TEST_EDITION:-workstation}
+case "$edition" in
+  workstation|kde) ;;
+  *) echo 'Unsupported fixture edition' >&2; exit 1 ;;
+esac
+dnf install -y --allowerasing "fedora-release-$edition" "fedora-release-identity-$edition" tuned-ppd sudo git python3 policycoreutils procps-ng
 useradd --create-home omadora-test
 printf 'omadora-test ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/omadora-test
 chmod 0440 /etc/sudoers.d/omadora-test

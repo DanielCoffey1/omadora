@@ -71,10 +71,10 @@ def os_release(path='/etc/os-release'):
 
 
 def validate_target(info, machine, atomic=False):
-    if info.get('ID') != 'fedora' or info.get('VARIANT_ID') != 'workstation':
-        raise ValueError('This release targets Fedora Workstation, not another edition.')
+    if info.get('ID') != 'fedora' or info.get('VARIANT_ID') not in ('workstation', 'kde'):
+        raise ValueError('This release targets Fedora Workstation or KDE Plasma Desktop.')
     if info.get('VERSION_ID') != '44' or machine != 'x86_64' or atomic:
-        raise ValueError('Target: Fedora Workstation 44, x86_64, non-Atomic.')
+        raise ValueError('Target: Fedora Workstation or KDE Plasma Desktop 44, x86_64, non-Atomic.')
 
 
 def preflight():
@@ -248,7 +248,6 @@ def menu_for_fedora(menu, apps, blocked):
     result['setup.gpu'] = {'label': 'Graphics', 'icon': '󰢮'}
     result['setup.gpu.status'] = {'label': 'GPU status', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu status'}
     result['setup.gpu.libraries'] = {'label': 'Gaming graphics', 'icon': '', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
-    result['setup.gpu.nvidia'] = {'label': 'NVIDIA drivers', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --nvidia --gaming'}
     result['install.gaming.graphics'] = {'label': 'GPU setup', 'icon': '󰢮', 'action': 'foot omadora-terminal-action omadora gpu setup --gaming'}
     for key in list(result):
         if key in ('style.theme', 'style.background', 'remove.theme', 'update.themes') or key.startswith(('install.style.theme', 'install.style.background', 'remove.style.theme', 'remove.style.background')):
@@ -370,7 +369,8 @@ fi
     write(output / 'bin/omadora-session', '#!/bin/bash\n' + env + image_setup + session_activation + 'exec uwsm start -e -D Hyprland -- /usr/share/wayland-sessions/hyprland.desktop\n', 0o755)
 
     envs = tree / 'default/hypr/envs.lua'
-    write(envs, envs.read_text().replace('hl.env("QT_QPA_PLATFORMTHEME", "gtk3")', 'hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")'))
+    write(envs, envs.read_text().replace('hl.env("QT_QPA_PLATFORMTHEME", "gtk3")', 'hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")')
+          .replace('require("default.hypr.nvidia")', '-- NVIDIA settings are managed manually on Fedora.'))
     overrides = {
         'omarchy-theme-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',
         'omarchy-theme-bg-switcher': '[[ ${1:-} == --preload ]] && exit 0\nexec omadora wallpaper browse',
@@ -673,7 +673,7 @@ def install(dry_run=False):
     if dry_run:
         import omadora_gpu
         graphics = omadora_gpu.detect()
-        print(json.dumps({'target': 'Fedora Workstation 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
+        print(json.dumps({'target': 'Fedora Workstation or KDE Plasma Desktop 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
                           'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics), 'prefix': str(PREFIX),
                           'graphics': graphics, 'nvidia_driver_automatic': False,
                           'optional_apps_preinstalled': [], 'gnome_removed': False}, indent=2))
@@ -690,7 +690,7 @@ def prepare_runtime(temp):
     gpus = omadora_gpu.detect()
     run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus))
     if any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(gpus)):
-        print('NVIDIA detected: after installation, stay in GNOME and run omadora gpu setup --nvidia --gaming. Driver compatibility and Secure Boot enrollment are checked separately.', flush=True)
+        print('NVIDIA detected: Omadora leaves your NVIDIA driver unchanged. Install or update it yourself after installation, then reboot before testing Omadora.', flush=True)
     # Hyprland initializes its logger before processing --version and needs
     # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
     probe_env = os.environ.copy()
@@ -721,7 +721,7 @@ def _install():
                  '/usr/share/wayland-sessions/omadora.desktop', '/etc/pam.d/omarchy-lock-password'):
         if os.path.lexists(path):
             raise ValueError(f'Refusing to replace an existing system file: {path}')
-    print('Omadora development build: adds nett00n/hyprland and whelanh/omarchy COPRs (ttfx screensaver), plus a GDM session. See docs/VALIDATION.md for test coverage and remaining limitations.', flush=True)
+    print('Omadora development build: adds nett00n/hyprland and whelanh/omarchy COPRs (ttfx screensaver), plus a Wayland login session. See docs/VALIDATION.md for test coverage and remaining limitations.', flush=True)
     with tempfile.TemporaryDirectory(prefix='omadora-') as temporary:
         temp = Path(temporary)
         fetch_upstream(temp / 'source')
@@ -764,7 +764,7 @@ def _install():
         lifecycle().root(sys.modules[__name__], 'activate', transaction['id'])
         run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
         lifecycle().commit(sys.modules[__name__], transaction)
-    print('Installed. Log out and select Omadora at the GDM gear menu. GNOME remains available.')
+    print('Installed. Log out and select Omadora in your login screen session selector (GDM gear menu or SDDM session menu). Your existing desktop remains available.')
 
 
 def installed(app):
@@ -867,7 +867,7 @@ def main():
         import omadora_applications
         omadora_applications.refresh()
     elif args.command == 'about':
-        print(f'Omadora {VERSION} | Omarchy 4.0.4 | Fedora Workstation 44\nIndependent minimal Fedora port. Experimental; see docs/VALIDATION.md for tested behavior and known failures.\nhttps://github.com/DanielCoffey1/omadora')
+        print(f'Omadora {VERSION} | Omarchy 4.0.4 | Fedora Workstation / KDE Plasma Desktop 44\nIndependent minimal Fedora port. Experimental; see docs/VALIDATION.md for tested behavior and known failures.\nhttps://github.com/DanielCoffey1/omadora')
     elif args.command == 'app':
         apps = read_json(ROOT / 'apps.json')
         if args.action == 'list':

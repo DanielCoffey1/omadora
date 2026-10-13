@@ -36,17 +36,22 @@ jobs:
   fedora-install:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [workstation, kde]
     steps:
       - uses: actions/checkout@v4
       - name: Run real installer in Fedora 44 container
         run: |
           mkdir -p test-results
           docker run --name omadora-fedora-test \
+            -e OMADORA_TEST_EDITION=${{ matrix.edition }} \
             -v "$PWD:/src:ro" -v "$PWD/test-results:/results" \
             quay.io/fedora/fedora:44 bash /src/tests/fedora-container.sh
       - name: Save Fedora evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fedora-install-results
+          name: fedora-install-results-${{ matrix.edition }}
           path: test-results/

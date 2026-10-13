@@ -5,12 +5,12 @@ if (( EUID == 0 )); then
   exit 1
 fi
 if [[ ! -r /etc/os-release ]]; then
-  echo 'Omadora requires Fedora Workstation.' >&2
+  echo 'Omadora requires Fedora Workstation or KDE Plasma Desktop.' >&2
   exit 1
 fi
 . /etc/os-release
-if [[ ${ID:-} != fedora || ${VARIANT_ID:-} != workstation || ${VERSION_ID:-} != 44 || -e /run/ostree-booted ]]; then
-  echo 'This development release targets Fedora Workstation 44 (non-Atomic).' >&2
+if [[ ${ID:-} != fedora || ( ${VARIANT_ID:-} != workstation && ${VARIANT_ID:-} != kde ) || ${VERSION_ID:-} != 44 || -e /run/ostree-booted ]]; then
+  echo 'This development release targets Fedora Workstation or KDE Plasma Desktop 44 (non-Atomic).' >&2
   exit 1
 fi
 command -v git >/dev/null || sudo dnf install -y git

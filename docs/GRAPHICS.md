@@ -1,6 +1,6 @@
 # Graphics and gaming setup
 
-Omadora targets Fedora Workstation 44, x86_64. Graphics setup does not install
+Omadora targets Fedora Workstation or KDE Plasma Desktop 44, x86_64. Graphics setup does not install
 games or a CUDA development toolkit, change the theme, disable Secure Boot,
 unload a running driver, or force the whole desktop onto a dedicated GPU.
 
@@ -12,13 +12,12 @@ the matching vendor firmware package are present. Fedora supplies the kernel
 drivers; Omadora does not install AMD's proprietary stack. Unknown/virtual
 devices and GPUs bound to vfio-pci are left alone.
 
-NVIDIA detection prints the next command to run from GNOME before starting
-Omadora. NVIDIA replacement is a separate explicit setup operation because
-driver compatibility and firmware enrollment need checking.
+NVIDIA detection prints a reminder to manage drivers manually after installation.
+No NVIDIA driver or firmware enrollment changes are performed.
 
 ## Existing installations and gaming libraries
 
-Open **Setup → Graphics** for status, gaming libraries or NVIDIA driver setup.
+Open **Setup → Graphics** for status or AMD/Intel gaming libraries.
 The **Install → Gaming → GPU setup** entry installs the optional gaming
 graphics libraries and explains the NVIDIA path if needed.
 
@@ -32,7 +31,7 @@ omadora gpu setup --gaming
 AMD/Intel gaming setup adds 32-bit Mesa/OpenGL/Vulkan libraries for native
 Steam/Wine workloads. Flatpak apps also manage their own runtime extensions;
 these host packages do not substitute for Flatpak runtime updates. NVIDIA
-users should use the driver setup below to install matching 32-bit libraries.
+users manage matching 32-bit libraries themselves with their driver installation.
 
 Status reports PCI identity, active driver, Secure Boot state, Vulkan devices
 and NVIDIA DRM modesetting. CPU/llvmpipe Vulkan is not reported as hardware
@@ -40,43 +39,18 @@ acceleration. Detection is not a gameplay or suspend certification.
 
 ## NVIDIA
 
-Log out of Hyprland and use GNOME or a TTY as your normal user:
+Install or update NVIDIA drivers yourself after Omadora installation, from
+GNOME, Plasma or a TTY. Reboot before checking `omadora gpu status` and logging
+into Omadora. The default Fedora driver remains in use until you change it;
+Omadora does not guarantee that it can run Hyprland on every NVIDIA GPU.
 
-```bash
-omadora gpu setup --nvidia --gaming
-```
-
-The tool enables Fedora 44 RPM Fusion free/nonfree repositories, queries the
-available current driver and checks NVIDIA's PCI support table for that exact
-version. If necessary it tries RPM Fusion's 580xx branch. All NVIDIA display
-controllers must fit one verified branch; unsupported/older or incompatible
-mixed cards stop with an explanation. It does not guess support from marketing
-names. Existing alternate driver branches/providers or .run installs require
-manual migration; they are not silently removed.
-
-With Secure Boot enabled, Omadora uses akmods' existing key-generation tools.
-If its certificate is not enrolled, it requests MOK enrollment and stops before
-installing the NVIDIA driver (exit status 3). Choose an enrollment password,
-reboot, select **Enroll MOK → Continue → Yes**, and enter that password.
-Then rerun the setup command from GNOME/TTY. Firmware approval remains a human
-step; Omadora never disables Secure Boot or enrolls a key on your behalf.
-
-After enrollment (or with Secure Boot disabled), setup installs the verified
-driver version and matching libraries, including NVIDIA's diagnostic tools
-(`nvidia-smi`, supplied in the RPM named `xorg-x11-drv-nvidia[-580xx]-cuda`).
-That package is not the CUDA compiler/toolkit. RPM Fusion chooses the open or
-closed kernel module suitable for its supported hardware. Setup ensures
-matching Fedora kernel headers, explicitly builds the akmod, verifies module
-presence/signing where required, and regenerates initramfs. It does not reboot
-automatically. A build failure stops the flow; review its output before reboot.
-
-Reboot after successful setup and run `omadora gpu status` in the desktop.
-DNF updates maintain RPM Fusion packages/akmods. Secure Boot, kernel updates,
-external displays and suspend still require physical-hardware testing.
-
-Driver/repository/kernel changes are not undone by `omadora rollback`, which
-only restores the previous desktop deployment. Use Fedora package recovery or
-a previously working kernel for driver problems; GNOME remains available.
+Omadora does not enable driver repositories, select a driver branch, install
+NVIDIA packages, build kernel modules, rebuild the initramfs for NVIDIA, or
+import Secure Boot keys. NVIDIA gaming libraries are also managed manually.
+The former `omadora gpu setup --nvidia` command now stops with an explanation
+before making any changes. Existing driver installations are left in place.
+The desktop also skips upstream NVIDIA environment overrides; any hardware
+specific Hyprland settings are yours to configure.
 
 ## Hybrid laptops and per-game GPU selection
 
@@ -113,9 +87,8 @@ separate concern; do not assume this host wrapper is available inside it.
 - [NVIDIA PRIME offload](https://download.nvidia.com/XFree86/Linux-x86_64/580.95.05/README/primerenderoffload.html)
 - [Mesa DRI_PRIME](https://docs.mesa3d.org/envvars.html#envvar-DRI_PRIME)
 
-Tests cover simulated PCI layouts, branch matching, failure handling, Secure
-Boot gating and per-process environment selection. Fedora containers exercise
-real packages and NVIDIA module builds. PCI IDs and firmware trust are simulated
-in those containers, and initramfs is generated without a host-only root device.
-Neither those tests nor a successful module build prove physical GPU rendering,
-firmware enrollment, laptop power management or game performance.
+Tests cover simulated PCI layouts, refusal of the former NVIDIA install path,
+Mesa package selection and per-process environment selection. The Fedora GPU
+container workflow installs Mesa packages and verifies that NVIDIA setup does
+not install driver packages or enable RPM Fusion. Containers cannot establish
+physical GPU rendering, laptop power management or game performance.

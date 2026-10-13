@@ -2,7 +2,7 @@
 
 **Omarchy 4's desktop, a minimal app selection, and Fedora underneath.**
 
-Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation 44, x86_64**. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
+Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/omadora). Targets fresh **Fedora Workstation or KDE Plasma Desktop 44, x86_64 (non-Atomic)**. KDE installation is enabled; a full KDE/SDDM hardware smoke test remains pending. Upstream desktop pinned to Omarchy **v4.0.4**, commit `c668141e9c42b13c80c9ca4ea108e11708c5e8a5`.
 
 **v0.5.0-alpha.** [Release notes](docs/releases/v0.5.0-alpha.md) · [Quick start](docs/QUICKSTART.md). Fedora tests cover installation, the original 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam startup, GTK dark dialogs and the GDM inactive-session startup crash are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume passed three cycles with a [Bochs virtual display](docs/VIRTUAL_MACHINES.md); QEMU/virtio still fails.** A laptop smoke test was reported by the project owner; detailed hardware results, broader application workloads and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
 
@@ -20,7 +20,7 @@ in a UEFI VM with SELinux enforcing. Physical hardware validation remains open.
 The [hardware test kit](docs/HARDWARE_TESTING.md) collects a read-only baseline
 and provides the local GPU/display/network/suspend checklist.
 
-Install the latest development version from `main` on **Fedora Workstation 44,
+Install the latest development version from `main` on **Fedora Workstation or KDE Plasma Desktop 44,
 x86_64 (non-Atomic)**:
 
 ```bash
@@ -31,6 +31,10 @@ This includes changes made after v0.5.0-alpha, including default-browser web
 apps, a 12-hour bar clock and terminals starting in your home directory. `main`
 changes as updates are pushed; it is not a tagged release. `OMADORA_REF=main`
 selects the latest source because the bootstrap otherwise fetches v0.5.0-alpha.
+
+The KDE and manual NVIDIA changes are available on the development branch;
+the pinned v0.5.0-alpha release still requires Workstation and retains its old
+optional NVIDIA setup.
 
 To install the pinned **v0.5.0-alpha release** instead:
 
@@ -52,7 +56,9 @@ Install from a local checkout on Fedora:
 python3 omadora.py install
 ```
 
-After installation, log out, select **Omadora** using GDM's gear menu, and log in. GNOME remains available. Fedora's existing apps are retained; Omadora doesn't remove Workstation packages.
+After installation, log out and select **Omadora** using GDM's gear menu (Workstation) or SDDM's session selector (KDE). Your existing GNOME or Plasma desktop and Fedora apps remain available. Omadora does not replace the login manager.
+
+NVIDIA drivers are managed manually after installation. Omadora does not install proprietary NVIDIA drivers, build NVIDIA modules, rebuild the initramfs for them, or enroll Secure Boot keys. Existing drivers are left in place. See [graphics setup](docs/GRAPHICS.md).
 
 ## What you get
 
