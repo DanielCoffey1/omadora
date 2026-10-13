@@ -41,7 +41,10 @@ def logout(name):
     # session belonging to the fixture user.
     graphical = [sid for sid in sessions if raw('loginctl show-session ' + shlex.quote(sid) + ' -p Type --value 2>/dev/null || true') == 'wayland']
     assert len(graphical) == 1, graphical
-    raw('loginctl terminate-session ' + shlex.quote(graphical[0]))
+    if name == 'plasmashell':
+        raw('export XDG_RUNTIME_DIR=/run/user/$(id -u); export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus; gdbus call --session --dest org.kde.Shutdown --object-path /Shutdown --method org.kde.Shutdown.logout')
+    else:
+        v.guest('omarchy-system-logout')
     wait_process(name, False)
     v.wait_for(lambda: raw('pgrep -f "[p]lasma-login-greeter" >/dev/null && echo ready || true') == 'ready', 90)
     time.sleep(10)

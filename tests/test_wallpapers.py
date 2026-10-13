@@ -83,6 +83,27 @@ class Wallpapers(unittest.TestCase):
         data['colors']['color3'] = '"; os.execute("bad")'
         with self.assertRaises(ValueError): wall.palette(data)
 
+    def test_selected_theme_replaces_dark_toolkit_palette_and_rejects_invalid_colors(self):
+        data = dict(colors={f'color{i}': '#667788' for i in range(16)},
+                    special=dict(background='#112233', foreground='#ddeeff'))
+        colors = wall.palette(data)
+        with tempfile.TemporaryDirectory() as tmp:
+            lib = wall.Library(tmp)
+            lib.toolkit_colors(colors)
+            selected = Path(tmp) / '.local/state/omarchy/current/theme/colors.toml'
+            selected.parent.mkdir(parents=True)
+            colors.update(mode='light', background='#ffffff', foreground='#000000')
+            selected.write_text(''.join(f'{key} = "{value}"\n' for key, value in colors.items()))
+            lib.sync_toolkit()
+            css = Path(tmp) / '.config/gtk-3.0/omadora-colors.css'
+            self.assertIn('@define-color theme_bg_color #ffffff;', css.read_text())
+            self.assertIn('#ffffff', (Path(tmp) / '.config/qt6ct/colors/Omadora.conf').read_text())
+            previous = css.read_text()
+            selected.write_text('background = "invalid"\n')
+            with self.assertRaisesRegex(ValueError, 'invalid toolkit colors'):
+                lib.sync_toolkit()
+            self.assertEqual(css.read_text(), previous)
+
     def test_generated_theme_failure_restores_previous_source(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(wall.Library, 'locked', contextlib.nullcontext):
             lib = wall.Library(tmp)
