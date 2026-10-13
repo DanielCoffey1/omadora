@@ -24,6 +24,7 @@ jobs:
       - name: Boot Fedora and test Omadora session
         env:
           VM_EDITION: ${{ inputs.edition }}
+          VM_SLEEP_DIAGNOSTIC: ${{ inputs.edition == 'kde' && 'bochs-gpu' || 'default' }}
           VM_SUITE: ${{ inputs.edition == 'kde' && 'kde' || 'apps' }}
           OMADORA_TEST_APPS: ${{ inputs.apps }}
         run: bash tests/fedora-vm.sh

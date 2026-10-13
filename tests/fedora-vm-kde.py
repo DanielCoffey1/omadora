@@ -36,7 +36,10 @@ def wait_process(name, present=True):
 
 def logout(name):
     sessions = raw("loginctl list-sessions --no-legend | awk '$3 == \"omadora-test\" {print $1}'").splitlines()
-    graphical = [sid for sid in sessions if raw('loginctl show-session ' + shlex.quote(sid) + ' -p Type --value') == 'wayland']
+    # Each SSH invocation has its own short-lived logind session; it may have
+    # vanished by the next invocation. Ignore those, but require one Wayland
+    # session belonging to the fixture user.
+    graphical = [sid for sid in sessions if raw('loginctl show-session ' + shlex.quote(sid) + ' -p Type --value 2>/dev/null || true') == 'wayland']
     assert len(graphical) == 1, graphical
     raw('loginctl terminate-session ' + shlex.quote(graphical[0]))
     wait_process(name, False)
