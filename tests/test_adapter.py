@@ -111,6 +111,18 @@ class AdapterTests(unittest.TestCase):
             self.assertEqual(destination.read_text(), 'custom configuration')
         self.assertEqual(adapter.kde_login_packages({'VARIANT_ID': 'workstation'}), [])
 
+    def test_custom_display_manager_unit_is_preserved(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            alias = root / 'etc/systemd/system/display-manager.service'
+            alias.parent.mkdir(parents=True)
+            alias.write_text('[Service]\nExecStart=/custom/greeter\n')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                adapter.configure_kde_login(root, root)
+            run.assert_not_called()
+            self.assertIn('/custom/greeter', alias.read_text())
+
     @unittest.skipIf(os.name == 'nt', 'Linux CI exercises display-manager symlinks')
     def test_kde_login_preserves_custom_manager_and_saves_previous_plm_journal(self):
         from types import SimpleNamespace

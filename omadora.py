@@ -708,7 +708,7 @@ def configure_kde_login(temp, root=Path('/')):
     if not kde_login_packages():
         return
     alias = root / 'etc/systemd/system/display-manager.service'
-    manager = alias.resolve().name if alias.is_symlink() else None
+    manager = alias.resolve().name if alias.exists() or alias.is_symlink() else None
     if manager not in (None, 'plasmalogin.service', 'sddm.service'):
         print(f'Preserving custom login manager {manager}; SDDM was not enabled.', flush=True)
         return
