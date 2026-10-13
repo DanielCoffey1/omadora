@@ -1,7 +1,7 @@
 # Omadora v0.5.0-alpha quick start
 
-Target: fresh Fedora Workstation **44, x86_64**, non-Atomic. This is an alpha
-release of the minimal Omarchy 4.0.4 desktop port. GNOME and Fedora's existing
+Development target: fresh Fedora Workstation or KDE Plasma Desktop **44, x86_64**, non-Atomic. KDE/SDDM end-to-end validation remains pending; the pinned v0.5.0-alpha installer still requires Workstation. This is an alpha
+release of the minimal Omarchy 4.0.4 desktop port. Your existing desktop and Fedora
 apps remain available. See [known limits](releases/v0.5.0-alpha.md).
 
 ## Install
@@ -31,8 +31,9 @@ The installer requests sudo for packages/system files, enables the
 documented desktop COPRs and backs up managed user configuration. Save the
 backup path it prints. Internet access is required.
 
-After installation, log out. Select your user in GDM, choose **Omadora** in
-the gear menu, and log in. Check the version with `omadora about`. Use the
+After installation, log out. Choose **Omadora** in the GDM gear menu
+(Workstation) or the KDE login screen session selector
+(Plasma Login Manager on Fedora 44, or SDDM where configured), and log in. Check the version with `omadora about`. Use the
 desktop's **Install** menu for optional apps, including Gaming and AI.
 
 ## Wallpapers
@@ -45,10 +46,11 @@ See [wallpaper color coverage](WALLPAPERS.md).
 ## Graphics and gaming
 
 Fresh installs ensure AMD/Intel Mesa and firmware packages for detected hardware.
-For NVIDIA, remain in GNOME and run `omadora gpu setup --nvidia --gaming` before
-starting Omadora. Secure Boot enrollment may require a reboot and rerunning setup.
+For NVIDIA, install or update your driver yourself after installation from
+your existing GNOME/Plasma desktop or a TTY, then reboot before testing Omadora.
+Omadora leaves existing NVIDIA drivers and Secure Boot enrollment unchanged.
 **Setup → Graphics** provides status and optional gaming-library setup. See
-[GPU setup, supported branches and hybrid laptops](GRAPHICS.md).
+[GPU status, manual NVIDIA drivers and hybrid laptops](GRAPHICS.md).
 
 ## Update
 

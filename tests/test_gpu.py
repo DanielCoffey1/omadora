@@ -40,70 +40,36 @@ class GPU(unittest.TestCase):
         self.assertEqual(gpu.mesa_packages([card(), card('1234')]), [])
         self.assertEqual(gpu.mesa_packages([card('AMD', driver='vfio-pci')]), [])
 
-    def test_support_parser_excludes_legacy_and_respects_subsystem(self):
-        html = '<a id="Current"></a><table><tr id="devid2684"><tr id="devid1E30_1028_129E"></table><table><tr id="devid1234"></table>'
-        ids = gpu.supported_ids(html)
-        self.assertTrue(gpu.supports(card(), ids))
-        self.assertFalse(gpu.supports(card(device='1234'), ids))
-        self.assertFalse(gpu.supports(card(device='1e30'), ids))
-        self.assertTrue(gpu.supports(card(device='1e30') | dict(subvendor='1028', subdevice='129e'), ids))
-        with self.assertRaises(ValueError):
-            gpu.supported_ids('<html>Access denied</html>')
+    def test_nvidia_setup_is_rejected_before_any_operation(self):
+        for dry_run in (False, True):
+            a = Mock()
+            with patch.object(gpu, 'detect') as detect:
+                with self.assertRaisesRegex(ValueError, 'managed manually'):
+                    gpu.setup(a, gaming=True, nvidia=True, dry_run=dry_run)
+            detect.assert_not_called()
+            a.run.assert_not_called()
+            a.preflight.assert_not_called()
 
-    def test_dry_run_does_not_fetch_or_install(self):
+    def test_dry_run_does_not_install(self):
         a = Mock()
-        with patch.object(gpu, 'detect', return_value=[card()]), patch.object(gpu, 'candidate') as query:
-            gpu.setup(a, gaming=True, nvidia=True, dry_run=True)
+        with patch.object(gpu, 'detect', return_value=[card()]):
+            gpu.setup(a, gaming=True, dry_run=True)
         a.run.assert_not_called()
         a.preflight.assert_not_called()
-        query.assert_not_called()
+
+    def test_hybrid_setup_only_installs_mesa_and_diagnostics(self):
+        a = Mock()
+        cards = [card(), card('Intel', driver='i915')]
+        with patch.object(gpu, 'detect', return_value=cards):
+            gpu.setup(a, gaming=True)
+        a.run.assert_called_once_with('sudo', 'dnf', 'install',
+            *gpu.mesa_packages(cards, True), 'vulkan-tools', 'pciutils', 'mokutil')
+        a.lifecycle.assert_not_called()
 
     def test_software_vulkan_is_not_reported_as_hardware(self):
         self.assertIn('no physical', gpu.acceleration({'status': 0, 'output': 'deviceType = PHYSICAL_DEVICE_TYPE_CPU\ndeviceName = llvmpipe'}))
         self.assertIn('hardware Vulkan', gpu.acceleration({'status': 0, 'output': 'deviceType = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU'}))
         self.assertIn('unverified', gpu.acceleration({'status': 1, 'output': ''}))
-
-    def test_nvidia_multilib_specs_keep_version_release_and_arch(self):
-        packages = gpu.nvidia_packages('-580xx', '580.159.04', True)
-        self.assertIn('xorg-x11-drv-nvidia-580xx-libs-580.159.04-*.i686', packages)
-        self.assertIn('xorg-x11-drv-nvidia-580xx-libs-580.159.04-*.x86_64', packages)
-
-    def test_secure_boot_pending_stops_before_driver_install(self):
-        a = Mock()
-        a.run.return_value = subprocess.CompletedProcess([], 1, '')
-        with patch.object(gpu, 'detect', return_value=[card()]), \
-             patch.object(gpu, 'candidate', return_value=('', '615.71.09')), \
-             patch.object(gpu, 'secure_boot', return_value='enabled'):
-            self.assertEqual(gpu.setup(a, nvidia=True), 3)
-        calls = [c.args for c in a.run.call_args_list]
-        self.assertIn(('sudo', 'mokutil', '--import', gpu.CERT), calls)
-        self.assertFalse(any(any(str(x).startswith('akmod-nvidia-') for x in c) for c in calls))
-        self.assertFalse(any('dracut' in c for c in calls))
-
-    def test_unknown_secure_boot_and_unsupported_gpu_stop(self):
-        for candidate, state in ((None, 'disabled'), (('', '615.71.09'), 'unknown')):
-            a = Mock()
-            a.run.return_value = subprocess.CompletedProcess([], 0, '')
-            with patch.object(gpu, 'detect', return_value=[card()]), \
-                 patch.object(gpu, 'candidate', return_value=candidate), \
-                 patch.object(gpu, 'secure_boot', return_value=state):
-                with self.assertRaises(ValueError):
-                    gpu.setup(a, nvidia=True)
-            self.assertFalse(any('akmods' in c.args for c in a.run.call_args_list))
-
-    def test_module_build_failure_prevents_initramfs_and_success(self):
-        a = Mock()
-        def run(*args, **kwargs):
-            if 'akmods' in args:
-                raise subprocess.CalledProcessError(1, args)
-            return subprocess.CompletedProcess(args, 0, '6.19.1-1.fc44.x86_64\n' if 'kernel-devel' in args else '')
-        a.run.side_effect = run
-        with patch.object(gpu, 'detect', return_value=[card()]), \
-             patch.object(gpu, 'candidate', return_value=('', '615.71.09')), \
-             patch.object(gpu, 'secure_boot', return_value='disabled'):
-            with self.assertRaises(subprocess.CalledProcessError):
-                gpu.setup(a, nvidia=True)
-        self.assertFalse(any('dracut' in c.args for c in a.run.call_args_list))
 
     def test_hybrid_launch_preserves_arguments_and_limits_environment(self):
         gpus = [card('Intel', pci='0000:00:02.0', driver='i915', boot=True), card()]

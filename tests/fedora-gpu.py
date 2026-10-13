@@ -1,4 +1,4 @@
-"""Disposable container only: real Fedora packages/module builds, simulated PCI IDs."""
+"""Disposable container only: real Fedora packages, simulated PCI IDs."""
 import os
 from pathlib import Path
 import subprocess
@@ -15,40 +15,36 @@ class Adapter:
         args = list(map(str, args))
         if args[0] == 'sudo':
             args.pop(0)
-        if args[:3] == ['dnf', 'install', 'akmods'] or args[:2] == ['dnf', 'install']:
+        if args[:2] == ['dnf', 'install']:
             args.insert(2, '-y')
-        if args[:2] == ['mokutil', '--test-key']:
-            print('SIMULATED: firmware already trusts the locally generated certificate', flush=True)
-            return subprocess.CompletedProcess(args, 0, '')
-        if args[0] == 'dracut':
-            # Container overlay filesystems have no bootable host root device.
-            args.insert(1, '--no-hostonly')
         print('RUN', args, flush=True)
         return subprocess.run(args, text=True, capture_output=capture, check=check)
 
     def preflight(self):
         pass  # The disposable container deliberately substitutes for a desktop user.
 
-    def lifecycle(self):
-        return self
-
-    def offline(self, adapter):
-        assert not os.environ.get('HYPRLAND_INSTANCE_SIGNATURE')
-
-
 mode = sys.argv[1]
-card = dict(pci='0000:01:00.0', vendor='NVIDIA', device='1b80' if mode == 'legacy' else '2684',
+card = dict(pci='0000:01:00.0', vendor='NVIDIA', device='2684',
             subvendor='10de', subdevice='0000', driver='', boot_display=True)
-cards = [card] if mode != 'mesa' else [card | dict(vendor='AMD'), card | dict(vendor='Intel', pci='0000:00:02.0')]
-with patch.object(gpu, 'detect', return_value=cards), patch.object(gpu, 'secure_boot', return_value='enabled' if mode == 'current' else 'disabled'):
-    gpu.setup(Adapter(), gaming=True, nvidia=mode != 'mesa')
+cards = [card] if mode == 'nvidia-manual' else [card | dict(vendor='AMD'), card | dict(vendor='Intel', pci='0000:00:02.0')]
+with patch.object(gpu, 'detect', return_value=cards):
+    if mode == 'nvidia-manual':
+        from unittest.mock import Mock
+        adapter = Mock()
+        try:
+            gpu.setup(adapter, gaming=True, nvidia=True)
+        except ValueError as error:
+            assert 'managed manually' in str(error)
+        else:
+            raise AssertionError('NVIDIA setup must be rejected')
+        adapter.run.assert_not_called()
+        adapter.preflight.assert_not_called()
+    gpu.setup(Adapter(), gaming=True)
 if mode == 'mesa':
     subprocess.run(['rpm', '-q', *gpu.mesa_packages(cards, True)], check=True)
     subprocess.run(['vulkaninfo', '--summary'], check=True)
 else:
-    suffix = '-580xx' if mode == 'legacy' else ''
-    subprocess.run(['rpm', '-q', 'akmod-nvidia' + suffix, 'xorg-x11-drv-nvidia' + suffix + '-libs.i686'], check=True)
-    assert Path('/usr/sbin/kmodgenca').is_file()
-    subprocess.run(['akmods', '--help'], check=True)
+    installed = subprocess.run(['rpm', '-qa', '--qf=%{NAME}\n'], text=True, capture_output=True, check=True).stdout.splitlines()
+    assert not any(name.startswith(('akmod-nvidia', 'xorg-x11-drv-nvidia', 'rpmfusion-')) for name in installed)
 print('PASS: GPU package setup', mode, flush=True)
-print('NOT TESTED: physical GPU rendering, firmware MOK approval, hardware suspend or game performance.')
+print('NOT TESTED: physical GPU rendering, laptop suspend or game performance.')

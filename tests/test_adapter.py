@@ -37,6 +37,8 @@ class AdapterTests(unittest.TestCase):
         self.assertIn('install.service.dropbox', menu)
         self.assertIn('install.browser.brave', menu)
         self.assertIn('install.gaming.minecraft', menu)
+        self.assertNotIn('setup.gpu.nvidia', menu)
+        self.assertIn('gsettings-desktop-schemas', adapter.packages())
         self.assertFalse(set(apps['ghostty']['packages']) & set(adapter.packages()))
 
     def test_optional_copr_is_enabled_only_for_install(self):
@@ -81,9 +83,13 @@ class AdapterTests(unittest.TestCase):
     def test_only_supported_fedora(self):
         good = {'ID': 'fedora', 'VARIANT_ID': 'workstation', 'VERSION_ID': '44'}
         adapter.validate_target(good, 'x86_64')
+        adapter.validate_target(good | {'VARIANT_ID': 'kde'}, 'x86_64')
         for changes, arch, atomic in [({'ID': 'arch'}, 'x86_64', False),
                                      ({'VERSION_ID': '43'}, 'x86_64', False),
                                      ({'VARIANT_ID': 'silverblue'}, 'x86_64', True),
+                                     ({'VARIANT_ID': 'kinoite'}, 'x86_64', True),
+                                     ({'VARIANT_ID': 'server'}, 'x86_64', False),
+                                     ({'VARIANT_ID': 'kde'}, 'x86_64', True),
                                      ({}, 'aarch64', False), ({}, 'x86_64', True)]:
             with self.assertRaises(ValueError):
                 adapter.validate_target(good | changes, arch, atomic)
@@ -287,6 +293,8 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             self.assertTrue((tree / 'shell/plugins/polkit/PolkitAgent.qml').is_file())
             self.assertNotIn('FONTCONFIG_FILE', (output / 'system/omadora-env').read_text())
             self.assertIn('gtk-contained-dark.css', (output / 'share/themes/Adwaita-dark/gtk-3.0/gtk.css').read_text())
+            self.assertNotIn('require("default.hypr.nvidia")', (tree / 'default/hypr/envs.lua').read_text())
+            self.assertNotIn('LIBVA_DRIVER_NAME', (output / 'system/omadora-env').read_text())
             self.assertIn('gsettings set', (tree / 'bin/omarchy-theme-set-gnome').read_text())
             logo = (tree / 'logo.txt').read_text(encoding='utf-8')
             self.assertEqual(logo, (tree / 'config/omarchy/branding/screensaver.txt').read_text(encoding='utf-8'))

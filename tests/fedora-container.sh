@@ -4,9 +4,13 @@ set -euo pipefail
 exec > >(tee /results/fedora-install.log) 2>&1
 trap 'status=$?; printf "%s\n" "$status" >/results/exit-status; rpm -qa | sort >/results/packages.txt; exit "$status"' EXIT
 cat /etc/os-release
-# Supply a Workstation identity so the actual target preflight is exercised.
-# This is a container with Workstation identity, not a full Workstation VM.
-dnf install -y --allowerasing fedora-release-workstation fedora-release-identity-workstation tuned-ppd sudo git python3 policycoreutils procps-ng
+# Exercise both supported edition identities, without claiming desktop coverage.
+edition=${OMADORA_TEST_EDITION:-workstation}
+case "$edition" in
+  workstation|kde) ;;
+  *) echo 'Unsupported fixture edition' >&2; exit 1 ;;
+esac
+dnf install -y --allowerasing "fedora-release-$edition" "fedora-release-identity-$edition" tuned-ppd sudo git python3 policycoreutils procps-ng
 useradd --create-home omadora-test
 printf 'omadora-test ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/omadora-test
 chmod 0440 /etc/sudoers.d/omadora-test
@@ -35,6 +39,12 @@ cp /tmp/omadora-lifecycle-*.json /results/
 cp /tmp/omadora-maintenance.json /results/
 cp /tmp/omadora-app-resolution.txt /results/
 cp /usr/local/share/omadora/portability-report.json /results/
-python3 /src/tests/fedora-legacy.py
+if [[ $edition == workstation ]]; then
+  python3 /src/tests/fedora-legacy.py
+else
+  # The actual historical release intentionally rejects KDE. Test its upgrade
+  # path on Workstation; do not misreport that rejection as a current failure.
+  printf '%s\n' 'NOT APPLICABLE: historical Workstation-only release on KDE' >/results/legacy-edition.txt
+fi
 echo 'PASS: real Fedora package installation, installer, theme generation and staged files.'
 echo 'NOT TESTED: graphical session, GDM, password unlock, suspend, GPU, SELinux.'
