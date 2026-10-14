@@ -49,13 +49,25 @@ establish a fix for the G14's physical GPU or its reported logout black screen.
 gh workflow run vm.yml --ref main -f edition=kde
 ```
 
-The fixture uses Plasma Login Manager to start Omadora, performs desktop
+The fixture defaults to SDDM with an X11 software-rendered greeter to start Omadora, performs desktop
 interaction checks, logs out through the desktop command and captures the greeter.
 It then starts Plasma and tests return to the greeter again. Autologin and
 session selection are test instrumentation restricted to the disposable VM.
+It also disables autologin, rejects a wrong password, accepts the real fixture
+password, and checks keyboard input after manually logging into Omadora.
+Plasma Login Manager remains selectable with `-f login_manager=plasmalogin`
+for comparison.
 A running greeter process alone is not proof that the screen rendered:
 inspect the saved screenshots and login-manager journal as well.
 
 The workflow retains VM logs, per-check results and screenshots as artifacts,
 including on failure. Physical GPU rendering and the G14 logout black screen
 remain unvalidated by these VM results.
+
+See [development VM acceptance](VM_ACCEPTANCE.md) for the expanded desktop,
+recovery, application and ISO results and their exact limits. The installer now
+handles the old `kmime` package automatically. Logout uses systemd replacement
+job mode: UWSM 0.27's failure mode could reject a stop while a Plasma graphical
+startup job was queued. The regression fixture deliberately queues such a job
+before normal logout. Capture-proxy rules also keep KDE's background X11 sharing
+window from appearing as an opaque tile in Omadora.

@@ -6,6 +6,12 @@ Independent project at [DanielCoffey1/omadora](https://github.com/DanielCoffey1/
 
 **v0.5.0-alpha.** [Release notes](docs/releases/v0.5.0-alpha.md) · [Quick start](docs/QUICKSTART.md). Fedora tests cover installation, the original 26 catalog install commands, 23 attempted app removals, GDM/desktop startup, password unlocking, window controls, clipboard, themes, power profiles, portals, audio controls, updates, and GNOME/configuration recovery. Steam startup, GTK dark dialogs and the GDM inactive-session startup crash are fixed and verified; Signal and Discord reached their linking/login screens. **Suspend/resume passed three cycles with a [Bochs virtual display](docs/VIRTUAL_MACHINES.md); QEMU/virtio still fails.** A laptop smoke test was reported by the project owner; detailed hardware results, broader application workloads and complete visual parity remain unvalidated. This is not a finished 1:1 port yet. See [validation](docs/VALIDATION.md), [application results](docs/APP_TESTS.md), and [compatibility](docs/COMPATIBILITY.md).
 
+Latest development testing expands this to KDE/SDDM login, queued-job logout,
+desktop upgrade/rollback and recovery, 69 application lifecycle/startup probes,
+real database persistence, prompted setup and offline ISO installation. See the
+[VM acceptance report](docs/VM_ACCEPTANCE.md) for passing runs, fixes and the
+account, license and software-GPU limits of those checks.
+
 ## Install
 
 ### Install on a new PC
