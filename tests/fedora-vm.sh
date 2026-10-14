@@ -200,6 +200,9 @@ elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
   else
     python3 tests/fedora-vm-interactions.py
   fi
+elif [[ ${VM_SUITE:-apps} == workflows ]]; then
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-workflows.py'\'''
+  printf '[]\n' >vm-results/interactions.json
 elif [[ ${VM_SUITE:-apps} == databases ]]; then
   ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'python3 ~/source/tests/fedora-vm-databases.py'
   printf '[]\n' >vm-results/interactions.json

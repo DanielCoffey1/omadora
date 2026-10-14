@@ -20,7 +20,7 @@ on:
         description: 'Automatic selects desktop defaults; catalog tests the requested app batch'
         type: choice
         default: automatic
-        options: [automatic, catalog, databases]
+        options: [automatic, catalog, databases, workflows]
 permissions:
   contents: read
 jobs:
