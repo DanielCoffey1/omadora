@@ -198,6 +198,11 @@ elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
   else
     python3 tests/fedora-vm-interactions.py
   fi
+elif [[ ${VM_SUITE:-apps} == catalog ]]; then
+  # App batches do not repeat suspend testing: dedicated reliability VMs
+  # exercise that separately, without hiding completed application evidence.
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-apps.py'\'''
+  printf '[]\n' >vm-results/interactions.json
 else
   # Suspend is deliberately last: a driver/compositor hang must not prevent
   # collection of independent application results from a healthy desktop.

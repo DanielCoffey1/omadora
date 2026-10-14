@@ -9,6 +9,7 @@ import time
 t = runpy.run_path('tests/fedora-vm-interactions.py')
 guest, wait_for, check = (t[n] for n in ('guest', 'wait_for', 'check'))
 out = Path('vm-results')
+manager = os.environ.get('VM_LOGIN_MANAGER', 'sddm') if os.environ.get('VM_EDITION') == 'kde' else 'gdm'
 
 
 def raw(command, timeout=30):
@@ -43,7 +44,7 @@ def healthy():
 
 def login_cycle():
     old = guest('pgrep -x Hyprland')
-    raw('sudo systemctl restart gdm', timeout=60)
+    raw('sudo systemctl restart ' + manager, timeout=60)
     wait_for(lambda: guest('pgrep -x Hyprland') != old and healthy(), seconds=90)
     # Prove input and real password authentication after every new session.
     t['authentication']()
@@ -51,7 +52,7 @@ def login_cycle():
 
 
 for cycle in range(1, 6):
-    check(f'GDM login {cycle}', login_cycle)
+    check(f'{manager} login {cycle}', login_cycle)
     evidence(f'login-{cycle}')
     if t['results'][-1]['status'] != 'PASS':
         break

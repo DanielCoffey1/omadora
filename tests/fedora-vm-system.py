@@ -1,6 +1,7 @@
 """Independent disposable VM: portal, network, virtual sound, GNOME, recovery."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import time
@@ -9,6 +10,10 @@ import shlex
 spec = importlib.util.spec_from_file_location('interactions', Path(__file__).with_name('fedora-vm-interactions.py'))
 v = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(v)
+KDE = os.environ.get('VM_EDITION') == 'kde'
+MANAGER = os.environ.get('VM_LOGIN_MANAGER', 'sddm') if KDE else 'gdm'
+FALLBACK = 'plasma' if KDE else 'gnome'
+FALLBACK_PROCESS = 'plasmashell' if KDE else 'gnome-shell'
 
 
 def portal():
@@ -84,20 +89,35 @@ def raw(command, timeout=90):
     return p.stdout.strip()
 
 
+def switch_desktop(session):
+    if KDE:
+        config = '/etc/sddm.conf.d/zz-omadora-test.conf'
+        raw('sudo systemctl stop ' + MANAGER)
+        raw("printf '[Autologin]\nUser=omadora-test\nSession=" + session + ".desktop\nRelogin=false\n' | sudo tee " + config + " >/dev/null; sudo systemctl start " + MANAGER)
+    else:
+        raw("sudo systemctl stop gdm; sudo systemctl stop accounts-daemon; "
+            f"printf '[User]\\nXSession={session}\\nSession={session}\\nSystemAccount=false\\n' | "
+            "sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null; sudo systemctl start accounts-daemon gdm")
+    executable = FALLBACK_PROCESS if session == FALLBACK else 'Hyprland'
+    v.wait_for(lambda: raw('pgrep -u $(id -u) -x ' + executable), 90)
+    if session == 'omadora':
+        v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok', 90)
+        assert v.guest('hyprctl configerrors') in ('', 'ok')
+
+
 def recovery():
-    raw("sudo systemctl stop gdm; sudo systemctl stop accounts-daemon; printf '[User]\\nXSession=gnome\\nSession=gnome\\nSystemAccount=false\\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null; sudo systemctl start accounts-daemon gdm")
-    v.wait_for(lambda: raw('pgrep -u $(id -u) -x gnome-shell'), 90)
+    switch_desktop(FALLBACK)
     # No Hyprland environment is supplied to restore-config from this SSH/TTY.
     result = raw("omadora restore-config \"$(python3 -c 'import json,pathlib; print(json.loads((pathlib.Path.home()/\".local/state/omadora/installation.json\").read_text())[\"backup\"])')\"")
     assert raw('cat ~/.config/hypr/original-test-marker') == 'pre-install sentinel'
     assert raw('cat ~/.local/state/omadora/backups/before-restore-*/.config/hypr/post-install-marker') == 'post-install sentinel'
-    raw('test ! -e ~/.config/hypr/post-install-marker; pgrep -u $(id -u) -x gnome-shell')
+    raw('test ! -e ~/.config/hypr/post-install-marker; pgrep -u $(id -u) -x ' + FALLBACK_PROCESS)
     raw('test ! -e ~/.config/fontconfig/conf.d/99-omadora.conf')
     original = raw("python3 -c 'import json,pathlib; p=pathlib.Path.home()/\".local/state/omadora/installation.json\"; b=pathlib.Path(json.loads(p.read_text())[\"backup\"]); print(json.dumps(json.loads((b/\"desktop-settings.json\").read_text())))'")
     import json
     for key, expected in json.loads(original).items():
         assert raw('gsettings get org.gnome.desktop.interface ' + key) == expected
-    return result + '; GNOME remained running and later edits were rescued.'
+    return result + '; fallback desktop remained running and later edits were rescued.'
 
 
 def desktop_shortcuts():
@@ -158,19 +178,10 @@ def font_preferences():
 
 
 def desktop_lifecycle():
-    def switch(session):
-        raw("sudo systemctl stop gdm; sudo systemctl stop accounts-daemon; "
-            f"printf '[User]\\nXSession={session}\\nSession={session}\\nSystemAccount=false\\n' | "
-            "sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null; sudo systemctl start accounts-daemon gdm")
-        executable = 'gnome-shell' if session == 'gnome' else 'Hyprland'
-        v.wait_for(lambda: raw('pgrep -u $(id -u) -x ' + executable), 90)
-        if session == 'omadora':
-            v.wait_for(lambda: v.guest('omarchy-shell shell ping') == 'ok', 90)
-            assert v.guest('hyprctl configerrors') in ('', 'ok')
-
+    switch = switch_desktop
     v.guest("printf 'keep my config' > ~/.config/foot/lifecycle-sentinel")
     raw('sudo touch /usr/local/share/omadora/previous-release-marker')
-    switch('gnome')
+    switch(FALLBACK)
     # A bare SSH shell is deliberately independent of the stopped compositor.
     revision = json.loads(raw('cat /usr/local/share/omadora/release.json'))['revision']
     assert len(revision) == 40 and all(c in '0123456789abcdef' for c in revision)
@@ -181,13 +192,13 @@ def desktop_lifecycle():
     v.wait_for(lambda: any(c['class'] == 'foot' for c in json.loads(v.guest('hyprctl clients -j'))))
     v.guest('grim /tmp/omadora-vm-results/desktop-after-upgrade.png')
     v.keys('meta_l', 'w')
-    switch('gnome')
+    switch(FALLBACK)
     raw('omadora rollback', timeout=180)
     raw('test -f /usr/local/share/omadora/previous-release-marker')
     switch('omadora')
     assert v.guest('cat ~/.config/foot/lifecycle-sentinel') == 'keep my config'
     v.guest('grim /tmp/omadora-vm-results/desktop-after-rollback.png')
-    return 'Upgraded from GNOME, logged into Omadora and opened Foot; rolled back from GNOME and logged in again; personal edit retained.'
+    return 'Upgraded from the fallback desktop, logged into Omadora and opened Foot; rolled back and logged in again; personal edit retained.'
 
 
 def menu_audit():
@@ -478,5 +489,5 @@ v.check('portal file chooser', portal)
 v.check('network reconnect', network)
 v.check('virtual audio controls', sound)
 v.check('notifications', notifications)
-v.check('GNOME and config recovery', recovery)
+v.check('Fallback desktop and config recovery', recovery)
 assert all(r['status'] == 'PASS' for r in v.results), v.results

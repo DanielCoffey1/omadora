@@ -28,6 +28,7 @@ if [[ $edition == kde ]]; then
   ! rpm -q kmime
   rpm -q kf6-kmime sddm sddm-x11
   grep -Fx 'DisplayServer=x11' /etc/sddm.conf.d/90-omadora.conf
+  grep -Fx 'InputMethod=' /etc/sddm.conf.d/90-omadora.conf
   grep -Fx 'GreeterEnvironment=QT_QUICK_BACKEND=software' /etc/sddm.conf.d/90-omadora.conf
 fi
 test "$(stat -c '%U' /usr/local/share/omadora/omadora.py)" = root

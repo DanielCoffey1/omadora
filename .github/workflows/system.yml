@@ -2,6 +2,11 @@ name: Fedora recovery and services
 on:
   workflow_dispatch:
     inputs:
+      edition:
+        description: Desktop edition under test
+        type: choice
+        default: workstation
+        options: [workstation, kde]
       suite:
         description: Desktop acceptance suite
         type: choice
@@ -22,6 +27,9 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb x11-utils libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
       - name: Test services and recovery
         env:
+          VM_EDITION: ${{ inputs.edition || 'workstation' }}
+          VM_LOGIN_MANAGER: sddm
+          VM_SLEEP_DIAGNOSTIC: ${{ inputs.edition == 'kde' && 'bochs-gpu' || 'default' }}
           VM_SUITE: ${{ inputs.suite || 'system' }}
         run: bash tests/fedora-vm.sh
       - name: Save evidence

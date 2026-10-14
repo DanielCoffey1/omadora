@@ -712,9 +712,10 @@ def configure_kde_login(temp, root=Path('/')):
     if manager not in (None, 'plasmalogin.service', 'sddm.service'):
         print(f'Preserving custom login manager {manager}; SDDM was not enabled.', flush=True)
         return
-    content = '[General]\nDisplayServer=x11\nGreeterEnvironment=QT_QUICK_BACKEND=software\n'
+    previous = '[General]\nDisplayServer=x11\nGreeterEnvironment=QT_QUICK_BACKEND=software\n'
+    content = '[General]\nDisplayServer=x11\nInputMethod=\nGreeterEnvironment=QT_QUICK_BACKEND=software\n'
     destination = root / 'etc/sddm.conf.d/90-omadora.conf'
-    if destination.is_symlink() or (destination.exists() and destination.read_text() != content):
+    if destination.is_symlink() or (destination.exists() and destination.read_text() not in (content, previous)):
         raise ValueError('Refusing to overwrite custom /etc/sddm.conf.d/90-omadora.conf.')
     config = temp / 'omadora-sddm.conf'
     write(config, content)

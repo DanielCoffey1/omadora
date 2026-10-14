@@ -2,6 +2,11 @@ name: Fedora suspend diagnostic
 on:
   workflow_dispatch:
     inputs:
+      edition:
+        description: Desktop edition under test
+        type: choice
+        default: workstation
+        options: [workstation, kde]
       mode:
         description: 'Isolated fixture diagnostic; never changes product defaults'
         type: choice
@@ -19,6 +24,8 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb x11-utils libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
       - name: Diagnose virtual GPU suspend
         env:
+          VM_EDITION: ${{ inputs.edition || 'workstation' }}
+          VM_LOGIN_MANAGER: sddm
           VM_SUITE: diagnostic
           VM_SLEEP_DIAGNOSTIC: ${{ inputs.mode }}
         run: bash tests/fedora-vm.sh

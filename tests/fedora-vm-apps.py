@@ -19,7 +19,8 @@ catalog = json.loads(Path('/usr/local/share/omadora/apps.json').read_text())
 cli = ['python3', '/usr/local/share/omadora/omadora.py', 'app']
 results = []
 selection_file = Path(__file__).with_name('selected-apps.json')
-selection = json.loads(selection_file.read_text()) if selection_file.exists() else list(catalog)
+probes = json.loads(Path(__file__).with_name('catalog-smoke.json').read_text())
+selection = json.loads(selection_file.read_text()) if selection_file.exists() else list(probes)
 assert selection and set(selection) <= set(catalog)
 (out / 'selection.json').write_text(json.dumps(selection))
 with (out / 'environment.log').open('w') as log:
@@ -30,12 +31,7 @@ with (out / 'environment.log').open('w') as log:
 subprocess.run(['omarchy-shell', 'idle', 'disable'], check=True)
 assert not json.loads(subprocess.check_output(['omarchy-shell', 'idle', 'status']))['enabled']
 atexit.register(lambda: subprocess.run(['omarchy-shell', 'idle', 'enable']))
-gui = {'steam': ['gtk-launch', 'steam'], 'lutris': ['lutris'], 'gimp': ['gimp'],
-       'libreoffice': ['libreoffice', '--writer'], 'kitty': ['kitty'],
-       'alacritty': ['alacritty'], 'chromium': ['chromium-browser', '--no-first-run']}
-terminal = {'mangohud': ['mangohud', '--version'], 'gamemode': ['gamemoded', '--version'],
-            'podman': ['podman', 'info'], 'node': ['node', '--version'],
-            'rust': ['rustc', '--version'], 'go': ['go', 'version']}
+assert set(selection) <= set(probes), 'Use optional-assets or workflow-specific checks for optional recipes'
 
 
 def installed(app_id):
@@ -50,7 +46,7 @@ def windows():
 def app_window(app_id, window):
     # A setup dialog, updater, keyring prompt or splash is not the application.
     aliases = {'protonup': 'pupgui2', 'obs': 'obsproject', 'libreoffice': 'libreoffice',
-               'vscode': 'code'}
+               'vscode': 'code', 'brave-origin': 'brave', 'geforce-now': 'geforcenow'}
     app_class = window['class'].lower()
     title = window['title'].lower()
     return (aliases.get(app_id, app_id) in app_class
@@ -98,13 +94,16 @@ for app_id in selection:
                 log.write(fonts.stdout + fonts.stderr)
                 assert fonts.returncode == 0 and 'Fontconfig error' not in fonts.stderr, 'sandbox font lookup failed'
                 record['fonts'] = 'PASS: sandbox font lookup'
-            if app_id in terminal:
-                p = subprocess.run(terminal[app_id], stdout=log, stderr=log, timeout=60)
+            if probes[app_id]['kind'] in ('cli', 'font'):
+                p = subprocess.run(probes[app_id]['command'], text=True, capture_output=True, timeout=60)
+                log.write(p.stdout + p.stderr)
+                if probes[app_id]['kind'] == 'font':
+                    assert probes[app_id]['expected'] in p.stdout.lower(), 'Requested font resolved to fallback'
                 assert p.returncode == 0, 'CLI smoke failed'
                 record['launch'] = 'PASS: CLI smoke'
             else:
                 before = {c['address'] for c in windows()}
-                command = ['flatpak', 'run', app['id']] if app['source'] == 'flatpak' else gui[app_id]
+                command = probes[app_id]['command']
                 process = subprocess.Popen(command, stdout=log, stderr=log, start_new_session=True)
                 deadline = time.monotonic() + (300 if app_id == 'steam' else 90)
                 created = []
