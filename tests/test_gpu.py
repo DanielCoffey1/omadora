@@ -91,7 +91,7 @@ class GPU(unittest.TestCase):
             if args[0] == 'modinfo':
                 output = module if 'version' in args else 'AA:BB:CC:DD'
             if 'openssl' in args:
-                output = 'X509v3 Subject Key Identifier:\n    AA:BB:CC:DD\n'
+                output = 'serial=AABBCCDD\n'
             return subprocess.CompletedProcess(args, code, output, '')
         a.run.side_effect = run
         return a

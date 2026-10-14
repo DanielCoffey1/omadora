@@ -171,6 +171,18 @@ def enroll_key(a):
     return True
 
 
+def verify_signing_key(a, kernel):
+    # For PKCS#7 modules kmod's sig_key is the certificate serial number,
+    # not its subjectKeyIdentifier. Compare the actual akmods certificate.
+    key = a.run('modinfo', '-k', kernel, '-F', 'sig_key', 'nvidia', capture=True).stdout.strip()
+    certificate = a.run('sudo', 'openssl', 'x509', '-inform', 'DER', '-in', MOK,
+                        '-noout', '-serial', capture=True).stdout
+    serial = re.search(r'^serial=([0-9a-fA-F]+)\s*$', certificate, re.MULTILINE)
+    if (not re.fullmatch(r'(?:[0-9a-fA-F]{2}:)*[0-9a-fA-F]{2}', key) or not serial or
+            int(key.replace(':', ''), 16) != int(serial[1], 16)):
+        raise ValueError('NVIDIA module was not signed with the akmods enrollment key; setup is incomplete.')
+
+
 def install_nvidia(a, gpus, gaming=True):
     branch = nvidia_branch(gpus)
     if not branch:
@@ -205,13 +217,7 @@ def install_nvidia(a, gpus, gaming=True):
     package_version = a.run('rpm', '-q', '--qf=%{VERSION}', driver, capture=True).stdout.strip()
     if not module_version or module_version != package_version:
         raise ValueError(f'NVIDIA kernel module/userspace version mismatch ({module_version!r} / {package_version!r}). Do not reboot into Omadora until setup succeeds; inspect /var/cache/akmods/.')
-    if boot == 'enabled':
-        key = a.run('modinfo', '-k', kernel, '-F', 'sig_key', 'nvidia', capture=True).stdout.strip()
-        certificate = a.run('sudo', 'openssl', 'x509', '-inform', 'DER', '-in', MOK,
-                            '-noout', '-ext', 'subjectKeyIdentifier', capture=True).stdout
-        identifiers = re.findall(r'(?:[0-9A-Fa-f]{2}:){3,}[0-9A-Fa-f]{2}', certificate)
-        if not key or not identifiers or key.lower() != identifiers[-1].lower():
-            raise ValueError('NVIDIA module was not signed with the akmods enrollment key; setup is incomplete.')
+    verify_signing_key(a, kernel)
     # RPM Fusion owns blacklists, DRM defaults and power-management presets.
     # Do not unload Nouveau, force NVIDIA as the desktop GPU, or stop the session.
     a.run('sudo', 'dracut', '--force', '--kver', kernel)
