@@ -1,19 +1,25 @@
 name: Fedora GPU packages
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'omadora_gpu.py'
+      - 'assets/nvidia-pci.json'
+      - 'tests/fedora-gpu.py'
+      - '.github/workflows/gpu.yml'
 permissions:
   contents: read
 jobs:
   gpu:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        mode: [mesa, nvidia-manual]
+        mode: [mesa, current, 580xx]
     steps:
       - uses: actions/checkout@v4
-      - name: Install Mesa libraries and verify manual NVIDIA policy
+      - name: Install graphics libraries and build real RPM Fusion NVIDIA modules
         env:
           MODE: ${{ matrix.mode }}
         run: |

@@ -399,7 +399,7 @@ fi
 
     envs = tree / 'default/hypr/envs.lua'
     write(envs, envs.read_text().replace('hl.env("QT_QPA_PLATFORMTHEME", "gtk3")', 'hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")')
-          .replace('require("default.hypr.nvidia")', '-- NVIDIA settings are managed manually on Fedora.'))
+          .replace('require("default.hypr.nvidia")', '-- RPM Fusion manages NVIDIA defaults; no global offload overrides.'))
     # Quickshell 0.3.2 releases its native lock before testing whether to emit
     # lockStateChanged, leaving QML bindings stale. Notify after the normal,
     # authenticated release; never bypass PAM or destroy an active lock.
@@ -736,8 +736,8 @@ def install(dry_run=False):
         graphics = omadora_gpu.detect()
         info = os_release() if Path('/etc/os-release').exists() else {}
         print(json.dumps({'target': 'Fedora Workstation or KDE Plasma Desktop 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
-                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics) + kde_login_packages(info), 'prefix': str(PREFIX),
-                          'graphics': graphics, 'nvidia_driver_automatic': False,
+                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics, gaming=True) + kde_login_packages(info), 'prefix': str(PREFIX),
+                          'graphics': omadora_gpu.plan(graphics), 'nvidia_driver_automatic': bool(omadora_gpu.nvidia_branch(graphics)),
                           'optional_apps_preinstalled': [], 'gnome_removed': False,
                           'package_migrations': {'kmime': 'kf6-kmime (only when kmime is installed)'},
                           'kde_login_manager': 'SDDM X11 with software-rendered greeter; effective after reboot' if kde_login_packages(info) else 'unchanged'}, indent=2))
@@ -800,9 +800,11 @@ def prepare_runtime(temp):
     # DNF's complete transaction must resolve. Never skip broken packages.
     import omadora_gpu
     gpus = omadora_gpu.detect()
-    run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus), *kde_login_packages())
-    if any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(gpus)):
-        print('NVIDIA detected: Omadora leaves your NVIDIA driver unchanged. Install or update it yourself after installation, then reboot before testing Omadora.', flush=True)
+    # Validate branch support before changing graphics packages. NVIDIA setup is
+    # part of both fresh installation and upgrade, including gaming multilib.
+    omadora_gpu.nvidia_branch(gpus)
+    run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus, gaming=True), *kde_login_packages())
+    omadora_gpu.install_nvidia(sys.modules[__name__], gpus)
     # Hyprland initializes its logger before processing --version and needs
     # XDG_RUNTIME_DIR even for this non-graphical probe (e.g. over SSH).
     probe_env = os.environ.copy()
