@@ -19,7 +19,10 @@ def run_checks(v):
         v.guest('nohup ' + command + ' >/tmp/omadora-vm-results/action-launch.log 2>&1 </dev/null &')
 
     def window_shortcuts():
-        v.keys('meta_l', '1')
+        # Prior checks leave legitimate windows on workspace 1. Use empty
+        # workspaces so returning focus has one unambiguous expected target.
+        assert not any(c['workspace']['id'] in (8, 9) for c in clients())
+        v.keys('meta_l', '8')
         before = {c['address'] for c in clients()}
         try:
             v.keys('meta_l', 'ret')
@@ -36,19 +39,20 @@ def run_checks(v):
             v.wait_for(lambda: active().get('floating'))
             v.keys('meta_l', 't')
             v.wait_for(lambda: not active().get('floating'))
-            v.keys('meta_l', 'shift', '2')
-            v.wait_for(lambda: any(c['address'] == second and c['workspace']['id'] == 2 for c in clients()))
-            v.keys('meta_l', '2')
+            v.keys('meta_l', 'shift', '9')
+            v.wait_for(lambda: any(c['address'] == second and c['workspace']['id'] == 9 for c in clients()))
+            v.keys('meta_l', '9')
             v.wait_for(lambda: active().get('address') == second)
             v.guest('grim /tmp/omadora-vm-results/window-workspace.png')
             v.keys('meta_l', 'w')
             v.wait_for(lambda: not any(c['address'] == second for c in clients()))
-            v.keys('meta_l', '1')
+            v.keys('meta_l', '8')
             v.wait_for(lambda: active().get('address') == first)
             v.keys('meta_l', 'w')
             v.wait_for(lambda: not any(c['address'] == first for c in clients()))
-            return 'Two real terminals; fullscreen and floating round trips; move to workspace 2, follow, close and return to workspace 1.'
+            return 'Two real terminals; fullscreen and floating round trips; move to workspace 9, follow, close and return to workspace 8.'
         finally:
+            (v.OUT / 'window-shortcut-state.json').write_text(json.dumps({'active': active(), 'clients': clients()}, indent=2))
             # Restrict cleanup to windows created by this test.
             for client in clients():
                 if client['address'] not in before:

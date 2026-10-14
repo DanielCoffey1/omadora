@@ -29,6 +29,11 @@ assert selection and set(selection) <= set(catalog)
 with (out / 'environment.log').open('w') as log:
     subprocess.run(['lscpu'], stdout=log, stderr=log)
     subprocess.run(['rpm', '-q', 'hyprland', 'aquamarine', 'mesa-dri-drivers', 'glibc'], stdout=log, stderr=log)
+# Autologin cannot supply a password to PAM's keyring integration. Initialize
+# the disposable user's login keyring with its actual test login password.
+# No account is connected and no empty-password keyring is used.
+subprocess.run(['gnome-keyring-daemon', '--unlock'], input='omadora-vm-test-only',
+               text=True, capture_output=True, check=True, timeout=30)
 # Long unattended downloads should not auto-lock over app screenshots. This
 # exercises the normal Stay Awake control and restores it when the suite exits.
 subprocess.run(['omarchy-shell', 'idle', 'disable'], check=True)
