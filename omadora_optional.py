@@ -91,13 +91,15 @@ def unpack(archive, destination, kind):
         data = [x for x in entries if re.fullmatch(r'data\.tar\.(xz|gz|zst)', x)]
         if len(data) != 1:
             raise ValueError('Unexpected Debian archive layout')
-        with tempfile.TemporaryDirectory() as tmp:
+        # Fedora mounts /tmp in RAM. Large packages must stage beside their
+        # destination on disk instead of exhausting a small VM's tmpfs quota.
+        with tempfile.TemporaryDirectory(dir=destination.parent) as tmp:
             payload = Path(tmp) / data[0]
             with payload.open('wb') as out:
                 run('bsdtar', '-xOf', archive, data[0], stdout=out)
             unpack(payload, destination, 'tar.zst' if data[0].endswith('zst') else 'tar')
     elif kind == 'tar.zst':
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=destination.parent) as tmp:
             payload = Path(tmp) / 'payload.tar'
             with payload.open('wb') as out:
                 run('zstd', '-dc', archive, stdout=out)
@@ -253,6 +255,11 @@ def launch(key, recipe, args):
     env.update(recipe.get('env', {}))
     if recipe['kind'] == 'appimage':
         env['APPIMAGE_EXTRACT_AND_RUN'] = '1'
+        runtime = location(key) / '.appimage-tmp'
+        if runtime.is_symlink():
+            raise ValueError('AppImage temporary storage must not be redirected')
+        runtime.mkdir(mode=0o700, exist_ok=True)
+        env['TMPDIR'] = str(runtime)
     os.execvpe(str(executable), [str(executable), *recipe.get('args', []), *args], env)
 
 
