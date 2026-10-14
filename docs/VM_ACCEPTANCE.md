@@ -17,7 +17,7 @@ third-party application workloads, accounts, games, AI models or physical GPUs.
 | Workstation apps, keyboard, authentication and suspend | Pass; VS Code responds to New File and the secure lock survives wake | [Desktop/apps](https://github.com/DanielCoffey1/omadora/actions/runs/38496286460) |
 | Official Workstation ISO installed through Anaconda | Desktop/recovery suite passes on the installed disk | [Fresh ISO](https://github.com/DanielCoffey1/omadora/actions/runs/38491820099) |
 | Omadora offline ISO | Build, graphical install and boot with internet blocked pass at `0149502`, including the capture-proxy rules | [Offline ISO](https://github.com/DanielCoffey1/omadora/actions/runs/38502420568) |
-| Mesa packages and manual NVIDIA policy | Pass; NVIDIA installation remains manual | [Graphics](https://github.com/DanielCoffey1/omadora/actions/runs/38489958578) |
+| Mesa packages and earlier manual NVIDIA policy | Pass for the previous policy; superseded by [automatic NVIDIA setup](GRAPHICS.md) | [Earlier graphics run](https://github.com/DanielCoffey1/omadora/actions/runs/38489958578) |
 
 The KDE fixture installs the real KDE package environment on the official Cloud
 image. It is distinct from a fresh KDE ISO installation. The normal graphical

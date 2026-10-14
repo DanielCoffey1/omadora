@@ -119,6 +119,23 @@ class GPU(unittest.TestCase):
                     gpu.install_nvidia(a, [card()])
             self.assertFalse(any('dracut' in c.args for c in a.run.call_args_list))
 
+    def test_failed_build_or_wrong_signing_key_never_rebuilds_initramfs(self):
+        for failure in ('akmods', 'signature'):
+            a = self.adapter()
+            normal = a.run.side_effect
+
+            def run(*args, **kwargs):
+                if failure == 'akmods' and 'akmods' in args and '--rebuild' in args:
+                    raise subprocess.CalledProcessError(1, args)
+                if failure == 'signature' and 'sig_key' in args:
+                    return subprocess.CompletedProcess(args, 0, '11:22:33:44', '')
+                return normal(*args, **kwargs)
+            a.run.side_effect = run
+            with patch.object(gpu, 'secure_boot', return_value='enabled'), patch.object(gpu, 'enroll_key', return_value=False):
+                with self.assertRaises((ValueError, subprocess.CalledProcessError)):
+                    gpu.install_nvidia(a, [card()])
+            self.assertFalse(any('dracut' in c.args for c in a.run.call_args_list))
+
     def test_enrollment_uses_tty_not_pipe_and_skips_enrolled_key(self):
         a = Mock()
         a.run.return_value.returncode = 0
