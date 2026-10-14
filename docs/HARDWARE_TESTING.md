@@ -61,7 +61,8 @@ checklist; the JSON remains the diagnostic baseline.
 
 Record failures exactly and retain the working GNOME or Plasma fallback while diagnosing
 them. The collector does not install NVIDIA drivers or enroll Secure Boot keys.
-NVIDIA drivers are managed manually as described in [Graphics setup](GRAPHICS.md).
+The installer selects supported NVIDIA drivers automatically as described in
+[Graphics setup](GRAPHICS.md); the read-only collector makes no driver changes.
 Physical support remains unvalidated; a detected NVIDIA
 GPU or successful `nvidia-smi` query does not establish Hyprland compatibility.
 

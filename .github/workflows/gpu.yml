@@ -1,24 +1,35 @@
 name: Fedora GPU packages
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'omadora_gpu.py'
+      - 'assets/nvidia-pci.json'
+      - 'tests/fedora-gpu.py'
+      - '.github/workflows/gpu.yml'
 permissions:
   contents: read
 jobs:
   gpu:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        mode: [mesa, nvidia-manual]
+        mode: [mesa, current, 580xx]
     steps:
       - uses: actions/checkout@v4
-      - name: Install Mesa libraries and verify manual NVIDIA policy
+      - name: Install graphics libraries and build real RPM Fusion NVIDIA modules
         env:
           MODE: ${{ matrix.mode }}
         run: |
           mkdir -p gpu-results
           set -o pipefail
+          for attempt in 1 2 3 4 5; do
+            docker pull quay.io/fedora/fedora:44 && break
+            if (( attempt == 5 )); then exit 1; fi
+            sleep 5
+          done
           docker run --rm -v "$PWD:/src:ro" quay.io/fedora/fedora:44 bash -c \
             'dnf install -y python3 && python3 /src/tests/fedora-gpu.py "$1"' _ "$MODE" \
             2>&1 | tee "gpu-results/$MODE.log"

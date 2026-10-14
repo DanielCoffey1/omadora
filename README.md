@@ -25,7 +25,7 @@ curl -fsSL https://raw.githubusercontent.com/DanielCoffey1/omadora/main/boot.sh 
 ```
 
 This installs the latest development version from `main`, including KDE
-support and manual NVIDIA driver management. Internet access is
+support and automatic NVIDIA driver setup for supported GPUs. Internet access is
 required. Enter your sudo password when prompted and save the configuration
 backup path printed by the installer.
 
@@ -35,7 +35,11 @@ automatically when the old package is present. No separate swap command is neede
 On KDE, Omadora configures **SDDM with an X11, software-rendered login screen**
 for the next boot. This avoids depending on Plasma Login Manager's Wayland
 greeter. Omadora and Plasma desktop sessions remain Wayland. Workstation keeps
-GDM. Install NVIDIA drivers yourself if needed, then reboot. Select **Omadora**
+GDM. NVIDIA hardware is detected automatically; the installer selects RPM Fusion's
+current or 580xx driver, installs 32-bit gaming libraries, and verifies the kernel
+module build before finishing. If Secure Boot is enabled, choose the enrollment
+password when prompted and complete **Enroll MOK** on the reboot screen. Reboot,
+then select **Omadora**
 in SDDM's session menu (KDE) or GDM's gear menu (Workstation) and log in. Your existing Plasma or GNOME desktop remains available.
 
 If Omadora is already installed, log out of Omadora, enter Plasma/GNOME or a
@@ -55,8 +59,9 @@ This is a login-manager fallback, not proof of the cause of a physical GPU hang.
 
 When replacing Plasma Login Manager, its current boot journal is saved at
 `~/.local/state/omadora/login-diagnostics.log` for troubleshooting. The installer
-does not stop your current desktop, enable autologin, install NVIDIA drivers,
-or change the desktop sessions to X11. It preserves a custom display manager
+does not stop your current desktop, enable autologin,
+or change the desktop sessions to X11. NVIDIA setup is handled separately during
+installation/upgrade. It preserves a custom display manager
 other than Plasma Login Manager/SDDM and refuses to overwrite an unrelated
 `/etc/sddm.conf.d/90-omadora.conf` file.
 
@@ -91,7 +96,7 @@ apps, a 12-hour bar clock and terminals starting in your home directory. `main`
 changes as updates are pushed; it is not a tagged release. `OMADORA_REF=main`
 selects the latest source because the bootstrap otherwise fetches v0.5.0-alpha.
 
-The KDE and manual NVIDIA changes are included in `main`;
+The KDE and automatic NVIDIA changes are included in `main`;
 the pinned v0.5.0-alpha release still requires Workstation and retains its old
 optional NVIDIA setup.
 
@@ -117,7 +122,12 @@ python3 omadora.py install
 
 After installation, reboot and select **Omadora** using GDM's gear menu (Workstation) or SDDM's session selector (KDE). Your existing GNOME or Plasma desktop and Fedora apps remain available. On KDE, Omadora selects SDDM for the next boot; Workstation's login manager is retained.
 
-NVIDIA drivers are managed manually after installation. Omadora does not install proprietary NVIDIA drivers, build NVIDIA modules, rebuild the initramfs for them, or enroll Secure Boot keys. Existing drivers are left in place. See [graphics setup](docs/GRAPHICS.md).
+Supported NVIDIA GPUs receive RPM Fusion drivers automatically, including matching
+32-bit OpenGL/Vulkan/CUDA libraries for Steam/Wine, GameMode and MangoHud. The
+installer builds and checks the next-boot kernel module and regenerates its
+initramfs. Secure Boot key enrollment requires confirmation at reboot. Old
+470xx/390xx GPUs and conflicting driver installations stop with an explanation.
+Game launchers remain available through the app menu. See [graphics setup](docs/GRAPHICS.md).
 
 ## What you get
 

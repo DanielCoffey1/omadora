@@ -4,6 +4,29 @@ This validation targets Fedora 44 x86_64, non-Atomic, in disposable QEMU VMs.
 It checks Omadora's installation and desktop behavior. It does not certify all
 third-party application workloads, accounts, games, AI models or physical GPUs.
 
+## Automatic NVIDIA update — October 14, 2026
+
+Installation and upgrade now provision supported NVIDIA drivers automatically.
+The earlier manual-driver policy below is historical. See [graphics setup](GRAPHICS.md)
+for driver selection, Secure Boot enrollment and the one-command installation path.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Linux source, assembly and safety checks | 92 tests pass, including real-terminal MOK input, PCI branch selection and failure gates | [Source checks](https://github.com/DanielCoffey1/omadora/actions/runs/38639430637) |
+| Actual Fedora graphics packages and kernel-module builds | Mesa, current NVIDIA 615.78.08 and legacy 580.178.04 pass; both NVIDIA branches build signed modules for Fedora kernel 7.2.10-200.fc44.x86_64, match userspace, regenerate initramfs, and install both gaming-helper architectures | [GPU matrix](https://github.com/DanielCoffey1/omadora/actions/runs/38639430505) |
+| Fedora installation and lifecycle | KDE and Workstation pass, including automatic KMime migration and runtime assembly | [Installer integration](https://github.com/DanielCoffey1/omadora/actions/runs/38636180276) |
+| KDE graphical regression | All eight checks pass: SDDM password login, secure lock, keyboard, clipboard, themes and normal Omadora/Plasma logout | [KDE VM](https://github.com/DanielCoffey1/omadora/actions/runs/38636576573) |
+| Workstation desktop and recovery regression | All 22 checks pass, including upgrade/rollback login, package pickers, recordings, clipboard, portals, audio controls and fallback/configuration recovery | [Workstation VM](https://github.com/DanielCoffey1/omadora/actions/runs/38636580355) |
+
+The GPU containers substitute PCI identity and next-boot kernel discovery. The
+current fixture verifies an open module (`Dual MIT/GPL`); the 580xx fixture uses
+a test-only RPM macro to verify the proprietary module (`NVIDIA`) needed by
+Maxwell/Pascal/Volta. Production uses RPM Fusion's physical-PCI module selection.
+Module signatures are checked against the generated akmods certificate serial.
+Neither containers nor virtual-display VMs validate physical NVIDIA rendering,
+firmware MOK enrollment, laptop suspend or gameplay. The offline ISO remains a
+separate image without bundled RPM Fusion drivers.
+
 ## Desktop and installation
 
 | Fixture | Result | Evidence |
@@ -17,7 +40,7 @@ third-party application workloads, accounts, games, AI models or physical GPUs.
 | Workstation apps, keyboard, authentication and suspend | Pass; VS Code responds to New File and the secure lock survives wake | [Desktop/apps](https://github.com/DanielCoffey1/omadora/actions/runs/38496286460) |
 | Official Workstation ISO installed through Anaconda | Desktop/recovery suite passes on the installed disk | [Fresh ISO](https://github.com/DanielCoffey1/omadora/actions/runs/38491820099) |
 | Omadora offline ISO | Build, graphical install and boot with internet blocked pass at `0149502`, including the capture-proxy rules | [Offline ISO](https://github.com/DanielCoffey1/omadora/actions/runs/38502420568) |
-| Mesa packages and manual NVIDIA policy | Pass; NVIDIA installation remains manual | [Graphics](https://github.com/DanielCoffey1/omadora/actions/runs/38489958578) |
+| Mesa packages and earlier manual NVIDIA policy | Pass for the previous policy; superseded by [automatic NVIDIA setup](GRAPHICS.md) | [Earlier graphics run](https://github.com/DanielCoffey1/omadora/actions/runs/38489958578) |
 
 The KDE fixture installs the real KDE package environment on the official Cloud
 image. It is distinct from a fresh KDE ISO installation. The normal graphical

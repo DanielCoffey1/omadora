@@ -48,12 +48,13 @@ See [wallpaper color coverage](WALLPAPERS.md).
 
 ## Graphics and gaming
 
-Fresh installs ensure AMD/Intel Mesa and firmware packages for detected hardware.
-For NVIDIA, install or update your driver yourself after installation from
-your existing GNOME/Plasma desktop or a TTY, then reboot before testing Omadora.
-Omadora leaves existing NVIDIA drivers and Secure Boot enrollment unchanged.
-**Setup → Graphics** provides status and optional gaming-library setup. See
-[GPU status, manual NVIDIA drivers and hybrid laptops](GRAPHICS.md).
+Fresh installs and upgrades ensure AMD/Intel Mesa and firmware packages for
+detected hardware, including 32-bit gaming libraries. Supported NVIDIA cards
+automatically receive RPM Fusion's current or 580xx driver and matching gaming
+libraries. The installer builds and verifies the next-boot kernel module.
+If Secure Boot is enabled, choose the prompted enrollment password and complete
+**Enroll MOK** at reboot before logging into Omadora. **Setup → Graphics** provides
+status and setup. See [GPU drivers, gaming and hybrid laptops](GRAPHICS.md).
 
 ## Update
 
