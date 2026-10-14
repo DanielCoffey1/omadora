@@ -12,6 +12,7 @@ import time
 import pexpect
 import atexit
 import shutil
+import re
 from PIL import Image, ImageStat
 
 out = Path('/tmp/omadora-vm-results/apps')
@@ -22,6 +23,7 @@ results = []
 selection_file = Path(__file__).with_name('selected-apps.json')
 probes = json.loads(Path(__file__).with_name('catalog-smoke.json').read_text())
 selection = json.loads(selection_file.read_text()) if selection_file.exists() else list(probes)
+probes.update(json.loads(Path(__file__).with_name('optional-smoke.json').read_text()))
 assert selection and set(selection) <= set(catalog)
 (out / 'selection.json').write_text(json.dumps(selection))
 with (out / 'environment.log').open('w') as log:
@@ -48,14 +50,15 @@ def app_window(app_id, window):
     # A setup dialog, updater, keyring prompt or splash is not the application.
     aliases = {'protonup': 'pupgui2', 'obs': 'obsproject', 'libreoffice': 'libreoffice',
                'vscode': 'code', 'brave-origin': 'brave', 'geforce-now': 'geforcenow',
-               '1password': 'onepassword'}
+               '1password': 'onepassword', 'grok-bot': 'grok'}
     app_class = window['class'].lower()
     title = window['title'].lower()
     if app_id == 'chrome' and title == 'google chrome and chromeos additional terms of service':
         return True
     if app_id == 'dropbox' and 'dropbox' in title and app_class in ('org.mozilla.firefox', 'chromium', 'chromium-browser'):
         return True
-    return (aliases.get(app_id, app_id) in app_class
+    normalize = lambda value: re.sub('[^a-z0-9]', '', value.lower())
+    return (normalize(aliases.get(app_id, app_id)) in normalize(app_class)
             and not any(part in title for part in ('startup', 'updater', 'steam setup')))
 
 
