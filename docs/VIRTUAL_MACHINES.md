@@ -31,7 +31,7 @@ Fedora installer does not change it automatically. Physical GPU suspend remains
 untested.
 
 Zed's VM probe explicitly opts into software rendering with
-`flatpak run --env=ZED_ALLOW_EMULATED_GPU=1 dev.zed.Zed`; this test option is not
+`flatpak run --env=ZED_ALLOW_EMULATED_GPU=1 --command=/app/libexec/zed-editor dev.zed.Zed`; this test option is not
 written to the user's launcher. Zed otherwise asks the user to acknowledge its
 software-GPU warning. Native GeForce NOW requires Vulkan video decoding, which
 this software display cannot provide. Its install/removal checks are separate

@@ -393,11 +393,12 @@
   },
   "zed": {
     "kind": "gui",
-    "fixture_note": "Zed's explicit software-GPU opt-in is confined to this disposable VM probe.",
+    "fixture_note": "The VM runs Zed's packaged editor directly with its explicit software-GPU opt-in, without the first-run wrapper project.",
     "command": [
       "flatpak",
       "run",
       "--env=ZED_ALLOW_EMULATED_GPU=1",
+      "--command=/app/libexec/zed-editor",
       "dev.zed.Zed"
     ]
   },
