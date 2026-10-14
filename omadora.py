@@ -354,6 +354,20 @@ def assemble(source, output):
     session_activation = '''# GDM can leave its greeter on the active VT during a slow login.
 # Activate only the authenticated local session supplied by the display manager.
 if [[ -n ${XDG_SESSION_ID:-} && -n ${XDG_SEAT:-} ]]; then
+  # UWSM waits for this queued boot job itself. Do that before activating
+  # our session: GDM can otherwise start its greeter during UWSM's wait and
+  # take the VT back before Aquamarine opens the authenticated session.
+  graphical_boot_pending() {
+    systemctl list-jobs --no-legend --no-pager | awk '$2 == "graphical.target" && $3 == "start" {pending=1} END {exit !pending}'
+  }
+  for ((attempt=0; attempt<60; attempt++)); do
+    graphical_boot_pending || break
+    sleep 1
+  done
+  if graphical_boot_pending; then
+    echo 'Omadora: graphical boot did not finish before session activation.' >&2
+    exit 1
+  fi
   timeout 10 loginctl activate "$XDG_SESSION_ID" || exit 1
   for ((attempt=0; attempt<50; attempt++)); do
     [[ $(loginctl show-session "$XDG_SESSION_ID" -p Active --value) == yes ]] && break

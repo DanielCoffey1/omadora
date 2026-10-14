@@ -46,7 +46,8 @@ def windows():
 def app_window(app_id, window):
     # A setup dialog, updater, keyring prompt or splash is not the application.
     aliases = {'protonup': 'pupgui2', 'obs': 'obsproject', 'libreoffice': 'libreoffice',
-               'vscode': 'code', 'brave-origin': 'brave', 'geforce-now': 'geforcenow'}
+               'vscode': 'code', 'brave-origin': 'brave', 'geforce-now': 'geforcenow',
+               '1password': 'onepassword'}
     app_class = window['class'].lower()
     title = window['title'].lower()
     return (aliases.get(app_id, app_id) in app_class

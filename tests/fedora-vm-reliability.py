@@ -1,4 +1,4 @@
-"""Repeated GDM handoffs and real S3 cycles in the disposable CI VM."""
+"""Repeated display-manager handoffs and real S3 cycles in the disposable CI VM."""
 import json
 import os
 from pathlib import Path
@@ -48,7 +48,7 @@ def login_cycle():
     wait_for(lambda: guest('pgrep -x Hyprland') != old and healthy(), seconds=90)
     # Prove input and real password authentication after every new session.
     t['authentication']()
-    return 'New GDM session, responsive compositor, wrong-password rejection and correct unlock.'
+    return f'New {manager} session, responsive compositor, wrong-password rejection and correct unlock.'
 
 
 for cycle in range(1, 6):

@@ -8,7 +8,7 @@ compatibility result.
 
 ## Collect a baseline on Fedora
 
-Start in a local Omadora session on the physical Fedora Workstation 44 machine.
+Start in a local Omadora session on the physical Fedora Workstation or KDE 44 machine.
 Run as your normal desktop user, without sudo. From an Omadora source checkout:
 
 ```bash
@@ -40,7 +40,9 @@ checklist; the JSON remains the diagnostic baseline.
 
 ## Exercise the hardware locally
 
-1. Test password login from GDM and again after reboot. Open Firefox and Foot;
+1. Test password login from GDM (Workstation) or SDDM (KDE) and again after reboot.
+   Log out of both Omadora and the original desktop and verify the login screen
+   renders each time. Open Firefox and Foot;
    resize, move and fullscreen windows, and play a local video.
 2. Test each display's resolution, refresh and scaling. With multiple displays,
    move windows between them, then disconnect/reconnect an external display.
@@ -52,14 +54,15 @@ checklist; the JSON remains the diagnostic baseline.
    Wake it, verify the lock remains, unlock and recheck displays/network/audio.
    Record **three separate cycles**, including any forced restart. Do this
    locally: an SSH disconnect cannot establish successful sleep, wake or unlock.
-5. Follow [maintenance and recovery](MAINTENANCE.md) from GNOME after the other
+5. Follow [maintenance and recovery](MAINTENANCE.md) from GNOME or Plasma after the other
    tests. Retain the reported backup and rescue paths in your private notes.
 6. Run the collector again into a new folder after testing. Keep both baselines
    and the completed checklist; note any settings or driver changes in between.
 
-Record failures exactly and retain the working GNOME fallback while diagnosing
+Record failures exactly and retain the working GNOME or Plasma fallback while diagnosing
 them. The collector does not install NVIDIA drivers or enroll Secure Boot keys.
-NVIDIA setup is available through [Graphics setup](GRAPHICS.md), but physical support remains unvalidated; a detected NVIDIA
+NVIDIA drivers are managed manually as described in [Graphics setup](GRAPHICS.md).
+Physical support remains unvalidated; a detected NVIDIA
 GPU or successful `nvidia-smi` query does not establish Hyprland compatibility.
 
 ## Evidence required for a hardware result

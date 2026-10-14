@@ -401,6 +401,13 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             root = Path(tmp)
             stage = adapter.assemble(Path(source), root / 'stage')
             fake = root / 'bin'
+            adapter.write(fake / 'systemctl', '''#!/bin/sh
+printf 'boot-check\\n' >> "$TEST_TRACE"
+if [ ! -e "$TEST_BOOT_DONE" ]; then
+  touch "$TEST_BOOT_DONE"
+  echo '1 graphical.target start waiting'
+fi
+''', 0o755)
             adapter.write(fake / 'loginctl', '''#!/bin/sh
 printf '%s\\n' "$*" >> "$TEST_TRACE"
 case "$1" in
@@ -413,12 +420,14 @@ esac
             env = os.environ | {'PATH': str(fake) + ':' + os.environ['PATH'],
                                 'XDG_SESSION_ID': 'test-session', 'XDG_SEAT': 'seat0',
                                 'TEST_TRACE': str(trace), 'TEST_STARTED': str(started),
+                                'TEST_BOOT_DONE': str(root / 'boot-done'),
                                 'TEST_ACTIVATE_STATUS': '1'}
             command = ['bash', str(stage / 'bin/omadora-session')]
             failed = subprocess.run(command, env=env, capture_output=True, timeout=15)
             self.assertNotEqual(failed.returncode, 0)
             self.assertFalse(started.exists())
             self.assertIn('activate test-session', trace.read_text())
+            self.assertTrue(trace.read_text().startswith('boot-check\nboot-check\n'))
             env['TEST_ACTIVATE_STATUS'] = '0'
             subprocess.run(command, env=env, check=True, capture_output=True, timeout=15)
             self.assertEqual(started.read_text(), 'started')
