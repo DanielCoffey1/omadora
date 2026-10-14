@@ -162,6 +162,12 @@ for app_id in selection:
                         assert time.monotonic() < deadline, 'Editor window stayed blank'
                         time.sleep(5)
                 if app_id == 'vscode':
+                    # First run opens an optional sign-in welcome modal.
+                    # Dismiss it without connecting any account.
+                    for state in ('down', 'up'):
+                        expression = 'hl.dsp.send_key_state({mods="", key="Escape", state="' + state + '", window="address:' + created[0]['address'] + '"})'
+                        subprocess.run(['hyprctl', 'dispatch', expression], stdout=log, stderr=log, check=True)
+                    time.sleep(2)
                     for state in ('down', 'up'):
                         expression = 'hl.dsp.send_key_state({mods="CTRL", key="n", state="' + state + '", window="address:' + created[0]['address'] + '"})'
                         subprocess.run(['hyprctl', 'dispatch', expression], stdout=log, stderr=log, check=True)
@@ -187,7 +193,8 @@ for app_id in selection:
             if before is not None:
                 for client in windows():
                     if client['address'] not in before:
-                        subprocess.run(['hyprctl', 'dispatch', 'closewindow', 'address:' + client['address']], stdout=log, stderr=log)
+                        expression = 'hl.dsp.window.close({ window = "address:' + client['address'] + '" })'
+                        subprocess.run(['hyprctl', 'dispatch', expression], stdout=log, stderr=log, check=True)
                 time.sleep(2)
             if app_id == 'steam':
                 steam_logs = Path.home() / '.local/share/Steam/logs'
