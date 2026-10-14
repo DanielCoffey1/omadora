@@ -25,6 +25,11 @@ jobs:
         run: |
           mkdir -p gpu-results
           set -o pipefail
+          for attempt in 1 2 3 4 5; do
+            docker pull quay.io/fedora/fedora:44 && break
+            if (( attempt == 5 )); then exit 1; fi
+            sleep 5
+          done
           docker run --rm -v "$PWD:/src:ro" quay.io/fedora/fedora:44 bash -c \
             'dnf install -y python3 && python3 /src/tests/fedora-gpu.py "$1"' _ "$MODE" \
             2>&1 | tee "gpu-results/$MODE.log"

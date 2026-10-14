@@ -124,6 +124,10 @@ module version/signature checks, dry runs and per-process offload. The GPU workf
 installs actual Fedora/RPM Fusion packages and builds signed NVIDIA modules for
 a real Fedora kernel in disposable containers. The containers substitute PCI
 identity and next-boot kernel selection, and do not emulate firmware enrollment.
+The 580xx fixture disables the builder's host-PCI detection only inside the
+disposable container to exercise the proprietary module required by Pascal;
+the current fixture checks the open module. Real installation leaves RPM Fusion's
+hardware-based module selection intact.
 VM desktop tests exercise virtual display hardware; neither establishes physical
 NVIDIA rendering, laptop suspend or game performance. Missing drivers alone do
 not establish the cause of an existing black screen.

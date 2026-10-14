@@ -31,6 +31,13 @@ card = dict(pci='0000:01:00.0', vendor='NVIDIA', device='2684',
             subvendor='10de', subdevice='0000', driver='', boot_display=True)
 cards = ([card | dict(device='1c82' if mode == '580xx' else '2684')]
          if mode != 'mesa' else [card | dict(vendor='AMD'), card | dict(vendor='Intel', pci='0000:00:02.0')])
+if mode == '580xx':
+    # RPM Fusion's builder reads real lspci, not our simulated Python PCI rows.
+    # With no physical NVIDIA card it would default to kernel-open, which cannot
+    # run on Pascal. Test the proprietary kernel tree required by this fixture.
+    # This macro exists ONLY in this disposable container, never in installation.
+    Path('/etc/rpm').mkdir(exist_ok=True)
+    Path('/etc/rpm/macros.omadora-test').write_text('%global _without_kmod_nvidia_detect 1\n')
 
 
 def container_kernel(a):
@@ -51,8 +58,10 @@ else:
     kernel = container_kernel(None)
     signer = subprocess.run(['modinfo', '-k', kernel, '-F', 'signer', 'nvidia'], text=True, capture_output=True, check=True).stdout.strip()
     assert signer, 'Akmods must sign the real built module'
+    license = subprocess.run(['modinfo', '-k', kernel, '-F', 'license', 'nvidia'], text=True, capture_output=True, check=True).stdout.strip()
+    assert license == ('NVIDIA' if mode == '580xx' else 'Dual MIT/GPL'), license
     image = Path('/boot') / ('initramfs-' + kernel + '.img')
     assert image.stat().st_size > 0
-    print('PASS: real NVIDIA RPMs, signed kernel module, matching userspace and initramfs:', branch, kernel, signer)
+    print('PASS: real NVIDIA RPMs, signed kernel module, matching userspace and initramfs:', branch, kernel, signer, license)
 print('PASS: GPU package setup', mode, flush=True)
 print('NOT TESTED: physical GPU rendering, firmware MOK enrollment, laptop suspend or game performance.')
