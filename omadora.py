@@ -499,6 +499,15 @@ fi
         if count != 1:
             raise ValueError('Upstream interactive menu helper changed; review ' + kind)
         write(helper, content, 0o755)
+    # UWSM 0.27 stops with job mode "fail". A queued Plasma autostart can
+    # reject logout after the windows have closed. Match upstream's corrected
+    # "replace" mode, scoped to this desktop's packaged compositor unit.
+    logout = tree / 'bin/omarchy-system-logout'
+    content = logout.read_text(encoding='utf-8')
+    old = 'sleep 2 && uwsm stop'
+    if content.count(old) != 1:
+        raise ValueError('Upstream logout helper changed; review the adapter')
+    write(logout, content.replace(old, 'sleep 2 && systemctl --user --job-mode=replace stop wayland-wm@hyprland.desktop.service'), 0o755)
     # Menu guards otherwise shadow our RPM helpers with an embedded Arch cache.
     model = tree / 'shell/plugins/menu/MenuModel.js'
     text = model.read_text(encoding='utf-8')

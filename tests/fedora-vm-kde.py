@@ -67,6 +67,18 @@ def plasma_roundtrip():
     return 'Plasma started through the selected login manager and returned to a running greeter; inspect screenshots.'
 
 
+def logout_with_pending_start():
+    raw("mkdir -p ~/.config/systemd/user; printf '[Service]\\nType=oneshot\\nExecStart=/usr/bin/sleep 30\\n' > ~/.config/systemd/user/omadora-ci-startup-blocker.service; printf '[Unit]\\nPartOf=graphical-session.target\\nAfter=omadora-ci-startup-blocker.service\\nWants=omadora-ci-startup-blocker.service\\n[Service]\\nType=oneshot\\nExecStart=/usr/bin/true\\n' > ~/.config/systemd/user/omadora-ci-queued-start.service")
+    prefix = 'export XDG_RUNTIME_DIR=/run/user/$(id -u); export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus; '
+    try:
+        raw(prefix + 'systemctl --user daemon-reload; systemctl --user start --no-block omadora-ci-queued-start.service')
+        assert 'omadora-ci-queued-start.service' in raw(prefix + 'systemctl --user list-jobs --no-pager'), 'Pending graphical startup fixture was not queued'
+        logout('Hyprland')
+    finally:
+        raw(prefix + 'systemctl --user stop omadora-ci-startup-blocker.service omadora-ci-queued-start.service; rm -f ~/.config/systemd/user/omadora-ci-startup-blocker.service ~/.config/systemd/user/omadora-ci-queued-start.service; systemctl --user daemon-reload')
+    return 'Normal logout returned to the rendered greeter despite a queued graphical autostart job.'
+
+
 def repeated_authentication():
     for _ in range(2):
         v.authentication()
@@ -103,7 +115,7 @@ v.check('keyboard and windows', v.keyboard_windows)
 v.check('clipboard', v.clipboard)
 v.check('power profiles', v.power)
 v.check('theme switching', v.themes)
-v.check('Omadora logout to KDE greeter', lambda: logout('Hyprland') or 'Session ended and greeter process returned; screenshot retained.')
+v.check('Omadora logout with queued graphical startup', logout_with_pending_start)
 v.check('Plasma login and logout to greeter', plasma_roundtrip)
 v.check('SDDM password login', greeter_authentication)
 (v.OUT / 'kde-login-journal.log').write_text(raw('sudo journalctl -b -u ' + MANAGER + ' --no-pager'))
