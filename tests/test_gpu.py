@@ -53,6 +53,9 @@ class GPU(unittest.TestCase):
         self.assertIn('xorg-x11-drv-nvidia-580xx-libs.i686', gpu.nvidia_packages('580xx'))
         self.assertNotIn('akmod-nvidia', gpu.nvidia_packages('580xx'))
         self.assertIn('xorg-x11-drv-nvidia-cuda-libs.i686', gpu.nvidia_packages('current'))
+        for name in ('gamemode', 'mangohud'):
+            for arch in ('x86_64', 'i686'):
+                self.assertIn(f'{name}.{arch}', gpu.nvidia_packages('current'))
         a = Mock()
         with patch.object(gpu, 'detect', return_value=[card(device='ffff')]):
             with self.assertRaises(ValueError):

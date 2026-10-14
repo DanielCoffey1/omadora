@@ -133,7 +133,8 @@ def nvidia_packages(branch, gaming=True):
               'nvidia-gpu-firmware', 'kernel', 'kernel-devel', 'akmods', 'mokutil']
     if gaming:
         result += [driver + '-libs.i686', driver + '-cuda-libs.i686',
-                   'vulkan-loader.i686', 'gamemode', 'gamemode.i686', 'mangohud', 'mangohud.i686']
+                   'vulkan-loader.i686', 'gamemode.x86_64', 'gamemode.i686',
+                   'mangohud.x86_64', 'mangohud.i686']
     return result
 
 
