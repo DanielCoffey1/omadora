@@ -131,7 +131,7 @@ def app_commands(app, action, fedora='44'):
     if app['source'] == 'rpmfusion' and action == 'install':
         for kind in ('free', 'nonfree'):
             commands.append(['sudo', 'dnf', 'install',
-                             f'https://mirrors.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-{fedora}.noarch.rpm'])
+                             f'https://download1.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-{fedora}.noarch.rpm'])
     commands.append(['sudo', 'dnf', action, *app['packages']])
     return commands
 
@@ -354,6 +354,20 @@ def assemble(source, output):
     session_activation = '''# GDM can leave its greeter on the active VT during a slow login.
 # Activate only the authenticated local session supplied by the display manager.
 if [[ -n ${XDG_SESSION_ID:-} && -n ${XDG_SEAT:-} ]]; then
+  # UWSM waits for this queued boot job itself. Do that before activating
+  # our session: GDM can otherwise start its greeter during UWSM's wait and
+  # take the VT back before Aquamarine opens the authenticated session.
+  graphical_boot_pending() {
+    systemctl list-jobs --no-legend --no-pager | awk '$2 == "graphical.target" && $3 == "start" {pending=1} END {exit !pending}'
+  }
+  for ((attempt=0; attempt<60; attempt++)); do
+    graphical_boot_pending || break
+    sleep 1
+  done
+  if graphical_boot_pending; then
+    echo 'Omadora: graphical boot did not finish before session activation.' >&2
+    exit 1
+  fi
   timeout 10 loginctl activate "$XDG_SESSION_ID" || exit 1
   for ((attempt=0; attempt<50; attempt++)); do
     [[ $(loginctl show-session "$XDG_SESSION_ID" -p Active --value) == yes ]] && break
@@ -363,6 +377,21 @@ if [[ -n ${XDG_SESSION_ID:-} && -n ${XDG_SEAT:-} ]]; then
     echo 'Omadora: the login session did not become active.' >&2
     exit 1
   fi
+  # A slow GDM autologin can still start its greeter after graphical.target
+  # completes. During compositor startup only, recover our authenticated VT
+  # if a greeter takes it. Never override a user's switch to another session.
+  (
+    for ((attempt=0; attempt<150; attempt++)); do
+      systemctl --user is-active --quiet wayland-wm@hyprland.desktop.service && break
+      state=$(loginctl show-session "$XDG_SESSION_ID" -p State --value) || break
+      [[ -n $state && $state != closing ]] || break
+      active=$(loginctl show-seat "$XDG_SEAT" -p ActiveSession --value) || break
+      if [[ -n $active && $active != "$XDG_SESSION_ID" && $(loginctl show-session "$active" -p Class --value) == greeter ]]; then
+        timeout 2 loginctl activate "$XDG_SESSION_ID" || break
+      fi
+      sleep 0.2
+    done
+  ) >/dev/null 2>&1 &
 fi
 '''
     image_setup = 'if [[ -f /etc/omadora/image.json ]]; then\n  python3 /usr/local/share/omadora/omadora_image.py || exit 1\nfi\n'
@@ -470,6 +499,28 @@ fi
         if count != 1:
             raise ValueError('Upstream interactive menu helper changed; review ' + kind)
         write(helper, content, 0o755)
+    # UWSM 0.27 stops with job mode "fail". A queued Plasma autostart can
+    # reject logout after the windows have closed. Match upstream's corrected
+    # "replace" mode, scoped to this desktop's packaged compositor unit.
+    logout = tree / 'bin/omarchy-system-logout'
+    content = logout.read_text(encoding='utf-8')
+    old = 'sleep 2 && uwsm stop'
+    if content.count(old) != 1:
+        raise ValueError('Upstream logout helper changed; review the adapter')
+    write(logout, content.replace(old, 'sleep 2 && systemctl --user --job-mode=replace stop wayland-wm@hyprland.desktop.service'), 0o755)
+    # Plasma installs an X11 capture proxy. Its background window must not
+    # become an opaque tile or take focus in the Hyprland desktop.
+    write(tree / 'default/hypr/apps/fedora.lua', '''o.window("^xwaylandvideobridge$", {
+  tag = "-default-opacity",
+  float = true,
+  no_focus = true,
+  no_initial_focus = true,
+  decorate = false,
+  no_blur = true,
+  no_shadow = true,
+  opacity = "0 override 0 override",
+})
+''')
     # Menu guards otherwise shadow our RPM helpers with an embedded Arch cache.
     model = tree / 'shell/plugins/menu/MenuModel.js'
     text = model.read_text(encoding='utf-8')
@@ -683,22 +734,73 @@ def install(dry_run=False):
     if dry_run:
         import omadora_gpu
         graphics = omadora_gpu.detect()
+        info = os_release() if Path('/etc/os-release').exists() else {}
         print(json.dumps({'target': 'Fedora Workstation or KDE Plasma Desktop 44 x86_64', 'upstream': read_json(ROOT / 'upstream.lock.json'),
-                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics), 'prefix': str(PREFIX),
+                          'coprs': [COPR, SCREENSAVER_COPR], 'packages': packages() + omadora_gpu.mesa_packages(graphics) + kde_login_packages(info), 'prefix': str(PREFIX),
                           'graphics': graphics, 'nvidia_driver_automatic': False,
-                          'optional_apps_preinstalled': [], 'gnome_removed': False}, indent=2))
+                          'optional_apps_preinstalled': [], 'gnome_removed': False,
+                          'package_migrations': {'kmime': 'kf6-kmime (only when kmime is installed)'},
+                          'kde_login_manager': 'SDDM X11 with software-rendered greeter; effective after reboot' if kde_login_packages(info) else 'unchanged'}, indent=2))
         return
     return lifecycle().perform(sys.modules[__name__], 'install')
 
 
+def migrate_package(old, new):
+    if run('rpm', '-q', old, capture=True, check=False).returncode == 0:
+        print(f'Migrating Fedora package {old} to {new}.', flush=True)
+        run('sudo', 'dnf', 'swap', '--refresh', '-y', old, new)
+
+
+def kde_login_packages(info=None):
+    return ['sddm', 'sddm-x11'] if (os_release() if info is None else info).get('VARIANT_ID') == 'kde' else []
+
+
+def configure_kde_login(temp, root=Path('/')):
+    if not kde_login_packages():
+        return
+    alias = root / 'etc/systemd/system/display-manager.service'
+    manager = alias.resolve().name if alias.exists() or alias.is_symlink() else None
+    if manager not in (None, 'plasmalogin.service', 'sddm.service'):
+        print(f'Preserving custom login manager {manager}; SDDM was not enabled.', flush=True)
+        return
+    previous = '[General]\nDisplayServer=x11\nGreeterEnvironment=QT_QUICK_BACKEND=software\n'
+    content = '[General]\nDisplayServer=x11\nInputMethod=\nGreeterEnvironment=QT_QUICK_BACKEND=software\n'
+    destination = root / 'etc/sddm.conf.d/90-omadora.conf'
+    if destination.is_symlink() or (destination.exists() and destination.read_text() not in (content, previous)):
+        raise ValueError('Refusing to overwrite custom /etc/sddm.conf.d/90-omadora.conf.')
+    config = temp / 'omadora-sddm.conf'
+    write(config, content)
+    run('sudo', 'install', '-D', '-m', '0644', config, destination)
+    # Select the next-boot login manager without killing the current session.
+    if (root / 'run/systemd/system').is_dir():
+        if manager == 'plasmalogin.service':
+            diagnostics = Path.home() / '.local/state/omadora/login-diagnostics.log'
+            logs = run('sudo', 'journalctl', '-b', '-u', 'plasmalogin', '-u', 'display-manager',
+                       '--no-pager', '-n', '200', capture=True, check=False)
+            write(diagnostics, logs.stdout + (logs.stderr or ''))
+            print(f'Previous login-manager diagnostics saved to {diagnostics}', flush=True)
+        # Both managers use the display-manager alias. Repoint it directly,
+        # avoiding a disabled-login-manager gap if package setup fails.
+        run('sudo', 'systemctl', 'enable', '--force', 'sddm.service')
+        run('sudo', 'systemctl', 'set-default', 'graphical.target')
+    print('KDE login screen: SDDM with an X11 software-rendered greeter is configured. Reboot after installation/upgrade; Omadora and Plasma sessions remain Wayland.', flush=True)
+
+
 def prepare_runtime(temp):
+    # Fedora renamed KMime; older KDE media can leave the former package
+    # installed alongside dependencies requesting the new name. Migrate it
+    # before the main RPM transaction instead of ignoring file conflicts.
+    migrate_package('kmime', 'kf6-kmime')
+    if kde_login_packages():
+        for old in ('sddm-wayland-plasma', 'sddm-wayland-generic'):
+            migrate_package(old, 'sddm-x11')
     run('sudo', 'dnf', 'install', '-y', 'dnf5-plugins')
     run('sudo', 'dnf', 'copr', 'enable', '-y', COPR)
     run('sudo', 'dnf', 'copr', 'enable', '-y', SCREENSAVER_COPR)
     # DNF's complete transaction must resolve. Never skip broken packages.
     import omadora_gpu
     gpus = omadora_gpu.detect()
-    run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus))
+    run('sudo', 'dnf', 'install', '-y', *packages(), *omadora_gpu.mesa_packages(gpus), *kde_login_packages())
     if any(g['vendor'] == 'NVIDIA' for g in omadora_gpu.managed(gpus)):
         print('NVIDIA detected: Omadora leaves your NVIDIA driver unchanged. Install or update it yourself after installation, then reboot before testing Omadora.', flush=True)
     # Hyprland initializes its logger before processing --version and needs
@@ -774,7 +876,8 @@ def _install():
         lifecycle().root(sys.modules[__name__], 'activate', transaction['id'])
         run('sudo', 'restorecon', '-RF', PREFIX, '/etc/pam.d/omarchy-lock-password', '/usr/share/wayland-sessions/omadora.desktop')
         lifecycle().commit(sys.modules[__name__], transaction)
-    print('Installed. Log out and select Omadora in your login screen session selector (GDM gear menu or KDE login screen session menu). Your existing desktop remains available.')
+        configure_kde_login(temp)
+    print('Installed. Reboot, then select Omadora in your login screen session selector (GDM gear menu or SDDM session menu). Your existing desktop remains available.')
 
 
 def installed(app):

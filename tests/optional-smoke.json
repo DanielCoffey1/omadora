@@ -1,0 +1,15 @@
+{
+  "meslo": {"kind": "font", "command": ["fc-match", "MesloLGS Nerd Font"], "expected": "meslo"},
+  "victor": {"kind": "font", "command": ["fc-match", "VictorMono Nerd Font"], "expected": "victor"},
+  "iosevka": {"kind": "font", "command": ["fc-match", "Iosevka Nerd Font"], "expected": "iosevka"},
+  "codex": {"kind": "cli", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "codex", "--version"]},
+  "claude": {"kind": "cli", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "claude", "--version"]},
+  "ollama": {"kind": "cli", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "ollama", "--version"]},
+  "chatgpt": {"kind": "gui", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "chatgpt"]},
+  "perplexity": {"kind": "gui", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "perplexity"]},
+  "grok-bot": {"kind": "gui", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "grok-bot"]},
+  "t3-code": {"kind": "gui", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "t3-code"]},
+  "lm-studio": {"kind": "gui", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "lm-studio"]},
+  "cursor": {"kind": "gui", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "cursor"]},
+  "hermes": {"kind": "gui", "command": ["python3", "/usr/local/share/omadora/omadora_optional.py", "launch", "hermes"]}
+}

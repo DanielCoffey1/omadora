@@ -7,10 +7,20 @@ on:
         type: choice
         default: workstation
         options: [workstation, kde]
+      login_manager:
+        description: 'KDE login manager under test'
+        type: choice
+        default: sddm
+        options: [sddm, plasmalogin]
       apps:
-        description: 'Comma-separated catalog IDs to retest; empty tests all 26'
+        description: 'Comma-separated catalog IDs to retest; empty tests all non-optional apps'
         type: string
         default: ''
+      suite:
+        description: 'Automatic selects desktop defaults; catalog tests the requested app batch'
+        type: choice
+        default: automatic
+        options: [automatic, catalog, databases, workflows]
 permissions:
   contents: read
 jobs:
@@ -23,9 +33,12 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb x11-utils libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
       - name: Boot Fedora and test Omadora session
         env:
+          VM_LOGIN_MANAGER: ${{ inputs.login_manager }}
           VM_EDITION: ${{ inputs.edition }}
-          VM_SLEEP_DIAGNOSTIC: ${{ inputs.edition == 'kde' && 'bochs-gpu' || 'default' }}
-          VM_SUITE: ${{ inputs.edition == 'kde' && 'kde' || 'apps' }}
+          # The supported software display also survives real S3 in CI.
+          # Explicit virtio/GL diagnostics remain in diagnostic.yml.
+          VM_SLEEP_DIAGNOSTIC: bochs-gpu
+          VM_SUITE: ${{ inputs.suite != 'automatic' && inputs.suite || inputs.edition == 'kde' && 'kde' || 'apps' }}
           OMADORA_TEST_APPS: ${{ inputs.apps }}
         run: bash tests/fedora-vm.sh
       - name: Save VM evidence

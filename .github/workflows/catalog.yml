@@ -1,0 +1,51 @@
+name: Catalog launch coverage
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      batches: ${{ steps.plan.outputs.batches }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        run: |
+          python3 - <<'PY'
+          import json, os
+          apps = json.load(open('apps.json'))
+          probes = json.load(open('tests/catalog-smoke.json'))
+          expected = {k for k, a in apps.items() if a['source'] != 'optional'}
+          assert set(probes) == expected, 'Every non-optional catalog app needs a probe'
+          keys = list(probes)
+          batches = [{'id': i // 8 + 1, 'apps': ','.join(keys[i:i+8])} for i in range(0, len(keys), 8)]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('batches=' + json.dumps(batches), file=output)
+          PY
+  apps:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        batch: ${{ fromJSON(needs.plan.outputs.batches) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disposable runner space
+        run: sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet
+      - name: Install VM test tools
+        run: sudo apt-get update -qq && sudo apt-get install -y qemu-system-x86 qemu-system-gui qemu-utils cloud-image-utils xvfb x11-utils libegl1 libegl-mesa0 libgl1-mesa-dri libglx-mesa0
+      - name: Test catalog install, launch and removal
+        env:
+          OMADORA_TEST_APPS: ${{ matrix.batch.apps }}
+          VM_SUITE: catalog
+          VM_SLEEP_DIAGNOSTIC: bochs-gpu
+        run: bash tests/fedora-vm.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: catalog-batch-${{ matrix.batch.id }}
+          path: vm-results/

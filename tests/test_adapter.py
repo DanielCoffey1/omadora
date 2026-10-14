@@ -80,6 +80,72 @@ class AdapterTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'was not restored'):
                     adapter.desktop_settings('restore', backup)
 
+    def test_package_rename_is_automatic_only_when_old_package_is_installed(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        for installed in (False, True):
+            with patch.object(adapter, 'run', return_value=SimpleNamespace(returncode=0 if installed else 1)) as run:
+                adapter.migrate_package('kmime', 'kf6-kmime')
+            calls = [call.args for call in run.call_args_list]
+            self.assertEqual(calls[0], ('rpm', '-q', 'kmime'))
+            self.assertEqual(calls[1:], [('sudo', 'dnf', 'swap', '--refresh', '-y', 'kmime', 'kf6-kmime')] if installed else [])
+
+    def test_kde_login_configuration_selects_next_boot_without_stopping_session(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'run/systemd/system').mkdir(parents=True)
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                adapter.configure_kde_login(root, root)
+            calls = [call.args for call in run.call_args_list]
+            self.assertIn(('sudo', 'systemctl', 'enable', '--force', 'sddm.service'), calls)
+            self.assertFalse(any('stop' in call or '--now' in call for call in calls))
+            self.assertIn('GreeterEnvironment=QT_QUICK_BACKEND=software', (root / 'omadora-sddm.conf').read_text())
+            destination = root / 'etc/sddm.conf.d/90-omadora.conf'
+            destination.parent.mkdir(parents=True)
+            destination.write_text('custom configuration')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                with self.assertRaisesRegex(ValueError, 'custom'):
+                    adapter.configure_kde_login(root, root)
+            run.assert_not_called()
+            self.assertEqual(destination.read_text(), 'custom configuration')
+        self.assertEqual(adapter.kde_login_packages({'VARIANT_ID': 'workstation'}), [])
+
+    def test_custom_display_manager_unit_is_preserved(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            alias = root / 'etc/systemd/system/display-manager.service'
+            alias.parent.mkdir(parents=True)
+            alias.write_text('[Service]\nExecStart=/custom/greeter\n')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                adapter.configure_kde_login(root, root)
+            run.assert_not_called()
+            self.assertIn('/custom/greeter', alias.read_text())
+
+    @unittest.skipIf(os.name == 'nt', 'Linux CI exercises display-manager symlinks')
+    def test_kde_login_preserves_custom_manager_and_saves_previous_plm_journal(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            alias = root / 'etc/systemd/system/display-manager.service'
+            alias.parent.mkdir(parents=True)
+            (root / 'run/systemd/system').mkdir(parents=True)
+            alias.symlink_to('/usr/lib/systemd/system/lightdm.service')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(adapter, 'run') as run:
+                adapter.configure_kde_login(root, root)
+            run.assert_not_called()
+            self.assertFalse((root / 'omadora-sddm.conf').exists())
+            alias.unlink()
+            alias.symlink_to('/usr/lib/systemd/system/plasmalogin.service')
+            with patch.object(adapter, 'os_release', return_value={'VARIANT_ID': 'kde'}), patch.object(Path, 'home', return_value=root), patch.object(adapter, 'run', return_value=SimpleNamespace(stdout='previous greeter failure', stderr='')) as run:
+                adapter.configure_kde_login(root, root)
+            self.assertEqual((root / '.local/state/omadora/login-diagnostics.log').read_text(), 'previous greeter failure')
+            calls = [call.args for call in run.call_args_list]
+            self.assertIn(('sudo', 'systemctl', 'enable', '--force', 'sddm.service'), calls)
+            self.assertFalse(any('stop' in call or 'disable' in call or '--now' in call for call in calls))
+
     def test_only_supported_fedora(self):
         good = {'ID': 'fedora', 'VARIANT_ID': 'workstation', 'VERSION_ID': '44'}
         adapter.validate_target(good, 'x86_64')
@@ -326,6 +392,48 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
         self.assertIn('SIL OPEN FONT LICENSE', (ROOT / 'assets/fonts/OFL.txt').read_text())
 
     @unittest.skipIf(os.name == 'nt', 'Generated Linux session is executed in Linux CI')
+    def test_startup_watch_recovers_only_a_greeter_and_stops_when_ready(self):
+        import subprocess
+        source = os.environ.get('OMADORA_TEST_UPSTREAM')
+        if not source:
+            self.skipTest('Set OMADORA_TEST_UPSTREAM to the pinned checkout')
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = adapter.assemble(Path(source), root / 'stage')
+            fake = root / 'bin'
+            adapter.write(fake / 'systemctl', '''#!/bin/sh
+if [ "$1" = --user ]; then test -f "$TEST_READY"; else exit 0; fi
+''', 0o755)
+            adapter.write(fake / 'loginctl', '''#!/bin/sh
+case "$1" in
+  activate) printf '%s\\n' "$2" >> "$TEST_TRACE" ;;
+  show-seat) echo other-session ;;
+  show-session)
+    case "$4" in
+      Active) echo yes ;;
+      State) echo "$TEST_STATE" ;;
+      Class) echo "$TEST_CLASS" ;;
+    esac ;;
+esac
+''', 0o755)
+            adapter.write(fake / 'uwsm', '#!/bin/sh\nsleep 1\ntouch "$TEST_READY"\nsleep 0.5\n', 0o755)
+            for other_class, state, recover in [('greeter', 'active', True), ('user', 'active', False), ('greeter', 'closing', False)]:
+                trace, ready = root / 'trace', root / 'ready'
+                trace.unlink(missing_ok=True)
+                ready.unlink(missing_ok=True)
+                env = os.environ | {'PATH': str(fake) + ':' + os.environ['PATH'],
+                                    'XDG_SESSION_ID': 'test-session', 'XDG_SEAT': 'seat0',
+                                    'TEST_TRACE': str(trace), 'TEST_READY': str(ready),
+                                    'TEST_CLASS': other_class, 'TEST_STATE': state}
+                subprocess.run(['bash', str(stage / 'bin/omadora-session')], env=env, check=True, capture_output=True, timeout=10)
+                activations = trace.read_text().splitlines()
+                self.assertTrue(all(value == 'test-session' for value in activations))
+                self.assertGreaterEqual(len(activations), 2) if recover else self.assertEqual(len(activations), 1)
+                count = len(activations)
+                __import__('time').sleep(.3)
+                self.assertEqual(len(trace.read_text().splitlines()), count, 'Watcher must stop once the compositor is ready')
+
+    @unittest.skipIf(os.name == 'nt', 'Generated Linux session is executed in Linux CI')
     def test_session_activation_failure_stops_compositor(self):
         import subprocess
         source = os.environ.get('OMADORA_TEST_UPSTREAM')
@@ -335,6 +443,14 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             root = Path(tmp)
             stage = adapter.assemble(Path(source), root / 'stage')
             fake = root / 'bin'
+            adapter.write(fake / 'systemctl', '''#!/bin/sh
+if [ "$1" = --user ]; then exit 0; fi
+printf 'boot-check\\n' >> "$TEST_TRACE"
+if [ ! -e "$TEST_BOOT_DONE" ]; then
+  touch "$TEST_BOOT_DONE"
+  echo '1 graphical.target start waiting'
+fi
+''', 0o755)
             adapter.write(fake / 'loginctl', '''#!/bin/sh
 printf '%s\\n' "$*" >> "$TEST_TRACE"
 case "$1" in
@@ -347,12 +463,14 @@ esac
             env = os.environ | {'PATH': str(fake) + ':' + os.environ['PATH'],
                                 'XDG_SESSION_ID': 'test-session', 'XDG_SEAT': 'seat0',
                                 'TEST_TRACE': str(trace), 'TEST_STARTED': str(started),
+                                'TEST_BOOT_DONE': str(root / 'boot-done'),
                                 'TEST_ACTIVATE_STATUS': '1'}
             command = ['bash', str(stage / 'bin/omadora-session')]
             failed = subprocess.run(command, env=env, capture_output=True, timeout=15)
             self.assertNotEqual(failed.returncode, 0)
             self.assertFalse(started.exists())
             self.assertIn('activate test-session', trace.read_text())
+            self.assertTrue(trace.read_text().startswith('boot-check\nboot-check\n'))
             env['TEST_ACTIVATE_STATUS'] = '0'
             subprocess.run(command, env=env, check=True, capture_output=True, timeout=15)
             self.assertEqual(started.read_text(), 'started')

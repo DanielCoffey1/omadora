@@ -1,0 +1,421 @@
+{
+  "steam": {
+    "kind": "gui",
+    "command": [
+      "gtk-launch",
+      "steam"
+    ]
+  },
+  "lutris": {
+    "kind": "gui",
+    "command": [
+      "lutris"
+    ]
+  },
+  "gimp": {
+    "kind": "gui",
+    "command": [
+      "gimp"
+    ]
+  },
+  "libreoffice": {
+    "kind": "gui",
+    "command": [
+      "libreoffice",
+      "--writer"
+    ]
+  },
+  "kitty": {
+    "kind": "gui",
+    "command": [
+      "kitty"
+    ]
+  },
+  "alacritty": {
+    "kind": "gui",
+    "command": [
+      "alacritty"
+    ]
+  },
+  "chromium": {
+    "kind": "gui",
+    "command": [
+      "chromium-browser",
+      "--no-first-run"
+    ]
+  },
+  "ghostty": {
+    "kind": "gui",
+    "command": [
+      "ghostty"
+    ]
+  },
+  "sublime": {
+    "kind": "gui",
+    "command": [
+      "subl"
+    ]
+  },
+  "brave-origin": {
+    "kind": "gui",
+    "command": [
+      "brave-origin-stable",
+      "--no-first-run"
+    ]
+  },
+  "1password": {
+    "kind": "gui",
+    "command": [
+      "1password"
+    ]
+  },
+  "mangohud": {
+    "kind": "cli",
+    "command": [
+      "mangohud",
+      "--version"
+    ]
+  },
+  "gamemode": {
+    "kind": "cli",
+    "command": [
+      "gamemoded",
+      "--version"
+    ]
+  },
+  "podman": {
+    "kind": "cli",
+    "command": [
+      "podman",
+      "info"
+    ]
+  },
+  "node": {
+    "kind": "cli",
+    "command": [
+      "node",
+      "--version"
+    ]
+  },
+  "rust": {
+    "kind": "cli",
+    "command": [
+      "rustc",
+      "--version"
+    ]
+  },
+  "go": {
+    "kind": "cli",
+    "command": [
+      "go",
+      "version"
+    ]
+  },
+  "helix": {
+    "kind": "cli",
+    "command": [
+      "hx",
+      "--version"
+    ]
+  },
+  "vim": {
+    "kind": "cli",
+    "command": [
+      "vim",
+      "--version"
+    ]
+  },
+  "emacs": {
+    "kind": "cli",
+    "command": [
+      "emacs",
+      "--version"
+    ]
+  },
+  "ruby": {
+    "kind": "cli",
+    "command": [
+      "ruby",
+      "--version"
+    ]
+  },
+  "rails": {
+    "kind": "cli",
+    "command": [
+      "rails",
+      "--version"
+    ]
+  },
+  "python": {
+    "kind": "cli",
+    "command": [
+      "python3",
+      "--version"
+    ]
+  },
+  "php": {
+    "kind": "cli",
+    "command": [
+      "php",
+      "--version"
+    ]
+  },
+  "elixir": {
+    "kind": "cli",
+    "command": [
+      "elixir",
+      "--version"
+    ]
+  },
+  "zig": {
+    "kind": "cli",
+    "command": [
+      "zig",
+      "version"
+    ]
+  },
+  "java": {
+    "kind": "cli",
+    "command": [
+      "java",
+      "-version"
+    ]
+  },
+  "dotnet": {
+    "kind": "cli",
+    "command": [
+      "dotnet",
+      "--version"
+    ]
+  },
+  "ocaml": {
+    "kind": "cli",
+    "command": [
+      "ocaml",
+      "-version"
+    ]
+  },
+  "clojure": {
+    "kind": "cli",
+    "command": [
+      "clojure",
+      "-e",
+      "(println (+ 1 1))"
+    ]
+  },
+  "tailscale": {
+    "kind": "cli",
+    "command": [
+      "tailscale",
+      "version"
+    ]
+  },
+  "nordvpn": {
+    "kind": "cli",
+    "command": [
+      "nordvpn",
+      "--version"
+    ]
+  },
+  "fira": {
+    "kind": "font",
+    "command": [
+      "fc-match",
+      "-f",
+      "%{family}",
+      "Fira Code"
+    ],
+    "expected": "fira"
+  },
+  "cascadia": {
+    "kind": "font",
+    "command": [
+      "fc-match",
+      "-f",
+      "%{family}",
+      "Cascadia Mono"
+    ],
+    "expected": "cascadia"
+  },
+  "bitstream": {
+    "kind": "font",
+    "command": [
+      "fc-match",
+      "-f",
+      "%{family}",
+      "Bitstream Vera Sans Mono"
+    ],
+    "expected": "bitstream"
+  },
+  "heroic": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.heroicgameslauncher.hgl"
+    ]
+  },
+  "bottles": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.usebottles.bottles"
+    ]
+  },
+  "retroarch": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "org.libretro.RetroArch"
+    ]
+  },
+  "protonup": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "net.davidotek.pupgui2"
+    ]
+  },
+  "obs": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.obsproject.Studio"
+    ]
+  },
+  "kdenlive": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "org.kde.kdenlive"
+    ]
+  },
+  "vlc": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "org.videolan.VLC"
+    ]
+  },
+  "spotify": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.spotify.Client"
+    ]
+  },
+  "obsidian": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "md.obsidian.Obsidian"
+    ]
+  },
+  "bitwarden": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.bitwarden.desktop"
+    ]
+  },
+  "signal": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "org.signal.Signal"
+    ]
+  },
+  "discord": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.discordapp.Discord"
+    ]
+  },
+  "vscode": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.visualstudio.code"
+    ]
+  },
+  "chrome": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.google.Chrome"
+    ]
+  },
+  "edge": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.microsoft.Edge"
+    ]
+  },
+  "brave": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.brave.Browser"
+    ]
+  },
+  "zen": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "app.zen_browser.zen"
+    ]
+  },
+  "dropbox": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.dropbox.Client"
+    ]
+  },
+  "zed": {
+    "kind": "gui",
+    "fixture_note": "The VM runs Zed's packaged editor directly with its explicit software-GPU opt-in, without the first-run wrapper project.",
+    "command": [
+      "flatpak",
+      "run",
+      "--env=ZED_ALLOW_EMULATED_GPU=1",
+      "--command=/app/libexec/zed-editor",
+      "dev.zed.Zed"
+    ]
+  },
+  "minecraft": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.mojang.Minecraft"
+    ]
+  },
+  "geforce-now": {
+    "kind": "gui",
+    "command": [
+      "flatpak",
+      "run",
+      "com.nvidia.geforcenow"
+    ]
+  }
+}

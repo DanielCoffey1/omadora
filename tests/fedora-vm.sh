@@ -10,9 +10,11 @@ if [[ ${VM_BASE:-cloud} == workstation-iso ]]; then
   if [[ ${VM_ISO_PREPARED:-0} != 1 ]]; then bash tests/fedora-workstation-iso.sh; fi
 else
 image=Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2
-base=https://download.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images
-curl -fL --retry 3 "$base/$image" -o "$vm_dir/disk.qcow2"
-curl -fL --retry 3 "$base/Fedora-Cloud-44-1.7-x86_64-CHECKSUM" -o "$vm_dir/CHECKSUM"
+# Use Fedora's origin for this fixed, checksum-verified image: a redirected
+# mirror stalled/reset multiple acceptance runs before the guest even booted.
+base=https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images
+curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --speed-limit 1024 --speed-time 30 "$base/$image" -o "$vm_dir/disk.qcow2"
+curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --speed-limit 1024 --speed-time 30 "$base/Fedora-Cloud-44-1.7-x86_64-CHECKSUM" -o "$vm_dir/CHECKSUM"
 expected=$(sed -n "s/^SHA256 ($image) = //p" "$vm_dir/CHECKSUM")
 [[ $expected =~ ^[0-9a-f]{64}$ ]]
 printf '%s  %s\n' "$expected" "$vm_dir/disk.qcow2" | sha256sum -c -
@@ -63,7 +65,7 @@ elif [[ ${VM_SLEEP_DIAGNOSTIC:-} == bochs-gpu ]]; then
   graphics=(-vga none -device bochs-display -display gtk,gl=off)
 fi
 input_devices=()
-if [[ ${VM_SUITE:-apps} == wallpapers ]]; then
+if [[ ${VM_SUITE:-apps} == wallpapers || ${VM_SUITE:-apps} == system ]]; then
   input_devices=(-device qemu-xhci,id=omadora-usb -device usb-tablet,bus=omadora-usb.0)
 fi
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
@@ -112,7 +114,7 @@ fi
 tar --exclude=.git --exclude=__pycache__ -czf "$vm_dir/source.tar.gz" omadora.py omadora_deploy.py omadora_lifecycle.py omadora_optional.py omadora_workflows.py apps.json optional.json upstream.lock.json packages assets tests
 scp -i "$vm_dir/key" -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$vm_dir/source.tar.gz" omadora-test@127.0.0.1:/tmp/source.tar.gz
 revision=$(git rev-parse HEAD)
-ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision ${VM_BASE:-cloud} ${VM_EDITION:-workstation}" <<'GUEST'
+ssh "${ssh_options[@]}" omadora-test@127.0.0.1 "bash -s -- ${VM_SLEEP_DIAGNOSTIC:-default} $revision ${VM_BASE:-cloud} ${VM_EDITION:-workstation} ${VM_LOGIN_MANAGER:-sddm}" <<'GUEST'
 set -euo pipefail
 if [[ $3 != workstation-iso ]]; then
 case "$4" in
@@ -124,6 +126,12 @@ sudo dnf --setopt=max_parallel_downloads=10 install -y --allowerasing "@$environ
 # Cloud starts with a trimmed kernel; install Workstation's kernel metapackage
 # so the emulated sound device has its normal driver after reboot.
 sudo dnf install -y kernel python3-pexpect
+if [[ $4 == kde ]]; then
+  # Cloud-init already supplied the fixture account. Model a desktop whose
+  # first-boot setup was completed, as required for running the installer as
+  # an existing regular user. This marker is test instrumentation only.
+  sudo touch /etc/plasma-setup-done
+fi
 else
   # Test instrumentation only; the desktop and kernel came from the Live ISO.
   sudo dnf install -y python3-pexpect
@@ -160,8 +168,14 @@ sed -i \
 sudo mkdir -p /var/lib/AccountsService/users
 printf '[User]\nXSession=omadora\nSession=omadora\nSystemAccount=false\n' | sudo tee /var/lib/AccountsService/users/omadora-test >/dev/null
 if [[ $4 == kde ]]; then
+  if [[ ${5:-sddm} == sddm ]]; then
+    sudo mkdir -p /etc/sddm.conf.d
+    printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/sddm.conf.d/zz-omadora-test.conf >/dev/null
+    sudo systemctl enable --force sddm
+  else
   printf '[Autologin]\nUser=omadora-test\nSession=omadora.desktop\nRelogin=false\n' | sudo tee /etc/plasmalogin.conf >/dev/null
-  sudo systemctl enable plasmalogin
+  sudo systemctl enable --force plasmalogin
+  fi
 else
   printf '[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=omadora-test\n' | sudo tee /etc/gdm/custom.conf >/dev/null
   sudo systemctl enable gdm
@@ -186,6 +200,17 @@ elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
   else
     python3 tests/fedora-vm-interactions.py
   fi
+elif [[ ${VM_SUITE:-apps} == workflows ]]; then
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-workflows.py'\'''
+  printf '[]\n' >vm-results/interactions.json
+elif [[ ${VM_SUITE:-apps} == databases ]]; then
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'python3 ~/source/tests/fedora-vm-databases.py'
+  printf '[]\n' >vm-results/interactions.json
+elif [[ ${VM_SUITE:-apps} == catalog ]]; then
+  # App batches do not repeat suspend testing: dedicated reliability VMs
+  # exercise that separately, without hiding completed application evidence.
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'bash -c '\''source ~/source/tests/vm-session.sh; python3 ~/source/tests/fedora-vm-apps.py'\'''
+  printf '[]\n' >vm-results/interactions.json
 else
   # Suspend is deliberately last: a driver/compositor hang must not prevent
   # collection of independent application results from a healthy desktop.

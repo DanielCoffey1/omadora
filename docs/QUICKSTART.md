@@ -1,6 +1,6 @@
 # Omadora v0.5.0-alpha quick start
 
-Development target: fresh Fedora Workstation or KDE Plasma Desktop **44, x86_64**, non-Atomic. KDE/SDDM end-to-end validation remains pending; the pinned v0.5.0-alpha installer still requires Workstation. This is an alpha
+Development target: fresh Fedora Workstation or KDE Plasma Desktop **44, x86_64**, non-Atomic. KDE/SDDM desktop and logout tests pass in a booted Fedora Cloud VM; a fresh KDE ISO is not covered by that fixture. The pinned v0.5.0-alpha installer still requires Workstation. This is an alpha
 release of the minimal Omarchy 4.0.4 desktop port. Your existing desktop and Fedora
 apps remain available. See [known limits](releases/v0.5.0-alpha.md).
 
@@ -31,9 +31,12 @@ The installer requests sudo for packages/system files, enables the
 documented desktop COPRs and backs up managed user configuration. Save the
 backup path it prints. Internet access is required.
 
-After installation, log out. Choose **Omadora** in the GDM gear menu
-(Workstation) or the KDE login screen session selector
-(Plasma Login Manager on Fedora 44, or SDDM where configured), and log in. Check the version with `omadora about`. Use the
+The development installer automatically migrates an installed old `kmime`
+package to `kf6-kmime`. On KDE it selects SDDM with an X11 software-rendered
+greeter for the next boot, while both desktop sessions remain Wayland.
+
+After installation, reboot. Choose **Omadora** in the GDM gear menu
+(Workstation) or SDDM session selector (KDE), and log in. Check the version with `omadora about`. Use the
 desktop's **Install** menu for optional apps, including Gaming and AI.
 
 ## Wallpapers

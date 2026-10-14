@@ -42,7 +42,7 @@
   "php": {"name": "PHP", "category": "development.php", "source": "dnf", "packages": ["php-cli", "php-devel", "composer"]},
   "elixir": {"name": "Elixir", "category": "development.elixir", "source": "dnf", "packages": ["elixir"]},
   "zig": {"name": "Zig", "category": "development", "source": "dnf", "packages": ["zig"]},
-  "java": {"name": "Java development kit", "category": "development", "source": "dnf", "packages": ["java-devel"]},
+  "java": {"name": "Java development kit", "category": "development", "source": "dnf", "packages": ["java-25-openjdk-devel"]},
   "dotnet": {"name": ".NET SDK", "category": "development", "source": "dnf", "packages": ["dotnet-sdk-10.0"]},
   "ocaml": {"name": "OCaml", "category": "development", "source": "dnf", "packages": ["ocaml", "opam"]},
   "clojure": {"name": "Clojure", "category": "development", "source": "dnf", "packages": ["clojure"]},

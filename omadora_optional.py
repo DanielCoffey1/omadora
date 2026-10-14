@@ -10,6 +10,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import urllib.request
@@ -20,6 +21,20 @@ ROOT = Path(__file__).resolve().parent
 
 def run(*args, **kwargs):
     return subprocess.run([str(x) for x in args], check=True, **kwargs)
+
+
+def install_dependencies(packages):
+    before = run('rpm', '-q', '--queryformat', '%{VERSION}-%{RELEASE}', 'python3-libs',
+                 capture_output=True, text=True).stdout
+    run('sudo', 'dnf', 'install', *packages)
+    after = run('rpm', '-q', '--queryformat', '%{VERSION}-%{RELEASE}', 'python3-libs',
+                capture_output=True, text=True).stdout
+    if before != after and Path(sys.argv[0]).resolve() == ROOT / 'omadora_optional.py':
+        # DNF can replace Python while this installer is running. Restart
+        # before importing download/extraction codecs from a different build.
+        # Dependencies precede payload staging; recognized workflow pending
+        # metadata permits resuming. Python's lock fd closes on exec.
+        os.execv(sys.executable, [sys.executable, *sys.argv])
 
 
 def recipes():
@@ -91,13 +106,15 @@ def unpack(archive, destination, kind):
         data = [x for x in entries if re.fullmatch(r'data\.tar\.(xz|gz|zst)', x)]
         if len(data) != 1:
             raise ValueError('Unexpected Debian archive layout')
-        with tempfile.TemporaryDirectory() as tmp:
+        # Fedora mounts /tmp in RAM. Large packages must stage beside their
+        # destination on disk instead of exhausting a small VM's tmpfs quota.
+        with tempfile.TemporaryDirectory(dir=destination.parent) as tmp:
             payload = Path(tmp) / data[0]
             with payload.open('wb') as out:
                 run('bsdtar', '-xOf', archive, data[0], stdout=out)
             unpack(payload, destination, 'tar.zst' if data[0].endswith('zst') else 'tar')
     elif kind == 'tar.zst':
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=destination.parent) as tmp:
             payload = Path(tmp) / 'payload.tar'
             with payload.open('wb') as out:
                 run('zstd', '-dc', archive, stdout=out)
@@ -164,7 +181,7 @@ def asset_install(key, recipe):
         return
     dependencies = recipe.get('dependencies', [])
     if dependencies:
-        run('sudo', 'dnf', 'install', *dependencies)
+        install_dependencies(dependencies)
     with tempfile.TemporaryDirectory(prefix='.' + key + '-', dir=final.parent) as tmp:
         stage = Path(tmp)
         artifact = stage / 'download'
@@ -253,6 +270,11 @@ def launch(key, recipe, args):
     env.update(recipe.get('env', {}))
     if recipe['kind'] == 'appimage':
         env['APPIMAGE_EXTRACT_AND_RUN'] = '1'
+        runtime = location(key) / '.appimage-tmp'
+        if runtime.is_symlink():
+            raise ValueError('AppImage temporary storage must not be redirected')
+        runtime.mkdir(mode=0o700, exist_ok=True)
+        env['TMPDIR'] = str(runtime)
     os.execvpe(str(executable), [str(executable), *recipe.get('args', []), *args], env)
 
 
