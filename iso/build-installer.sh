@@ -6,8 +6,8 @@ exec > >(tee /out/build-installer.log) 2>&1
 dnf install -y lorax squashfs-tools
 lorax --product Omadora --version 44 --release 44 --variant workstation \
   --installpkgs anaconda-webui --installpkgs firefox --volid OMADORA_44 --rootfs-type squashfs \
-  --source https://download.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/ \
-  --source https://download.fedoraproject.org/pub/fedora/linux/updates/44/Everything/x86_64/ \
+  --source https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/ \
+  --source https://dl.fedoraproject.org/pub/fedora/linux/updates/44/Everything/x86_64/ \
   --workdir /build/lorax-work --logfile /out/lorax.log /build/installer
 unsquashfs -ll /build/installer/images/install.img >/out/installer-files.txt
 grep -q 'usr/share/cockpit/anaconda-webui' /out/installer-files.txt
