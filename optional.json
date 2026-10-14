@@ -86,8 +86,8 @@
   "perplexity": {
     "name": "Perplexity",
     "kind": "archive",
-    "url": "https://packages.perplexity.ai/deb/pool/main/p/perplexity/perplexity_26.9.4%2Bbuild72244_amd64.deb",
-    "sha256": "fe64a09a82f8e6b0e3de5637ee768dc5aee94a326af795dce8bcbaf5c7660409",
+    "url": "https://packages.perplexity.ai/deb/pool/main/p/perplexity/perplexity_26.10.1%2Bbuild108257_amd64.deb",
+    "sha256": "5f7578fa768628f8c9e885c40f207fbfa83651400f8a62bcb077ef84d894cba2",
     "archive": "deb",
     "executable": "opt/Perplexity/perplexity",
     "command": "perplexity",
@@ -111,7 +111,7 @@
       "zstd",
       "bubblewrap"
     ],
-    "version": "26.9.4+build72244"
+    "version": "26.10.1+build108257"
   },
   "grok-bot": {
     "name": "Grok Bot",

@@ -13,9 +13,14 @@ on:
         default: sddm
         options: [sddm, plasmalogin]
       apps:
-        description: 'Comma-separated catalog IDs to retest; empty tests all 26'
+        description: 'Comma-separated catalog IDs to retest; empty tests all non-optional apps'
         type: string
         default: ''
+      suite:
+        description: 'Automatic selects desktop defaults; catalog tests the requested app batch'
+        type: choice
+        default: automatic
+        options: [automatic, catalog]
 permissions:
   contents: read
 jobs:
@@ -31,7 +36,7 @@ jobs:
           VM_LOGIN_MANAGER: ${{ inputs.login_manager }}
           VM_EDITION: ${{ inputs.edition }}
           VM_SLEEP_DIAGNOSTIC: ${{ inputs.edition == 'kde' && 'bochs-gpu' || 'default' }}
-          VM_SUITE: ${{ inputs.edition == 'kde' && 'kde' || 'apps' }}
+          VM_SUITE: ${{ inputs.suite == 'catalog' && 'catalog' || inputs.edition == 'kde' && 'kde' || 'apps' }}
           OMADORA_TEST_APPS: ${{ inputs.apps }}
         run: bash tests/fedora-vm.sh
       - name: Save VM evidence

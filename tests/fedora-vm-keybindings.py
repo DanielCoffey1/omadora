@@ -33,8 +33,13 @@ def guide(v):
         v.keys('meta_l', 'w')
     v.keys('meta_l', 'k')
     v.wait_for(lambda: v.guest("pgrep -af '[o]marchy-menu-select Keybindings'"), 20)
+    v.wait_for(lambda: 'omarchy-menu' in v.guest('hyprctl layers -j'), 10)
+    time.sleep(1)
     v.keys('esc')
-    v.wait_for(lambda: v.guest("pgrep -af '[o]marchy-menu-select Keybindings' >/dev/null; echo $?") == '1', 10)
+    try:
+        v.wait_for(lambda: v.guest("pgrep -af '[o]marchy-menu-select Keybindings' >/dev/null; echo $?") == '1', 10)
+    finally:
+        (v.OUT / 'keybindings-dismissal.log').write_text(v.guest("pgrep -af '[o]marchy-menu-select Keybindings'; hyprctl layers -j; ls -lt /tmp/tmp.* | head -20"))
     return 'Super+K and Learn → Keybindings opened; search and Terminal selection worked from each; Escape closed the guide.'
 
 
