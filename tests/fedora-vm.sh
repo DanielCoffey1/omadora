@@ -198,6 +198,9 @@ elif [[ ${VM_SUITE:-apps} == diagnostic ]]; then
   else
     python3 tests/fedora-vm-interactions.py
   fi
+elif [[ ${VM_SUITE:-apps} == databases ]]; then
+  ssh "${ssh_options[@]}" omadora-test@127.0.0.1 'python3 ~/source/tests/fedora-vm-databases.py'
+  printf '[]\n' >vm-results/interactions.json
 elif [[ ${VM_SUITE:-apps} == catalog ]]; then
   # App batches do not repeat suspend testing: dedicated reliability VMs
   # exercise that separately, without hiding completed application evidence.

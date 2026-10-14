@@ -88,7 +88,7 @@ def greeter_authentication():
     v.type_password('omadora-vm-test-only')
     try:
         wait_process('Hyprland')
-        v.wait_for(lambda: '"locked": false' in v.guest('omarchy-shell lock status'), 90)
+        v.wait_for(lambda: not v.lock_status()['locked'], 90)
     finally:
         screenshot('sddm-correct-password')
     return 'Real SDDM password login: wrong password rejected; correct password started Omadora without autologin.'
