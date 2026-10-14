@@ -1,6 +1,6 @@
 # Omadora v0.5.0-alpha quick start
 
-Development target: fresh Fedora Workstation or KDE Plasma Desktop **44, x86_64**, non-Atomic. KDE/SDDM end-to-end validation remains pending; the pinned v0.5.0-alpha installer still requires Workstation. This is an alpha
+Development target: fresh Fedora Workstation or KDE Plasma Desktop **44, x86_64**, non-Atomic. KDE/SDDM desktop and logout tests pass in a booted Fedora Cloud VM; a fresh KDE ISO is not covered by that fixture. The pinned v0.5.0-alpha installer still requires Workstation. This is an alpha
 release of the minimal Omarchy 4.0.4 desktop port. Your existing desktop and Fedora
 apps remain available. See [known limits](releases/v0.5.0-alpha.md).
 

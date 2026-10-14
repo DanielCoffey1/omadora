@@ -24,8 +24,25 @@ This is a verified VM workaround, not a repair to the virtio driver. Software gr
 
 The original virtio/virgl configuration still hangs after S3 with Hyprland blocked in the kernel's `drm_atomic_helper_swap_state`. Turning off 3D acceleration passed one cycle but failed the second. Blanking the display before sleep and the earlier legacy-DRM experiment also failed. These workarounds are not enabled in Omadora.
 
-The app-validation workflow retains virtio graphics so this known failure remains visible. The suspend-diagnostic workflow defaults to the verified Bochs profile and retains the alternative profiles for investigation. Changing the VM's display device happens on the host; the Fedora installer does not change it automatically. Physical GPU suspend remains untested.
+The graphical and catalog workflows now use the verified Bochs profile by
+default. The suspend-diagnostic workflow retains the explicit virtio/GL profiles
+for investigation. Changing the VM's display device happens on the host; the
+Fedora installer does not change it automatically. Physical GPU suspend remains
+untested.
+
+Zed's VM probe explicitly opts into software rendering with
+`flatpak run --env=ZED_ALLOW_EMULATED_GPU=1 dev.zed.Zed`; this test option is not
+written to the user's launcher. Zed otherwise asks the user to acknowledge its
+software-GPU warning. Native GeForce NOW requires Vulkan video decoding, which
+this software display cannot provide. Its install/removal checks are separate
+from application readiness. See [NVIDIA's launch troubleshooting](https://nvidia.custhelp.com/app/answers/detail/a_id/5737/kw/DYNAMIC).
 
 ## GDM startup fix
 
-Omadora now uses Hyprland's packaged startup entry and activates the authenticated local GDM session through logind before starting UWSM. This addresses the recorded inactive-session timeout. Twenty subsequent GDM relaunches across four VMs passed password checks, including five deliberately delayed launches. The installer does not enable autologin; autologin exists only in the disposable test fixture.
+Omadora uses Hyprland's packaged startup entry and activates the authenticated
+local session through logind before starting UWSM. It first waits for a queued
+`graphical.target` boot job to finish: activating earlier allowed GDM to take
+the VT back while UWSM waited for boot, causing Aquamarine's inactive-session
+timeout. The wait is bounded and a failure stops compositor startup with an
+explanation. It does not activate a remote or seatless session. The installer
+does not enable autologin; autologin exists only in the disposable test fixture.

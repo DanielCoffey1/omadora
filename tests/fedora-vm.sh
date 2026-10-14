@@ -11,8 +11,8 @@ if [[ ${VM_BASE:-cloud} == workstation-iso ]]; then
 else
 image=Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2
 base=https://download.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images
-curl -fL --retry 3 "$base/$image" -o "$vm_dir/disk.qcow2"
-curl -fL --retry 3 "$base/Fedora-Cloud-44-1.7-x86_64-CHECKSUM" -o "$vm_dir/CHECKSUM"
+curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --speed-limit 1024 --speed-time 30 "$base/$image" -o "$vm_dir/disk.qcow2"
+curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --speed-limit 1024 --speed-time 30 "$base/Fedora-Cloud-44-1.7-x86_64-CHECKSUM" -o "$vm_dir/CHECKSUM"
 expected=$(sed -n "s/^SHA256 ($image) = //p" "$vm_dir/CHECKSUM")
 [[ $expected =~ ^[0-9a-f]{64}$ ]]
 printf '%s  %s\n' "$expected" "$vm_dir/disk.qcow2" | sha256sum -c -
