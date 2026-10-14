@@ -152,7 +152,9 @@ for app_id in selection:
                     subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)
                 assert created, 'no matching application window appeared before timeout'
                 record['windows'] = [{'class': c['class'], 'title': c['title']} for c in created]
-                time.sleep(30 if app_id in ('discord', 'signal', 'steam', 'vscode', 'zed', 'minecraft') else 5)
+                time.sleep(30 if app_id in ('discord', 'signal', 'steam', 'vscode', 'zed', 'minecraft',
+                                           'chatgpt', 'cursor', 'hermes', 'lm-studio', 'grok-bot',
+                                           'perplexity', 't3-code') else 5)
                 if app_id in ('vscode', 'zed'):
                     # A mapped but blank editor is not a successful launch.
                     deadline = time.monotonic() + 60
