@@ -109,6 +109,12 @@ to be available inside a sandbox.
 
 ## Sources and test boundaries
 
+On October 14, 2026, the [GPU matrix](https://github.com/DanielCoffey1/omadora/actions/runs/38639430505)
+passed for Mesa, NVIDIA 615.78.08 (open) and NVIDIA 580.178.04 (proprietary),
+including signed module builds and both gaming-helper architectures. The
+[validation record](VM_ACCEPTANCE.md#automatic-nvidia-update--october-14-2026)
+also records 92 Linux source checks and passing KDE/Workstation VM regressions.
+
 - [RPM Fusion driver packaging](https://github.com/rpmfusion/xorg-x11-drv-nvidia)
 - [RPM Fusion 580xx packaging](https://github.com/rpmfusion/xorg-x11-drv-nvidia-580xx)
 - [RPM Fusion module selection and builds](https://github.com/rpmfusion/nvidia-kmod)
