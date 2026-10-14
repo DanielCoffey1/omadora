@@ -19,6 +19,23 @@ import omadora as adapter
 
 
 class OptionalTests(unittest.TestCase):
+    def test_dependency_update_restarts_cli_only_when_python_changes(self):
+        from types import SimpleNamespace
+        args = [str(ROOT / 'omadora_optional.py'), 'install', 'hermes']
+        for changed in (False, True):
+            results = [SimpleNamespace(stdout='3.14.8-1.fc44'), SimpleNamespace(),
+                       SimpleNamespace(stdout='3.14.9-1.fc44' if changed else '3.14.8-1.fc44')]
+            with patch.object(optional, 'run', side_effect=results), \
+                 patch.object(sys, 'argv', args), \
+                 patch.object(optional.os, 'execv', side_effect=RuntimeError('exec intercepted')) as restart:
+                if changed:
+                    with self.assertRaisesRegex(RuntimeError, 'exec intercepted'):
+                        optional.install_dependencies(['python3-devel'])
+                    restart.assert_called_once_with(sys.executable, [sys.executable, *args])
+                else:
+                    optional.install_dependencies(['python3-devel'])
+                    restart.assert_not_called()
+
     def test_optional_chooser_keeps_screen_visible_and_installs_selected_ids(self):
         result = subprocess.CompletedProcess([], 0, 'dictation | Dictation\n')
         with patch.object(workflows.subprocess, 'run', return_value=result) as picker, \

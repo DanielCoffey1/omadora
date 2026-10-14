@@ -14,7 +14,7 @@ import omadora_optional as opt
 
 
 def deps(*packages):
-    opt.run('sudo', 'dnf', 'install', *packages)
+    opt.install_dependencies(packages)
 
 
 def source(key, destination):

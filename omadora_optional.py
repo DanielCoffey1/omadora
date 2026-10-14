@@ -10,6 +10,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import urllib.request
@@ -20,6 +21,20 @@ ROOT = Path(__file__).resolve().parent
 
 def run(*args, **kwargs):
     return subprocess.run([str(x) for x in args], check=True, **kwargs)
+
+
+def install_dependencies(packages):
+    before = run('rpm', '-q', '--queryformat', '%{VERSION}-%{RELEASE}', 'python3-libs',
+                 capture_output=True, text=True).stdout
+    run('sudo', 'dnf', 'install', *packages)
+    after = run('rpm', '-q', '--queryformat', '%{VERSION}-%{RELEASE}', 'python3-libs',
+                capture_output=True, text=True).stdout
+    if before != after and Path(sys.argv[0]).resolve() == ROOT / 'omadora_optional.py':
+        # DNF can replace Python while this installer is running. Restart
+        # before importing download/extraction codecs from a different build.
+        # Dependencies precede payload staging; recognized workflow pending
+        # metadata permits resuming. Python's lock fd closes on exec.
+        os.execv(sys.executable, [sys.executable, *sys.argv])
 
 
 def recipes():
@@ -166,7 +181,7 @@ def asset_install(key, recipe):
         return
     dependencies = recipe.get('dependencies', [])
     if dependencies:
-        run('sudo', 'dnf', 'install', *dependencies)
+        install_dependencies(dependencies)
     with tempfile.TemporaryDirectory(prefix='.' + key + '-', dir=final.parent) as tmp:
         stage = Path(tmp)
         artifact = stage / 'download'
