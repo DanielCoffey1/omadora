@@ -198,6 +198,13 @@ def desktop_lifecycle():
     switch('omadora')
     v.keys('meta_l', 'ret')
     v.wait_for(lambda: any(c['class'] == 'foot' for c in json.loads(v.guest('hyprctl clients -j'))))
+    if KDE:
+        clients = json.loads(v.guest('hyprctl clients -j'))
+        bridge = [c for c in clients if c['class'] == 'xwaylandvideobridge']
+        assert all(c['floating'] and not c['acceptsInput'] and 'default-opacity*' not in c['tags'] for c in bridge), bridge
+        monitor = json.loads(v.guest('hyprctl monitors -j'))[0]
+        v.wait_for(lambda: any(c['class'] == 'foot' and c['size'][0] > monitor['width'] / monitor['scale'] * .8
+                              for c in json.loads(v.guest('hyprctl clients -j'))), 30)
     v.guest('grim /tmp/omadora-vm-results/desktop-after-upgrade.png')
     v.keys('meta_l', 'w')
     switch(FALLBACK)

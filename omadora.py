@@ -508,6 +508,19 @@ fi
     if content.count(old) != 1:
         raise ValueError('Upstream logout helper changed; review the adapter')
     write(logout, content.replace(old, 'sleep 2 && systemctl --user --job-mode=replace stop wayland-wm@hyprland.desktop.service'), 0o755)
+    # Plasma installs an X11 capture proxy. Its background window must not
+    # become an opaque tile or take focus in the Hyprland desktop.
+    write(tree / 'default/hypr/apps/fedora.lua', '''o.window("^xwaylandvideobridge$", {
+  tag = "-default-opacity",
+  float = true,
+  no_focus = true,
+  no_initial_focus = true,
+  decorate = false,
+  no_blur = true,
+  no_shadow = true,
+  opacity = "0 override 0 override",
+})
+''')
     # Menu guards otherwise shadow our RPM helpers with an embedded Arch cache.
     model = tree / 'shell/plugins/menu/MenuModel.js'
     text = model.read_text(encoding='utf-8')
