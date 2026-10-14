@@ -37,7 +37,7 @@ if mode == '580xx':
     # run on Pascal. Test the proprietary kernel tree required by this fixture.
     # This macro exists ONLY in this disposable container, never in installation.
     Path('/etc/rpm').mkdir(exist_ok=True)
-    Path('/etc/rpm/macros.omadora-test').write_text('%global _without_kmod_nvidia_detect 1\n')
+    Path('/etc/rpm/macros.omadora-test').write_text('%_without_kmod_nvidia_detect 1\n')
 
 
 def container_kernel(a):
