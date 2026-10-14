@@ -201,10 +201,23 @@ def desktop_lifecycle():
     if KDE:
         clients = json.loads(v.guest('hyprctl clients -j'))
         bridge = [c for c in clients if c['class'] == 'xwaylandvideobridge']
-        assert all(c['floating'] and not c['acceptsInput'] and 'default-opacity*' not in c['tags'] for c in bridge), bridge
+        assert all(c['floating'] and not c['visible'] and 'default-opacity*' not in c['tags'] for c in bridge), bridge
         monitor = json.loads(v.guest('hyprctl monitors -j'))[0]
         v.wait_for(lambda: any(c['class'] == 'foot' and c['size'][0] > monitor['width'] / monitor['scale'] * .8
                               for c in json.loads(v.guest('hyprctl clients -j'))), 30)
+        # Click where the invisible capture proxy lives. Actual focus/paste
+        # behavior matters; acceptsInput reports the X11 client's hint, not
+        # the compositor's no-focus rule.
+        v.qmp('input-send-event', {'events': [
+            {'type': 'abs', 'data': {'axis': 'x', 'value': int(160 / monitor['width'] * 32767)}},
+            {'type': 'abs', 'data': {'axis': 'y', 'value': int(200 / monitor['height'] * 32767)}},
+            {'type': 'btn', 'data': {'down': True, 'button': 'left'}},
+            {'type': 'btn', 'data': {'down': False, 'button': 'left'}}]})
+        assert json.loads(v.guest('hyprctl activewindow -j'))['class'] == 'foot'
+        v.guest("printf '%s' 'echo bridge-click-ok > /tmp/omadora-proxy-click' | wl-copy >/dev/null 2>&1")
+        v.keys('shift', 'insert')
+        v.keys('ret')
+        v.wait_for(lambda: v.guest('cat /tmp/omadora-proxy-click 2>/dev/null || true') == 'bridge-click-ok')
     v.guest('grim /tmp/omadora-vm-results/desktop-after-upgrade.png')
     v.keys('meta_l', 'w')
     switch(FALLBACK)

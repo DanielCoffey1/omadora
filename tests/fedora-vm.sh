@@ -65,7 +65,7 @@ elif [[ ${VM_SLEEP_DIAGNOSTIC:-} == bochs-gpu ]]; then
   graphics=(-vga none -device bochs-display -display gtk,gl=off)
 fi
 input_devices=()
-if [[ ${VM_SUITE:-apps} == wallpapers ]]; then
+if [[ ${VM_SUITE:-apps} == wallpapers || ${VM_SUITE:-apps} == system ]]; then
   input_devices=(-device qemu-xhci,id=omadora-usb -device usb-tablet,bus=omadora-usb.0)
 fi
 qemu-system-x86_64 -accel "$accel" -cpu "$cpu" -m 4096 -smp 2 \
