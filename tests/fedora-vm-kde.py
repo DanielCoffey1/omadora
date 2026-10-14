@@ -73,6 +73,27 @@ def repeated_authentication():
     return 'Two lock cycles: wrong passwords rejected and correct password unlocked shell and compositor.'
 
 
+def greeter_authentication():
+    if MANAGER != 'sddm':
+        return 'SDDM password test applies to the default KDE login manager.'
+    raw('sudo systemctl stop sddm; sudo rm -f ' + CONFIG)
+    raw("sudo mkdir -p /var/lib/sddm; printf '[Last]\\nUser=omadora-test\\nSession=omadora.desktop\\n' | sudo tee /var/lib/sddm/state.conf >/dev/null; sudo chown sddm:sddm /var/lib/sddm/state.conf; sudo systemctl start sddm")
+    v.wait_for(lambda: raw('pgrep -f "' + GREETER + '" >/dev/null && echo ready || true') == 'ready', 90)
+    time.sleep(15)
+    screenshot('sddm-password-login')
+    v.type_password('incorrect')
+    time.sleep(10)
+    assert raw('pgrep -u $(id -u) -x Hyprland >/dev/null && echo yes || echo no') == 'no', 'Wrong login password started a desktop'
+    screenshot('sddm-wrong-password')
+    v.type_password('omadora-vm-test-only')
+    try:
+        wait_process('Hyprland')
+        v.wait_for(lambda: '"locked": false' in v.guest('omarchy-shell lock status'), 90)
+    finally:
+        screenshot('sddm-correct-password')
+    return 'Real SDDM password login: wrong password rejected; correct password started Omadora without autologin.'
+
+
 v.check('password authentication', repeated_authentication)
 v.check('keyboard and windows', v.keyboard_windows)
 v.check('clipboard', v.clipboard)
@@ -80,5 +101,6 @@ v.check('power profiles', v.power)
 v.check('theme switching', v.themes)
 v.check('Omadora logout to KDE greeter', lambda: logout('Hyprland') or 'Session ended and greeter process returned; screenshot retained.')
 v.check('Plasma login and logout to greeter', plasma_roundtrip)
+v.check('SDDM password login', greeter_authentication)
 (v.OUT / 'kde-login-journal.log').write_text(raw('sudo journalctl -b -u ' + MANAGER + ' --no-pager'))
 assert all(result['status'] == 'PASS' for result in v.results), v.results
