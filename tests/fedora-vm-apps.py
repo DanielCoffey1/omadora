@@ -158,6 +158,15 @@ for app_id in selection:
                             break
                         assert time.monotonic() < deadline, 'Editor window stayed blank'
                         time.sleep(5)
+                if app_id == 'vscode':
+                    for state in ('down', 'up'):
+                        expression = 'hl.dsp.send_key_state({mods="CTRL", key="n", state="' + state + '", window="address:' + created[0]['address'] + '"})'
+                        subprocess.run(['hyprctl', 'dispatch', expression], stdout=log, stderr=log, check=True)
+                    deadline = time.monotonic() + 30
+                    while not any(c['class'].lower() == 'code' and 'untitled' in c['title'].lower() for c in windows()):
+                        assert time.monotonic() < deadline, 'VS Code did not respond to New File'
+                        time.sleep(2)
+                    record['interaction'] = 'PASS: Ctrl+N opened an untitled editor'
                 subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)
                 if app_id == 'geforce-now' and any('cannot continue' in c['title'].lower() for c in created):
                     record['launch'] = 'NOT VERIFIED: virtual GPU lacks Vulkan video decoding'

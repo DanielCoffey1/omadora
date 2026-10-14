@@ -35,7 +35,9 @@ jobs:
         env:
           VM_LOGIN_MANAGER: ${{ inputs.login_manager }}
           VM_EDITION: ${{ inputs.edition }}
-          VM_SLEEP_DIAGNOSTIC: ${{ inputs.edition == 'kde' && 'bochs-gpu' || 'default' }}
+          # The supported software display also survives real S3 in CI.
+          # Explicit virtio/GL diagnostics remain in diagnostic.yml.
+          VM_SLEEP_DIAGNOSTIC: bochs-gpu
           VM_SUITE: ${{ inputs.suite != 'automatic' && inputs.suite || inputs.edition == 'kde' && 'kde' || 'apps' }}
           OMADORA_TEST_APPS: ${{ inputs.apps }}
         run: bash tests/fedora-vm.sh

@@ -42,6 +42,7 @@ jobs:
         env:
           OMADORA_TEST_APPS: ${{ matrix.batch.apps }}
           VM_SUITE: catalog
+          VM_SLEEP_DIAGNOSTIC: bochs-gpu
         run: bash tests/fedora-vm.sh
       - uses: actions/upload-artifact@v4
         if: always()
