@@ -392,6 +392,48 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
         self.assertIn('SIL OPEN FONT LICENSE', (ROOT / 'assets/fonts/OFL.txt').read_text())
 
     @unittest.skipIf(os.name == 'nt', 'Generated Linux session is executed in Linux CI')
+    def test_startup_watch_recovers_only_a_greeter_and_stops_when_ready(self):
+        import subprocess
+        source = os.environ.get('OMADORA_TEST_UPSTREAM')
+        if not source:
+            self.skipTest('Set OMADORA_TEST_UPSTREAM to the pinned checkout')
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = adapter.assemble(Path(source), root / 'stage')
+            fake = root / 'bin'
+            adapter.write(fake / 'systemctl', '''#!/bin/sh
+if [ "$1" = --user ]; then test -f "$TEST_READY"; else exit 0; fi
+''', 0o755)
+            adapter.write(fake / 'loginctl', '''#!/bin/sh
+case "$1" in
+  activate) printf '%s\\n' "$2" >> "$TEST_TRACE" ;;
+  show-seat) echo other-session ;;
+  show-session)
+    case "$4" in
+      Active) echo yes ;;
+      State) echo "$TEST_STATE" ;;
+      Class) echo "$TEST_CLASS" ;;
+    esac ;;
+esac
+''', 0o755)
+            adapter.write(fake / 'uwsm', '#!/bin/sh\nsleep 1\ntouch "$TEST_READY"\nsleep 0.5\n', 0o755)
+            for other_class, state, recover in [('greeter', 'active', True), ('user', 'active', False), ('greeter', 'closing', False)]:
+                trace, ready = root / 'trace', root / 'ready'
+                trace.unlink(missing_ok=True)
+                ready.unlink(missing_ok=True)
+                env = os.environ | {'PATH': str(fake) + ':' + os.environ['PATH'],
+                                    'XDG_SESSION_ID': 'test-session', 'XDG_SEAT': 'seat0',
+                                    'TEST_TRACE': str(trace), 'TEST_READY': str(ready),
+                                    'TEST_CLASS': other_class, 'TEST_STATE': state}
+                subprocess.run(['bash', str(stage / 'bin/omadora-session')], env=env, check=True, capture_output=True, timeout=10)
+                activations = trace.read_text().splitlines()
+                self.assertTrue(all(value == 'test-session' for value in activations))
+                self.assertGreaterEqual(len(activations), 2) if recover else self.assertEqual(len(activations), 1)
+                count = len(activations)
+                __import__('time').sleep(.3)
+                self.assertEqual(len(trace.read_text().splitlines()), count, 'Watcher must stop once the compositor is ready')
+
+    @unittest.skipIf(os.name == 'nt', 'Generated Linux session is executed in Linux CI')
     def test_session_activation_failure_stops_compositor(self):
         import subprocess
         source = os.environ.get('OMADORA_TEST_UPSTREAM')
@@ -402,6 +444,7 @@ console.log(JSON.stringify({ normalized, script: model.guardScript(normalized) }
             stage = adapter.assemble(Path(source), root / 'stage')
             fake = root / 'bin'
             adapter.write(fake / 'systemctl', '''#!/bin/sh
+if [ "$1" = --user ]; then exit 0; fi
 printf 'boot-check\\n' >> "$TEST_TRACE"
 if [ ! -e "$TEST_BOOT_DONE" ]; then
   touch "$TEST_BOOT_DONE"

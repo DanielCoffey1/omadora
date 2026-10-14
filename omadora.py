@@ -377,6 +377,21 @@ if [[ -n ${XDG_SESSION_ID:-} && -n ${XDG_SEAT:-} ]]; then
     echo 'Omadora: the login session did not become active.' >&2
     exit 1
   fi
+  # A slow GDM autologin can still start its greeter after graphical.target
+  # completes. During compositor startup only, recover our authenticated VT
+  # if a greeter takes it. Never override a user's switch to another session.
+  (
+    for ((attempt=0; attempt<150; attempt++)); do
+      systemctl --user is-active --quiet wayland-wm@hyprland.desktop.service && break
+      state=$(loginctl show-session "$XDG_SESSION_ID" -p State --value) || break
+      [[ -n $state && $state != closing ]] || break
+      active=$(loginctl show-seat "$XDG_SEAT" -p ActiveSession --value) || break
+      if [[ -n $active && $active != "$XDG_SESSION_ID" && $(loginctl show-session "$active" -p Class --value) == greeter ]]; then
+        timeout 2 loginctl activate "$XDG_SESSION_ID" || break
+      fi
+      sleep 0.2
+    done
+  ) >/dev/null 2>&1 &
 fi
 '''
     image_setup = 'if [[ -f /etc/omadora/image.json ]]; then\n  python3 /usr/local/share/omadora/omadora_image.py || exit 1\nfi\n'
