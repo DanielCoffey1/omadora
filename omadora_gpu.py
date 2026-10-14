@@ -163,7 +163,7 @@ def enroll_key(a):
     # curl | bash leaves stdin at EOF. Give mokutil the controlling terminal;
     # never put a password in argv, an environment variable, or a log.
     try:
-        terminal = open('/dev/tty', 'r+')
+        terminal = open('/dev/tty', 'r')
     except OSError as error:
         raise ValueError('Secure Boot key enrollment needs an interactive terminal. Run the installer from a terminal.') from error
     with terminal:

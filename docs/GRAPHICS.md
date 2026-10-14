@@ -24,7 +24,7 @@ For supported NVIDIA display GPUs, the same one-command installer:
    it is enrolled and requests enrollment when needed.
 5. Installs matching kernel headers, builds the NVIDIA module for the next-boot
    default kernel, checks its version against userspace, verifies the signing-key
-   identity when Secure Boot is enabled, and regenerates that kernel's initramfs.
+   identity, and regenerates that kernel's initramfs.
 
 The installer waits for the build rather than telling you to reboot while akmods
 is still compiling. A failed build or version/signature mismatch stops setup;
@@ -66,6 +66,10 @@ omadora gpu setup --gaming
 omadora gpu status
 omadora gpu status --json
 ```
+
+Automatic provisioning runs in the Fedora bootstrap installer and upgrade.
+The separate offline ISO does not bundle RPM Fusion drivers; use the fresh
+Fedora plus one-command route for automatic NVIDIA setup before first login.
 
 `--nvidia` remains accepted, but detection is now automatic and that flag will not
 install a driver on a machine without a supported NVIDIA display GPU.

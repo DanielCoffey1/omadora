@@ -144,7 +144,22 @@ class GPU(unittest.TestCase):
         terminal = mock_open()
         with patch('builtins.open', terminal), patch.object(gpu.subprocess, 'run') as execute:
             self.assertTrue(gpu.enroll_key(a))
+        terminal.assert_called_with('/dev/tty', 'r')
         execute.assert_called_once_with(['sudo', 'mokutil', '--import', gpu.MOK], stdin=terminal(), check=True)
+
+    @unittest.skipIf(os.name == 'nt', 'Real pseudo-terminal verification requires Linux')
+    def test_enrollment_opens_a_real_nonseekable_terminal(self):
+        master, slave = os.openpty()
+        real_open = open
+        a = Mock()
+        a.run.return_value.returncode = 1
+        try:
+            with patch('builtins.open', side_effect=lambda path, mode: real_open(os.ttyname(slave), mode)), patch.object(gpu.subprocess, 'run') as execute:
+                execute.side_effect = lambda *args, **kwargs: self.assertTrue(kwargs['stdin'].isatty())
+                self.assertTrue(gpu.enroll_key(a))
+        finally:
+            os.close(master)
+            os.close(slave)
 
     def test_software_vulkan_is_not_reported_as_hardware(self):
         self.assertIn('no physical', gpu.acceleration({'status': 0, 'output': 'deviceType = PHYSICAL_DEVICE_TYPE_CPU\ndeviceName = llvmpipe'}))
