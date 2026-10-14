@@ -393,9 +393,11 @@
   },
   "zed": {
     "kind": "gui",
+    "fixture_note": "Zed's explicit software-GPU opt-in is confined to this disposable VM probe.",
     "command": [
       "flatpak",
       "run",
+      "--env=ZED_ALLOW_EMULATED_GPU=1",
       "dev.zed.Zed"
     ]
   },

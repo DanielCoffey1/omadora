@@ -77,7 +77,7 @@ def greeter_authentication():
     if MANAGER != 'sddm':
         return 'SDDM password test applies to the default KDE login manager.'
     raw('sudo systemctl stop sddm; sudo rm -f ' + CONFIG)
-    raw("sudo mkdir -p /var/lib/sddm; printf '[Last]\\nUser=omadora-test\\nSession=omadora.desktop\\n' | sudo tee /var/lib/sddm/state.conf >/dev/null; sudo chown sddm:sddm /var/lib/sddm/state.conf; sudo systemctl start sddm")
+    raw("state_home=$(getent passwd sddm | cut -d: -f6); sudo mkdir -p \"$state_home\"; printf '[Last]\\nUser=omadora-test\\nSession=/usr/share/wayland-sessions/omadora.desktop\\n' | sudo tee \"$state_home/state.conf\" >/dev/null; sudo chown sddm:sddm \"$state_home/state.conf\"; sudo systemctl start sddm")
     v.wait_for(lambda: raw('pgrep -f "' + GREETER + '" >/dev/null && echo ready || true') == 'ready', 90)
     time.sleep(15)
     screenshot('sddm-password-login')
@@ -89,6 +89,7 @@ def greeter_authentication():
     try:
         wait_process('Hyprland')
         v.wait_for(lambda: not v.lock_status()['locked'], 90)
+        assert '/usr/local/bin/omadora-session' in raw("sudo journalctl -b -u sddm --no-pager | grep 'Starting Wayland user session:' | tail -1"), 'Login did not select Omadora'
     finally:
         screenshot('sddm-correct-password')
     return 'Real SDDM password login: wrong password rejected; correct password started Omadora without autologin.'

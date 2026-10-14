@@ -12,6 +12,7 @@ import time
 import pexpect
 import atexit
 import shutil
+from PIL import Image, ImageStat
 
 out = Path('/tmp/omadora-vm-results/apps')
 out.mkdir(parents=True, exist_ok=True)
@@ -50,6 +51,10 @@ def app_window(app_id, window):
                '1password': 'onepassword'}
     app_class = window['class'].lower()
     title = window['title'].lower()
+    if app_id == 'chrome' and title == 'google chrome and chromeos additional terms of service':
+        return True
+    if app_id == 'dropbox' and 'dropbox' in title and app_class in ('org.mozilla.firefox', 'chromium', 'chromium-browser'):
+        return True
     return (aliases.get(app_id, app_id) in app_class
             and not any(part in title for part in ('startup', 'updater', 'steam setup')))
 
@@ -75,9 +80,12 @@ def transaction(action, app_id, log):
 for app_id in selection:
     app = catalog[app_id]
     record = {'app': app_id, 'source': app['source'], 'preexisting': installed(app_id)}
+    if probes[app_id].get('fixture_note'):
+        record['fixture_note'] = probes[app_id]['fixture_note']
     print('Testing app:', app_id, flush=True)
     with (out / f'{app_id}.log').open('w') as log:
         process = None
+        before = None
         try:
             # Answer the same interactive prompts a user sees. No adapter or
             # package-manager shim replaces the real transaction.
@@ -136,12 +144,39 @@ for app_id in selection:
                     subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)
                 assert created, 'no matching application window appeared before timeout'
                 record['windows'] = [{'class': c['class'], 'title': c['title']} for c in created]
-                time.sleep(30 if app_id in ('discord', 'signal', 'steam') else 5)
+                time.sleep(30 if app_id in ('discord', 'signal', 'steam', 'vscode', 'zed', 'minecraft') else 5)
+                if app_id in ('vscode', 'zed'):
+                    # A mapped but blank editor is not a successful launch.
+                    deadline = time.monotonic() + 60
+                    while True:
+                        client = next(c for c in windows() if c['address'] == created[0]['address'])
+                        x, y = client['at']
+                        width, height = client['size']
+                        crop = out / f'{app_id}-window.png'
+                        subprocess.run(['grim', '-g', f'{x},{y} {width}x{height}', str(crop)], check=True, timeout=30)
+                        if max(ImageStat.Stat(Image.open(crop).convert('RGB')).stddev) > 3:
+                            break
+                        assert time.monotonic() < deadline, 'Editor window stayed blank'
+                        time.sleep(5)
                 subprocess.run(['grim', str(out / f'{app_id}.png')], stdout=log, stderr=log, timeout=30)
-                record['launch'] = 'PASS: window created'
+                if app_id == 'geforce-now' and any('cannot continue' in c['title'].lower() for c in created):
+                    record['launch'] = 'NOT VERIFIED: virtual GPU lacks Vulkan video decoding'
+                    record['vm_limitation'] = 'GeForce NOW native client returned a graphics initialization error; installation/removal coverage only.'
+                elif app_id == 'chrome' and any('Additional Terms of Service' in c['title'] for c in created):
+                    record['launch'] = 'USER ACTION: Chrome terms dialog rendered; terms were not accepted'
+                elif app_id == 'dropbox':
+                    record['launch'] = 'PASS: Dropbox account setup opened; synchronization requires an account'
+                else:
+                    assert not any('unsupported gpu' in c['title'].lower() or 'cannot continue' in c['title'].lower() for c in windows() if c['address'] not in before), 'Application reported a runtime startup error'
+                    record['launch'] = 'PASS: window created'
         except Exception as error:
             record['error'] = str(error)
         finally:
+            if before is not None:
+                for client in windows():
+                    if client['address'] not in before:
+                        subprocess.run(['hyprctl', 'dispatch', 'closewindow', 'address:' + client['address']], stdout=log, stderr=log)
+                time.sleep(2)
             if app_id == 'steam':
                 steam_logs = Path.home() / '.local/share/Steam/logs'
                 if steam_logs.is_dir():

@@ -48,7 +48,8 @@ for db, (write, read) in queries.items():
             assert env.stat().st_mode & 0o777 == 0o600
             digest = hashlib.sha256(env.read_bytes()).hexdigest()
             info = json.loads(subprocess.check_output(['podman', 'inspect', name]))[0]
-            assert all(binding['HostIp'] == '127.0.0.1' for bindings in info['NetworkSettings']['Ports'].values() for binding in bindings)
+            published = [binding for bindings in info['NetworkSettings']['Ports'].values() if bindings for binding in bindings]
+            assert published and all(binding['HostIp'] == '127.0.0.1' for binding in published)
             query(name, write)
             query(name, read, '42')
             transaction('remove', key, log)

@@ -92,6 +92,14 @@ def raw(command, timeout=90):
 def switch_desktop(session):
     if KDE:
         config = '/etc/sddm.conf.d/zz-omadora-test.conf'
+        # Model the user's logout before changing the disposable autologin
+        # fixture. Stopping SDDM alone leaves Plasma's user services alive.
+        if raw('pgrep -u $(id -u) -x Hyprland || true'):
+            v.guest('omarchy-system-logout')
+            v.wait_for(lambda: not raw('pgrep -u $(id -u) -x Hyprland || true'), 90)
+        if raw('pgrep -u $(id -u) -x plasmashell || true'):
+            raw('export XDG_RUNTIME_DIR=/run/user/$(id -u); export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus; gdbus call --session --dest org.kde.Shutdown --object-path /Shutdown --method org.kde.Shutdown.logout')
+            v.wait_for(lambda: not raw('pgrep -u $(id -u) -x plasmashell || true'), 90)
         raw('sudo systemctl stop ' + MANAGER)
         raw("printf '[Autologin]\nUser=omadora-test\nSession=" + session + ".desktop\nRelogin=false\n' | sudo tee " + config + " >/dev/null; sudo systemctl start " + MANAGER)
     else:
