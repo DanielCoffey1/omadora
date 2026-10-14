@@ -131,7 +131,7 @@ def app_commands(app, action, fedora='44'):
     if app['source'] == 'rpmfusion' and action == 'install':
         for kind in ('free', 'nonfree'):
             commands.append(['sudo', 'dnf', 'install',
-                             f'https://mirrors.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-{fedora}.noarch.rpm'])
+                             f'https://download1.rpmfusion.org/{kind}/fedora/rpmfusion-{kind}-release-{fedora}.noarch.rpm'])
     commands.append(['sudo', 'dnf', action, *app['packages']])
     return commands
 
