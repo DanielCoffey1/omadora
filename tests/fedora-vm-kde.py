@@ -90,6 +90,9 @@ def greeter_authentication():
         wait_process('Hyprland')
         v.wait_for(lambda: not v.lock_status()['locked'], 90)
         assert '/usr/local/bin/omadora-session' in raw("sudo journalctl -b -u sddm --no-pager | grep 'Starting Wayland user session:' | tail -1"), 'Login did not select Omadora'
+        v.keys('meta_l', 'ret')
+        v.wait_for(lambda: 'foot' in v.guest('hyprctl clients -j'), 30)
+        time.sleep(10)
     finally:
         screenshot('sddm-correct-password')
     return 'Real SDDM password login: wrong password rejected; correct password started Omadora without autologin.'
